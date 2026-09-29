@@ -1,15 +1,21 @@
 import { Environment, Lightformer } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
-import type { DirectionalLight, Object3D } from 'three'
+import { type AmbientLight, Color, type DirectionalLight, type HemisphereLight, type Object3D } from 'three'
+import { sky } from '@/core/dayNight'
 import { playerRuntime } from '@/core/runtime'
-import { SUN_DIRECTION } from '@/components/environment/Sky'
 import { useGameStore } from '@/stores/gameStore'
 
 const SHADOW_EXTENT = 36
 
+// rooms keep their own warm, even indoor light whatever the hour outside
+const ROOM_SKY = new Color('#e9e6e0')
+const ROOM_GROUND = new Color('#a79a88')
+const ROOM_NIGHT = new Color('#f1dcc0')
+
 /**
- * Soft late-afternoon lighting: sky/ground hemisphere fill, a warm low sun
+ * Time-of-day lighting (values from core/dayNight): sky/ground hemisphere fill,
+ * a key light that is the sun by day and the moon by night, sky/ground hemisphere fill, a warm low sun
  * whose shadow frustum follows the player (texel-snapped to avoid shimmer),
  * a cool rim light, and a procedural environment map for reflections.
  */
@@ -17,6 +23,8 @@ export function Lighting({ shadowMapSize = 2048, shadows = true, env = true, sha
   const frame = useRef(0)
   const sun = useRef<DirectionalLight>(null!)
   const target = useRef<Object3D>(null!)
+  const hemi = useRef<HemisphereLight>(null!)
+  const amb = useRef<AmbientLight>(null!)
 
   useEffect(() => {
     sun.current.target = target.current
@@ -39,7 +47,25 @@ export function Lighting({ shadowMapSize = 2048, shadows = true, env = true, sha
     const fx = Math.round(focus.x / texel) * texel
     const fz = Math.round(focus.z / texel) * texel
     target.current.position.set(fx, 0, fz)
-    sun.current.position.set(fx + SUN_DIRECTION.x * 90, SUN_DIRECTION.y * 90 + 20, fz + SUN_DIRECTION.z * 90)
+    const inside = !!useGameStore.getState().interior
+    const d = sky.lightDir
+    sun.current.position.set(fx + d.x * 90, d.y * 90 + 20, fz + d.z * 90)
+    if (inside) {
+      // the daytime balance indoors; a touch warmer in the evening (lamps, not daylight)
+      hemi.current.color.copy(ROOM_SKY).lerp(ROOM_NIGHT, sky.lights * 0.55)
+      hemi.current.groundColor.copy(ROOM_GROUND)
+      hemi.current.intensity = 1.35
+      amb.current.intensity = 0.18
+      sun.current.color.set('#fff0dc')
+      sun.current.intensity = 3.3 * (1 - sky.lights * 0.35)
+    } else {
+      hemi.current.color.copy(sky.hemiSky)
+      hemi.current.groundColor.copy(sky.hemiGround)
+      hemi.current.intensity = sky.hemiIntensity
+      amb.current.intensity = sky.ambient
+      sun.current.color.copy(sky.sunColor)
+      sun.current.intensity = sky.sunIntensity
+    }
     target.current.updateMatrixWorld()
     // optionally refresh the shadow map every Nth frame (cheaper on integrated GPUs)
     frame.current++
@@ -49,8 +75,8 @@ export function Lighting({ shadowMapSize = 2048, shadows = true, env = true, sha
 
   return (
     <>
-      <hemisphereLight args={['#d4e2f5', '#a39684', 1.35]} />
-      <ambientLight intensity={0.18} color="#f2efe8" />
+      <hemisphereLight ref={hemi} args={['#d4e2f5', '#a39684', 1.35]} />
+      <ambientLight ref={amb} intensity={0.18} color="#f2efe8" />
       <directionalLight
         ref={sun}
         color="#fff0dc"

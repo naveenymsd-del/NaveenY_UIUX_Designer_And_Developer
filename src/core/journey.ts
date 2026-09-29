@@ -8,6 +8,7 @@ import { companion, say } from './companion'
 import { enterInterior } from './interiors'
 import { playerRuntime, SPAWN_YAW } from './runtime'
 import { soundManager } from './sound/SoundManager'
+import { useDayNight } from './dayNight'
 
 /**
  * The visitor journey: how the landing hands over to the world, what counts
@@ -35,6 +36,11 @@ const state = {
   lastNudge: 0,
   studioSeen: false,
   finalHinted: false,
+  /** time-of-day lines (each said at most once) */
+  dayAtStart: null as boolean | null,
+  saidChanging: false,
+  saidKeepGoing: false,
+  saidParkNight: false,
   unsub: null as null | (() => void),
 }
 
@@ -130,6 +136,21 @@ export function tickJourney(now: number) {
   const g = useGameStore.getState()
   if (g.phase !== 'playing' || g.mode !== 'street') return
   const p = playerRuntime.position
+  // the evening arriving during a visit: two quiet remarks, never a running commentary
+  const dn = useDayNight.getState()
+  if (state.dayAtStart === null) state.dayAtStart = dn.phase === 'day'
+  if (state.dayAtStart && !state.saidChanging && (dn.phase === 'golden' || dn.phase === 'sunset')) {
+    state.saidChanging = true
+    say('The city is changing.', { ms: 3000, emote: 'think' })
+  }
+  if (state.saidChanging && !state.saidKeepGoing && dn.phase === 'night') {
+    state.saidKeepGoing = true
+    say('Let’s keep exploring.', { ms: 2800, emote: 'excited' })
+  }
+  if (dn.night && !state.saidParkNight && !g.interior && p.x > -43 && p.x < -8 && p.z > 7 && p.z < 43) {
+    state.saidParkNight = true
+    say('Even the ideas look different at night.', { ms: 3600, emote: 'think' })
+  }
   if (g.interior === 'office' && !state.studioSeen && inStudio(p.x, p.z)) {
     state.studioSeen = true
     discover('projects')

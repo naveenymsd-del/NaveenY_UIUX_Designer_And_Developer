@@ -512,3 +512,33 @@ export function genPark(ctx: GenContext) {
   crateStack(b, rng)
   b.pop()
 }
+
+/**
+ * Night furniture for the Design Park and the plaza fountain: low path
+ * bollards along the park's cross paths and soft uplight around the fountain.
+ * By day they are quiet dark posts; after sunset their caps and pools glow
+ * (the day/night system drives the shared emissive + light-pool materials).
+ */
+export function genNightFurniture(ctx: GenContext) {
+  const { b } = ctx
+  const [px, pz] = PARK_CENTER
+  const bollard = (x: number, z: number) => {
+    b.push(x, SIDEWALK_Y, z)
+    b.add('cyl8', PALETTE.charcoal, [0, 0.34, 0], [0.13, 0.68, 0.13], { cast: false })
+    b.add('cyl8', 0xffe2b4, [0, 0.62, 0], [0.15, 0.07, 0.15], { mat: 'emissive', cast: false })
+    b.add('cyl8', PALETTE.charcoal, [0, 0.69, 0], [0.19, 0.04, 0.19], { cast: false })
+    b.cylCollider([0, 0, 0], 0.08, 0.7)
+    b.pop()
+    lightPoolAt(ctx, x, z, 1.25, 0xffd9a6)
+  }
+  // along the north–south path (both edges), clear of the round plaza
+  for (const dz of [-14.5, -10, 10, 14.5]) for (const dx of [-1.95, 1.95]) bollard(px + dx, pz + dz)
+  // along the east–west path
+  for (const dx of [-14, -9.5, 9.5, 14]) for (const dz of [-1.95, 1.95]) bollard(px + dx, pz + dz)
+  // fountain uplight
+  const [fx, fz] = FOUNTAIN_POS
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4
+    lightPoolAt(ctx, fx + Math.cos(a) * 5.1, fz + Math.sin(a) * 5.1, 1.6, 0xffcf96)
+  }
+}

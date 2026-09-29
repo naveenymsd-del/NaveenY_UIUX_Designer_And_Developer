@@ -3,6 +3,8 @@ import { INTRO, introRuntime, skipIntro } from '@/core/intro'
 import { beginJourney } from '@/core/journey'
 import { useGameStore } from '@/stores/gameStore'
 import { SoundButton } from './SoundButton'
+import { DayNightToggle } from './DayNightToggle'
+import { useDayNight } from '@/core/dayNight'
 import { WorldStatus } from './WorldStatus'
 
 /**
@@ -14,6 +16,7 @@ import { WorldStatus } from './WorldStatus'
 export function IntroOverlay() {
   const phase = useGameStore((s) => s.phase)
   const [t, setT] = useState(0)
+  const night = useDayNight((s) => s.night)
 
   useEffect(() => {
     if (phase !== 'intro') return
@@ -37,7 +40,7 @@ export function IntroOverlay() {
         <p className="ui-intro__eyebrow">UI/UX Designer · Interactive portfolio</p>
         <h1 id="intro-title" className="ui-intro__title">Naveen</h1>
         <p className="ui-intro__subtitle">Designing human experiences with technology, interaction and&nbsp;AI.</p>
-        <p className="ui-intro__welcome">Welcome. Take your time exploring my world.</p>
+        <p className="ui-intro__welcome">{night ? 'Welcome. Ready to explore?' : 'Welcome. Take your time exploring my world.'}</p>
         <div className="ui-intro__actions">
           <button className="ui-btn ui-btn--primary ui-btn--lg" onClick={() => beginJourney('street')} tabIndex={hero ? 0 : -1} autoFocus={hero}>
             Start exploring
@@ -51,6 +54,7 @@ export function IntroOverlay() {
 
       <div className={`ui-intro__status ${hero && !leaving ? 'is-visible' : ''}`}>
         <WorldStatus />
+        <DayNightToggle />
         <SoundButton />
       </div>
 

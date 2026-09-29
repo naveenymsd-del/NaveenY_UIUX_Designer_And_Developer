@@ -66,7 +66,7 @@ function windowView(ctx: GenContext, x: number, y: number, z: number, yaw: numbe
   const rect = ctx.decor.add(256, 192, windowViewPainter(seed), `winview-${seed}`)
   const { b } = ctx
   b.push(x, y, z, yaw)
-  b.add('plane', 0xffffff, [0, 0, 0.005], [w, h, 1], { mat: 'decorAtlas', uv: rect, cast: false })
+  b.add('plane', 0xffffff, [0, 0, 0.005], [w, h, 1], { mat: 'viewAtlas', uv: rect, cast: false })
   b.box(frame, [0, h / 2, 0.03], [w + 0.14, 0.08, 0.1], { cast: false })
   b.box(frame, [0, -h / 2, 0.05], [w + 0.2, 0.08, 0.16], { cast: false })
   b.box(frame, [-w / 2, 0, 0.03], [0.08, h, 0.1], { cast: false })

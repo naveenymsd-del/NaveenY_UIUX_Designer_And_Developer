@@ -21,6 +21,7 @@ import { CompanionBubble } from '@/components/ui/CompanionBubble'
 import { FinalPanel } from '@/components/ui/FinalPanel'
 import { NameTag } from '@/components/ui/NameTag'
 import { initJourney } from '@/core/journey'
+import { useDayNight } from '@/core/dayNight'
 import { useKeyboardControls } from '@/hooks/useKeyboardControls'
 import { useResponsive } from '@/hooks/useResponsive'
 import { useSoundBridge } from '@/hooks/useSoundBridge'
@@ -34,6 +35,7 @@ export function App() {
   const [webgl] = useState(hasWebGL)
   const phase = useGameStore((s) => s.phase)
   const isTouch = useUIStore((s) => s.isTouch)
+  const night = useDayNight((s) => s.night)
   const vp = useResponsive()
   useKeyboardControls()
   useSoundBridge()
@@ -59,7 +61,7 @@ export function App() {
 
   if (!webgl) return <WebGLFallback />
   return (
-    <div className={`app phase-${phase} ${isTouch ? 'is-touch' : 'is-desktop'} ${vp.portrait ? 'is-portrait' : 'is-landscape'} ${vp.compact ? 'is-compact' : ''}`}>
+    <div className={`app phase-${phase} ${isTouch ? 'is-touch' : 'is-desktop'} ${vp.portrait ? 'is-portrait' : 'is-landscape'} ${vp.compact ? 'is-compact' : ''} ${night ? 'is-night' : ''}`}>
       <GameCanvas />
       <div className="ui-layer">
         <TopNavigation />

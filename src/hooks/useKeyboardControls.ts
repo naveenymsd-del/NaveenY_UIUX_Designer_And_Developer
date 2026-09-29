@@ -1,3 +1,4 @@
+import { getTime, setMode, setTime } from '@/core/dayNight'
 import { skipIntro } from '@/core/intro'
 import { useEffect } from 'react'
 import { clearMovement, input, pressJump } from '@/core/input'
@@ -24,6 +25,8 @@ function isTyping(e: KeyboardEvent) {
  * E to interact, Esc to close panels/menus, H to toggle the controls tip.
  * Space/arrows are only captured while the game has focus (not in the menu).
  */
+const DEV_KEYS = import.meta.env.DEV || (typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug'))
+
 export function useKeyboardControls() {
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -59,6 +62,12 @@ export function useKeyboardControls() {
         return
       }
       if (e.code === 'KeyH') game.setTipsOpen(!game.tipsOpen)
+      // developer shortcuts (dev server or ?debug only): N night · M day ("morning") · T +1 hour
+      if (DEV_KEYS) {
+        if (e.code === 'KeyN') setMode('night')
+        else if (e.code === 'KeyM') setMode('day')
+        else if (e.code === 'KeyT') setTime((getTime() + 1) % 24)
+      }
     }
     const up = (e: KeyboardEvent) => {
       const k = MOVE_KEYS[e.code]

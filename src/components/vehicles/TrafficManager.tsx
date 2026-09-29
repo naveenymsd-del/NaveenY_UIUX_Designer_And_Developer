@@ -1,6 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useCallback, useMemo, useRef } from 'react'
 import { Color, Quaternion, Vector3 } from 'three'
+import { sky } from '@/core/dayNight'
 import { agentPositions, playerRuntime, vehiclePositions } from '@/core/runtime'
 import { soundManager } from '@/core/sound/SoundManager'
 import { buildLoop, LOOPS, samplePath, VEHICLES, type SampledPath, type VehicleDef } from '@/data/vehiclePaths'
@@ -27,6 +28,8 @@ const _up = new Vector3(0, 1, 0)
 const _out = { x: 0, z: 0, hx: 0, hz: 1 }
 const BRAKE_ON = new Color(3.2, 0.35, 0.4)
 const BRAKE_OFF = new Color(1.3, 0.22, 0.28)
+const TAIL_NIGHT = new Color(2.1, 0.3, 0.32)
+const _off = new Color()
 
 /**
  * Path-based traffic: no vehicle physics, just arc-length motion along lane
@@ -113,7 +116,9 @@ export function TrafficManager() {
         if (h.parts) {
           v.wheelSpin += (v.speed * dt) / 0.36
           for (const w of h.parts.wheels) if (w) w.rotation.x = v.wheelSpin
-          h.parts.tail.color.lerpColors(BRAKE_OFF, BRAKE_ON, v.braking)
+          // running lights come up after dark; braking still reads brighter
+          _off.copy(BRAKE_OFF).lerp(TAIL_NIGHT, sky.lights)
+          h.parts.tail.color.lerpColors(_off, BRAKE_ON, v.braking)
         }
       }
       nearest = Math.min(nearest, Math.hypot(v.pos.x - pp.x, v.pos.z - pp.z))

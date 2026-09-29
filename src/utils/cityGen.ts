@@ -5,7 +5,7 @@ import {
 import { PALETTE } from '@/data/palette'
 import { PROJECTS } from '@/data/projects'
 import {
-  addSign, buildingHeight, generateBuilding, type GenContext, type GlassPane, type RectArea, type ScreenDef, type SeatDef, type WaterDef,
+  addSign, buildingHeight, lightAnchors, generateBuilding, type GenContext, type GlassPane, type RectArea, type ScreenDef, type SeatDef, type WaterDef,
 } from './buildingGen'
 import { PartBuilder, type BoxColliderDef, type CylColliderDef, type Part } from './partBuilder'
 import {
@@ -13,7 +13,7 @@ import {
   type PropKind, type PropPlacement, type TreeKind,
 } from './propGen'
 import { createRng } from './rng'
-import { genEntry, genGallery, genPark, genPlaza, genStudio } from './specialGen'
+import { genEntry, genGallery, genNightFurniture, genPark, genPlaza, genStudio } from './specialGen'
 import { genEducation, genHome, genOffice } from './landmarkGen'
 import { genInteriors } from './interiorGen'
 import { AtlasBuilder } from './textures'
@@ -285,6 +285,7 @@ function boundaries(b: PartBuilder): BoxColliderDef[] {
 }
 
 export function generateCity(options: { modelBuildingIds?: Set<string>; replaceProps?: Set<PropKind> } = {}): CityData {
+  lightAnchors.length = 0
   propRegistry.replaced = options.replaceProps ?? new Set()
   propRegistry.placements = []
   const b = new PartBuilder()
@@ -334,6 +335,7 @@ export function generateCity(options: { modelBuildingIds?: Set<string>; replaceP
   genEntry(ctx)
   genPlaza(ctx, PROJECTS)
   genPark(ctx)
+  genNightFurniture(ctx)
   genInteriors(ctx)
   cityProps(ctx)
   const walls = boundaries(b)

@@ -5,7 +5,8 @@ import { Sky } from '@/components/environment/Sky'
 import { Lighting } from '@/components/effects/Lighting'
 import { AmbientParticles, Birds, DustPuffs, FeedbackPulse, FountainSpray, WorldClock } from '@/components/effects/EnvironmentEffects'
 import { AICompanion } from '@/components/effects/AICompanion'
-import { IntroAtmosphere } from '@/components/effects/IntroAtmosphere'
+import { DayNightSystem } from '@/components/effects/DayNightSystem'
+import { NightLights } from '@/components/effects/NightLights'
 import { StoryProps } from '@/components/interactions/StoryProps'
 import { InteractionManager } from '@/components/interactions/InteractionManager'
 import { InteractiveObjects } from '@/components/interactions/InteractiveObject'
@@ -30,7 +31,8 @@ export function GameWorld() {
       <fog attach="fog" args={[FOG_COLOR, 110, 460]} />
       <color attach="background" args={[FOG_COLOR]} />
       <WorldClock />
-      <IntroAtmosphere />
+      <DayNightSystem />
+      <NightLights />
       <Sky />
       <Lighting shadowMapSize={q.shadowMapSize} shadows={q.shadows && !off.has('shadows')} env={!off.has('env')} shadowInterval={quality === 'high' ? 1 : 2} />
       <City shadows={q.shadows && !off.has('shadows')} parts={!off.has('parts')} />

@@ -6,6 +6,7 @@ import { useCurrentPlace } from '@/hooks/useCurrentPlace'
 import { useGameStore } from '@/stores/gameStore'
 import { MenuButton } from './MenuButton'
 import { SoundButton } from './SoundButton'
+import { DayNightToggle } from './DayNightToggle'
 import { WorldStatus } from './WorldStatus'
 
 /**
@@ -49,6 +50,7 @@ export function TopNavigation() {
       </div>
       <div className="ui-top__right">
         <WorldStatus />
+        <DayNightToggle />
         <SoundButton />
         <MenuButton />
       </div>

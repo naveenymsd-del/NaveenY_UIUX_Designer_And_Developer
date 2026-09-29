@@ -198,8 +198,16 @@ export function wallLamp(ctx: GenContext, x: number, y: number) {
   lightPoolAt(ctx, wx, wz, 1.6, 0xffc58a)
 }
 
+/**
+ * Every light pool in the world (lamps, entrances, landmarks, studio bays).
+ * At night the few nearest to the player get a real point light; the rest
+ * stay emissive/decal only (see NightLights).
+ */
+export const lightAnchors: { x: number; z: number; r: number; color: number }[] = []
+
 /** Warm light decal on the sidewalk, authored in world space. */
 export function lightPoolAt(ctx: GenContext, wx: number, wz: number, r: number, color = 0xffd4a0) {
+  lightAnchors.push({ x: wx, z: wz, r, color })
   ctx.b.inWorld(() => {
     ctx.b.add('disk', color, [wx, SIDEWALK_Y + 0.02, wz], [r * 2, 1, r * 2], { mat: 'lightPool', cast: false })
   })

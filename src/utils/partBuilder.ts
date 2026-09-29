@@ -12,7 +12,7 @@ export type GeoKind =
 
 export type MatKind =
   | 'matte' | 'gloss' | 'metal' | 'glass' | 'glow' | 'foliage' | 'fabric' | 'paint'
-  | 'water' | 'signAtlas' | 'decorAtlas' | 'lightPool' | 'emissive'
+  | 'water' | 'signAtlas' | 'decorAtlas' | 'viewAtlas' | 'lightPool' | 'emissive'
 
 export interface Part {
   geo: GeoKind

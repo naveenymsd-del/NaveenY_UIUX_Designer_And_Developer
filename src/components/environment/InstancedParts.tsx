@@ -6,7 +6,7 @@ import { getMaterial } from '@/utils/materials'
 
 const CHUNK = 64
 const CHUNK_THRESHOLD = 1200
-const NO_RECEIVE = new Set(['glow', 'emissive', 'lightPool', 'signAtlas', 'decorAtlas'])
+const NO_RECEIVE = new Set(['glow', 'emissive', 'lightPool', 'signAtlas', 'decorAtlas', 'viewAtlas'])
 
 /**
  * Batches parts into InstancedMeshes keyed by geometry + material (+ spatial
@@ -43,7 +43,7 @@ export function InstancedParts({ parts, shadows = true }: { parts: Part[]; shado
     const color = new Color()
     return groups.map(([key, list]) => {
       const [geo, mat, cast] = key.split('|')
-      const atlas = mat === 'signAtlas' || mat === 'decorAtlas'
+      const atlas = mat === 'signAtlas' || mat === 'decorAtlas' || mat === 'viewAtlas'
       const geometry = atlas ? geos[geo as Part['geo']].clone() : geos[geo as Part['geo']]
       const mesh = new InstancedMesh(geometry, getMaterial(mat as Part['mat']), list.length)
       const uv = atlas ? new Float32Array(list.length * 4) : null

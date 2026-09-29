@@ -100,6 +100,26 @@ Names are in **`src/data/colleagues.ts`**. A name appears only when you walk up 
 - **Visitor count** (`src/services/visitors.ts`): no number is ever invented. Without a backend the HUD says **THIS SESSION · 01**. Set `VITE_VISITOR_ENDPOINT` (e.g. in `.env.local`) to a URL that records a visit on `POST` and returns `{ current?, today?, total? }` on `GET`. A Supabase edge function or Firebase function works, and the HUD then shows the real figures.
 - **Feedback** (`src/services/feedback.ts`): one question, four answers, an optional note, and no account needed. Set `VITE_FEEDBACK_ENDPOINT` to a URL that accepts a JSON `POST`. Until then, feedback is kept in this browser (`localStorage` → `mindscape:feedback`), and the UI says so.
 
+## Day & night
+
+The same world is shown at every hour; only the light changes. One time value (0–24 h) in **`src/core/dayNight.ts`** drives everything: sun ↔ moon (one shadow-casting key light), sky gradient, stars and moon, hemisphere and ambient fill, fog, reflections, window lights, street and park lights, vehicle lights, the companion's warmth and the UI tone.
+
+- **Moments:** `MOMENTS` defines golden 17:30, sunset 18:15, blue 18:50, night 19:35, and dawn and sunrise in the morning. The look at each moment is a preset (`DAY`, `GOLDEN`, `SUNSET`, `BLUE`, `NIGHT`, …), blended smoothly in between. The `DAY` preset is exactly the original daytime look.
+- **Modes:** the small sun/moon button in the HUD cycles **Auto → Day → Sunset → Night**. Auto starts at the visitor's local time and advances at `DAY_NIGHT_SPEED` in-world minutes per real minute (default 10). Mode changes play a short time-lapse the shorter way round the clock, never a cut.
+- **API:** `setTime(hour, animate?)`, `setMode(mode)`, `getTime()` and `useDayNight` (mode, phase, night) for UI. The evaluated state is `sky`, which consumers read each frame.
+- **Where it's applied:**
+  - `DayNightSystem` handles materials, fog, background and reflections.
+  - `Lighting` handles sun/moon, hemisphere and ambient; rooms keep warm indoor light.
+  - `Sky` handles the gradient, stars, moon and clouds.
+  - `NightLights` handles the local point lights.
+  - `TrafficManager` handles tail lights.
+- **Windows:** window glass lights up per pane from a stable hash of its position. Some panes stay off, some are dim, the colours range from warm white to amber, and they switch on staggered through the evening. The home, office and campus have their own occupancy (`ZONES` in DayNightSystem). The base probability is `nightUniforms.uWindowP` (0.45).
+- **Performance:**
+  - No per-window or per-lamp lights: windows, lamp heads and bollards are emissive, and pavement light is shared additive decals.
+  - Only 4 pooled point lights (plus one small companion light) follow the nearest anchors. Every `lightPoolAt` call registers one.
+  - The light count is constant, so shaders never recompile when night falls.
+- **Testing:** `?mode=night`, `?mode=sunset` or `?mode=day` sets the start mode, and `?time=18.9` freezes a time. In dev (or with `?debug`), **N** is night, **M** is day and **T** is +1 hour; D is taken by WASD. `node scripts/qa-daynight.mjs` captures five places at five moments. `node scripts/qa-daynight-toggle.mjs` checks the toggle time-lapses and the office at night.
+
 ## Typography
 
 **Bricolage Grotesque** is the display face (optical sizes): the hero, headings and key labels. **Instrument Sans** is the body face: copy, instructions, metadata and navigation. The tokens (`--font-*`, `--text-*`, `--track-*`, `--weight-*`) live in `src/styles/global.css`. The refined interface layer is `src/styles/refine.css`.

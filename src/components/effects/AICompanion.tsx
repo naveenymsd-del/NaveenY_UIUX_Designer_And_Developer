@@ -7,6 +7,8 @@ import { companion, emote, say, tickCompanion } from '@/core/companion'
 import { INTRO, introCompanion, introRuntime } from '@/core/intro'
 import { tickJourney } from '@/core/journey'
 import { playerRuntime } from '@/core/runtime'
+import { sky } from '@/core/dayNight'
+import type { PointLight } from 'three'
 import { AI_AREA, PROCESS_STATIONS, getLocation } from '@/data/locations'
 import { useGameStore } from '@/stores/gameStore'
 import { damp, dampAngle } from '@/utils/movement'
@@ -35,6 +37,7 @@ export function AICompanion() {
   const armR = useRef<Group>(null!)
   const tip = useRef<Mesh>(null!)
   const shadow = useRef<Mesh>(null!)
+  const glowLight = useRef<PointLight>(null!)
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
 
@@ -232,6 +235,9 @@ export function AICompanion() {
     armL.current.rotation.x = damp(armL.current.rotation.x, lx, 9, dt)
     armR.current.rotation.x = damp(armR.current.rotation.x, rx, 9, dt)
 
+    // after dark: a slightly warmer body and a small warm light — it stays a physical character
+    res.shell.emissiveIntensity = 0.18 + sky.lights * 0.46
+    glowLight.current.intensity = visible ? sky.lights * 1.3 : 0
     // glow tip breathes; brighter while speaking
     const glow = 0.75 + Math.sin(s.t * 2.4) * 0.15 + (talking ? 0.35 : 0)
     ;(tip.current.material as MeshBasicMaterial).color.setRGB(1.7 * glow, 1.2 * glow, 0.75 * glow)
@@ -262,6 +268,7 @@ export function AICompanion() {
   return (
     <>
       <group ref={root}>
+        <pointLight ref={glowLight} color="#ffb070" intensity={0} distance={2.8} decay={2} position={[0.05, 0.36, 0.05]} />
         <group ref={body}>
           <mesh geometry={res.body} material={res.shell} scale={[1, 1.1, 0.94]} castShadow />
           {/* lighter crown so the shape reads as soft and warm, not a flat ball */}
