@@ -1,4 +1,5 @@
 import { navigate } from '@/app/routes'
+import { BASE } from '@/utils/basePath'
 import { exitInterior } from '@/core/interiors'
 import { soundManager } from '@/core/sound/SoundManager'
 import { useCurrentPlace } from '@/hooks/useCurrentPlace'
@@ -34,7 +35,7 @@ export function TopNavigation() {
   return (
     <header className={`ui-top ${visible ? 'is-visible' : ''}`}>
       <div className="ui-top__left">
-        <a className="ui-brand" href="/street" onClick={(e) => { e.preventDefault(); closePanels(); navigate('/street') }} aria-label="Naveen — interactive portfolio">
+        <a className="ui-brand" href={`${BASE}street`} onClick={(e) => { e.preventDefault(); closePanels(); navigate('/street') }} aria-label="Naveen — interactive portfolio">
           <span className="ui-brand__word">Naveen</span>
         </a>
         <p className="ui-where" aria-live="polite">

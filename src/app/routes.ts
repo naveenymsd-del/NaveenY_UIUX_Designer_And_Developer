@@ -1,4 +1,8 @@
 import { useGameStore } from '@/stores/gameStore'
+import { BASE } from '@/utils/basePath'
+
+/** full URL path for a route under the deployment base (e.g. /repo/street) */
+const full = (p: RoutePath) => BASE + p.slice(1)
 
 /**
  * Client-side routes without page reloads: /street and /projects map to the
@@ -22,8 +26,8 @@ function apply(path: RoutePath) {
 }
 
 export function navigate(path: RoutePath, replace = false) {
-  const url = path + window.location.search
-  if (window.location.pathname !== path) {
+  const url = full(path) + window.location.search
+  if (window.location.pathname !== full(path)) {
     if (replace) window.history.replaceState({ path }, '', url)
     else window.history.pushState({ path }, '', url)
   }
@@ -33,7 +37,8 @@ export function navigate(path: RoutePath, replace = false) {
 /** Call once at startup: normalises '/', listens to history, applies deferred routes after the intro. */
 export function initRouter() {
   const initial = currentRoute()
-  if (window.location.pathname === '/' || window.location.pathname === '') window.history.replaceState({ path: initial }, '', initial + window.location.search)
+  const here = window.location.pathname
+  if (here === '/' || here === '' || here === BASE || here === BASE.replace(/\/$/, '')) window.history.replaceState({ path: initial }, '', full(initial) + window.location.search)
   pending = initial
   const onPop = () => apply(currentRoute())
   window.addEventListener('popstate', onPop)
@@ -46,7 +51,7 @@ export function initRouter() {
     // keep the URL in sync when mode changes from inside the app
     if (s.mode !== prev.mode) {
       const want: RoutePath = s.mode === 'projects' ? '/projects' : '/street'
-      if (currentRoute() !== want) window.history.pushState({ path: want }, '', want + window.location.search)
+      if (currentRoute() !== want) window.history.pushState({ path: want }, '', full(want) + window.location.search)
     }
   })
   return () => {

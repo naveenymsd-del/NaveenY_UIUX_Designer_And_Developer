@@ -1,9 +1,15 @@
 /**
  * Check whether an optional asset really exists. Dev servers with an SPA
  * fallback answer missing files with index.html (HTTP 200), so we inspect the
- * content-type and, for GLB, the 'glTF' magic bytes.
+ * content-type and, for GLB, the 'glTF' magic bytes. Files not present in /public at
+ * build time (or when the dev server started) are never requested.
  */
+declare const __PUBLIC_FILES__: string[]
+
 export async function probeAsset(url: string, kind: 'model' | 'audio'): Promise<boolean> {
+  // skip the request entirely when the file isn't in /public (listed at build / dev-server start)
+  const rel = '/' + url.slice(import.meta.env.BASE_URL.length)
+  if (!__PUBLIC_FILES__.includes(rel)) return false
   try {
     const res = await fetch(url, { headers: { Range: 'bytes=0-15' }, cache: 'no-cache' })
     if (!res.ok && res.status !== 206) return false

@@ -1,3 +1,4 @@
+import { asset } from '@/utils/basePath'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Vector3 } from 'three'
 import { navigate } from '@/app/routes'
@@ -191,7 +192,7 @@ function Screens({ p }: { p: ProjectDef }) {
     )
   return (
     <div className="ui-case__screens">
-      {p.screens.map((src, i) => <img key={src} className="ui-case__shot" src={src} alt={`${p.title} screen ${i + 1}`} loading="lazy" />)}
+      {p.screens.map((src, i) => <img key={src} className="ui-case__shot" src={asset(src)} alt={`${p.title} screen ${i + 1}`} loading="lazy" />)}
     </div>
   )
 }

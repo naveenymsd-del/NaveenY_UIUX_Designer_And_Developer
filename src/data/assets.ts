@@ -1,3 +1,4 @@
+import { asset } from '@/utils/basePath'
 import type { MoveState } from '@/core/runtime'
 
 /**
@@ -25,36 +26,36 @@ export interface ModelAsset {
 
 export const MODEL_ASSETS = {
   character: {
-    url: '/models/character.glb', scale: 1, rotationY: 0, offsetY: 0,
+    url: asset('/models/character.glb'), scale: 1, rotationY: 0, offsetY: 0,
     clips: { idle: 'Idle', walk: 'Walk', run: 'Run', jump: 'Jump', fall: 'Fall', land: 'Land' },
     nativeWalkSpeed: 1.7, nativeRunSpeed: 4.8,
   },
   npc: {
-    url: '/models/npc.glb', scale: 1,
+    url: asset('/models/npc.glb'), scale: 1,
     clips: { idle: 'Idle', walk: 'Walk', run: 'Run', sit: 'Sit', talk: 'Talk' },
     nativeWalkSpeed: 1.4, nativeRunSpeed: 4,
   },
-  car: { url: '/models/car.glb', scale: 1 },
-  van: { url: '/models/van.glb', scale: 1 },
-  bus: { url: '/models/bus.glb', scale: 1 },
-  tree: { url: '/models/tree.glb', scale: 1 },
-  bench: { url: '/models/bench.glb', scale: 1 },
-  lamp: { url: '/models/lamp.glb', scale: 1 },
+  car: { url: asset('/models/car.glb'), scale: 1 },
+  van: { url: asset('/models/van.glb'), scale: 1 },
+  bus: { url: asset('/models/bus.glb'), scale: 1 },
+  tree: { url: asset('/models/tree.glb'), scale: 1 },
+  bench: { url: asset('/models/bench.glb'), scale: 1 },
+  lamp: { url: asset('/models/lamp.glb'), scale: 1 },
 } satisfies Record<string, ModelAsset>
 
 export type ModelKey = keyof typeof MODEL_ASSETS
 
 export const AUDIO_ASSETS = {
-  ambient: '/audio/ambient-city.mp3',
-  music: '/audio/music.mp3',
-  birds: '/audio/birds.mp3',
-  footstep: '/audio/footstep.mp3',
-  jump: '/audio/jump.mp3',
-  land: '/audio/land.mp3',
-  click: '/audio/ui-click.mp3',
-  interact: '/audio/interact.mp3',
-  open: '/audio/open.mp3',
-  vehicle: '/audio/vehicle.mp3',
+  ambient: asset('/audio/ambient-city.mp3'),
+  music: asset('/audio/music.mp3'),
+  birds: asset('/audio/birds.mp3'),
+  footstep: asset('/audio/footstep.mp3'),
+  jump: asset('/audio/jump.mp3'),
+  land: asset('/audio/land.mp3'),
+  click: asset('/audio/ui-click.mp3'),
+  interact: asset('/audio/interact.mp3'),
+  open: asset('/audio/open.mp3'),
+  vehicle: asset('/audio/vehicle.mp3'),
 } as const
 
 export type AudioKey = keyof typeof AUDIO_ASSETS
