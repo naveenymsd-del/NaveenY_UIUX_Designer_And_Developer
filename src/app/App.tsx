@@ -1,0 +1,77 @@
+import { useEffect, useState } from 'react'
+import { GameCanvas } from '@/components/game/GameCanvas'
+import { A11yLayer } from '@/components/ui/A11yLayer'
+import { ControlsHint } from '@/components/ui/ControlsHint'
+import { DebugHUD } from '@/components/ui/DebugHUD'
+import { InteractionPrompt } from '@/components/ui/InteractionPrompt'
+import { IntroOverlay } from '@/components/ui/IntroOverlay'
+import { LoadingScreen } from '@/components/ui/LoadingScreen'
+import { LocationPanel } from '@/components/ui/LocationPanel'
+import { MenuOverlay } from '@/components/ui/MenuOverlay'
+import { Minimap } from '@/components/ui/Minimap'
+import { MobileControls } from '@/components/ui/MobileJoystick'
+import { ProjectPanel } from '@/components/ui/ProjectPanel'
+import { ProjectRail } from '@/components/ui/ProjectRail'
+import { TipsOverlay } from '@/components/ui/TipsOverlay'
+import { TopNavigation } from '@/components/ui/TopNavigation'
+import { WebGLFallback, hasWebGL } from '@/components/ui/WebGLFallback'
+import { ZoneToast } from '@/components/ui/ZoneToast'
+import { useKeyboardControls } from '@/hooks/useKeyboardControls'
+import { useResponsive } from '@/hooks/useResponsive'
+import { useSoundBridge } from '@/hooks/useSoundBridge'
+import { useAssetStore } from '@/stores/assetStore'
+import { useGameStore } from '@/stores/gameStore'
+import { useUIStore } from '@/stores/uiStore'
+import { initRouter } from './routes'
+
+/** Two layers: the WebGL world, and the HTML/CSS interface above it. */
+export function App() {
+  const [webgl] = useState(hasWebGL)
+  const phase = useGameStore((s) => s.phase)
+  const isTouch = useUIStore((s) => s.isTouch)
+  const vp = useResponsive()
+  useKeyboardControls()
+  useSoundBridge()
+
+  useEffect(() => initRouter(), [])
+
+  useEffect(() => {
+    const setLoading = useGameStore.getState().setLoading
+    const fonts = Promise.all([
+      document.fonts.load('700 48px "Outfit Variable"'),
+      document.fonts.load('800 48px "Inter Variable"', 'MINDSCAPE AVENUE'),
+      document.fonts.load('600 24px "Inter Variable"'),
+    ])
+      .then(() => document.fonts.ready)
+      .catch(() => undefined)
+    Promise.race([fonts, new Promise((r) => setTimeout(r, 2500))]).then(() => setLoading({ fontsReady: true }))
+    useAssetStore
+      .getState()
+      .probeModels()
+      .finally(() => setLoading({ assetsProbed: true }))
+  }, [])
+
+  if (!webgl) return <WebGLFallback />
+  return (
+    <div className={`app phase-${phase} ${isTouch ? 'is-touch' : 'is-desktop'} ${vp.portrait ? 'is-portrait' : 'is-landscape'} ${vp.compact ? 'is-compact' : ''}`}>
+      <GameCanvas />
+      <div className="ui-layer">
+        <TopNavigation />
+        <ZoneToast />
+        <InteractionPrompt />
+        <ControlsHint />
+        <Minimap />
+        <MobileControls />
+        <TipsOverlay />
+        <LocationPanel />
+        <ProjectPanel />
+        <ProjectRail />
+        <IntroOverlay />
+        <MenuOverlay />
+        <LoadingScreen />
+        <A11yLayer />
+        <DebugHUD />
+      </div>
+    </div>
+  )
+}
