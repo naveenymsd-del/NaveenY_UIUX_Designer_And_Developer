@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import type { CharacterAnim } from '@/core/runtime'
 import { MODEL_ASSETS } from '@/data/assets'
 import { useAssetStore } from '@/stores/assetStore'
-import type { CharacterLook } from './characterLook'
+import type { CharacterDetail, CharacterLook } from './characterLook'
 import { AssetErrorBoundary } from './ErrorBoundary'
 import { GLBCharacter } from './GLBCharacter'
 import { ProceduralCharacter } from './ProceduralCharacter'
@@ -13,6 +13,8 @@ interface Props {
   /** which manifest entry to try: the player or the generic NPC model */
   asset?: 'character' | 'npc'
   castShadow?: boolean
+  /** mesh density of the procedural fallback */
+  detail?: CharacterDetail
 }
 
 /**
@@ -20,10 +22,10 @@ interface Props {
  * render <CharacterModel>; whether a GLB or the procedural rig appears is an
  * asset decision made here.
  */
-export function CharacterModel({ anim, look, asset = 'character', castShadow = true }: Props) {
+export function CharacterModel({ anim, look, asset = 'character', castShadow = true, detail }: Props) {
   const available = useAssetStore((s) => !!s.models[asset])
   const markFailed = useAssetStore((s) => s.markFailed)
-  const fallback = <ProceduralCharacter anim={anim} look={look} castShadow={castShadow} />
+  const fallback = <ProceduralCharacter anim={anim} look={look} castShadow={castShadow} detail={detail} />
   if (!available) return fallback
   return (
     <AssetErrorBoundary fallback={fallback} label={MODEL_ASSETS[asset].url} onError={() => markFailed(asset)}>

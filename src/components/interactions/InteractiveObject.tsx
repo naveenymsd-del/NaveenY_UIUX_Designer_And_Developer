@@ -54,6 +54,7 @@ export function InteractiveObject({ def }: { def: InteractiveDef }) {
 }
 
 export function InteractiveObjects({ defs }: { defs: InteractiveDef[] }) {
+  defs = defs.filter((d) => !d.quiet)
   return (
     <>
       {defs.map((d) => (

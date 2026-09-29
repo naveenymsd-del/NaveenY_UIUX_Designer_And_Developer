@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { CameraShot } from '@/data/locations'
+import type { InteriorId } from '@/data/interiors'
 
 export type Phase = 'loading' | 'intro' | 'transition' | 'playing'
 export type Mode = 'street' | 'projects'
@@ -31,10 +32,22 @@ interface GameState {
   tipsOpen: boolean
   /** an explicit camera shot request (menu quick-travel previews etc.) */
   shotOverride: CameraShot | null
+  /** interior the player is currently inside (null = street) */
+  interior: InteriorId | null
+  /** performance.now() when the current interior was entered */
+  interiorSince: number
+  /** full-screen fade used by building transitions */
+  fade: boolean
+  /** establishing camera shot after entering a room */
+  establishing: InteriorId | null
+  /** location whose camera shot is shown during an approach (before a fade) */
+  cameraShot: string | null
   /** feedback pulses consumed by fx */
   pulse: { kind: 'open' | 'close' | 'enter' | 'select'; at: number } | null
 
   setLoading: (patch: Partial<LoadingState>) => void
+  /** low-level patch for orchestration code (transitions) */
+  setState: (patch: Partial<GameState>) => void
   setPhase: (phase: Phase) => void
   setMode: (mode: Mode) => void
   setNearby: (id: string | null) => void
@@ -63,9 +76,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   visitedZones: [],
   tipsOpen: false,
   shotOverride: null,
+  interior: null,
+  interiorSince: 0,
+  fade: false,
+  establishing: null,
+  cameraShot: null,
   pulse: null,
 
   setLoading: (patch) => set((s) => ({ loading: { ...s.loading, ...patch } })),
+  setState: (patch) => set(patch),
   setPhase: (phase) => set({ phase }),
   setMode: (mode) => {
     if (get().mode === mode) return
@@ -94,6 +113,6 @@ export const useGameStore = create<GameState>((set, get) => ({
 }))
 
 /** True when the player should receive movement input. */
-export function controlsEnabled(s: Pick<GameState, 'phase' | 'mode' | 'activeLocationId' | 'activeProjectId'>) {
-  return s.phase === 'playing' && s.mode === 'street' && !s.activeLocationId && !s.activeProjectId
+export function controlsEnabled(s: Pick<GameState, 'phase' | 'mode' | 'activeLocationId' | 'activeProjectId' | 'fade' | 'establishing'>) {
+  return s.phase === 'playing' && s.mode === 'street' && !s.activeLocationId && !s.activeProjectId && !s.fade && !s.establishing
 }

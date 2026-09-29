@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { type PerspectiveCamera, Vector3 } from 'three'
 import { CAMERA_DEFAULTS, cameraRuntime, cinematicRuntime, playerRuntime } from '@/core/runtime'
 import { getLocation } from '@/data/locations'
+import { INTERIORS, roomToWorld, type InteriorId } from '@/data/interiors'
 import { getProject, PROJECTS_OVERVIEW_CAMERA } from '@/data/projects'
 import { useGameStore } from '@/stores/gameStore'
 import { clamp, damp, dampAngle, easeInOutCubic, smoothstep, wrapAngle } from '@/utils/movement'
@@ -19,6 +20,8 @@ interface CamPose {
 function shotKey(): string {
   const g = useGameStore.getState()
   if (g.phase === 'loading' || g.phase === 'intro') return 'intro'
+  if (g.establishing) return `establish:${g.establishing}`
+  if (g.cameraShot) return `loc:${g.cameraShot}`
   if (g.activeProjectId) return `project:${g.activeProjectId}`
   if (g.activeLocationId) return `loc:${g.activeLocationId}`
   if (g.mode === 'projects') return g.focusedProjectId ? `project:${g.focusedProjectId}` : 'projects'
@@ -26,6 +29,9 @@ function shotKey(): string {
 }
 
 function durationFor(from: string, to: string) {
+  // cut instantly into a room (we are behind a fade), then ease out of the establishing shot
+  if (to.startsWith('establish')) return 0.001
+  if (from.startsWith('establish')) return 1.8
   if (from === 'intro' && to === 'follow') return 3.6
   if (to === 'follow') return 1.35
   if (from === 'follow') return 1.6
@@ -49,7 +55,7 @@ export function GameCamera() {
   const portrait = size.height > size.width
 
   useEffect(() => {
-    camera.fov = portrait ? 64 : size.width < 1100 ? 58 : 54
+    camera.fov = portrait ? 62 : size.width < 1100 ? 56 : 52
     camera.near = 0.2
     camera.far = 1100
     camera.updateProjectionMatrix()
@@ -108,7 +114,7 @@ export function GameCamera() {
     }
     const yaw = cameraRuntime.yaw
     const pitch = cameraRuntime.pitch + cw * 0.2
-    const portraitBoost = portrait ? 1.6 : 0
+    const portraitBoost = portrait ? 1.2 : 0
     const want = cameraRuntime.distance + portraitBoost + cw * 2.8
     _dir.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch))
     // collision: ray from the look target toward the desired camera position
@@ -150,6 +156,12 @@ export function GameCamera() {
       const oz = c.position[2] - c.target[2]
       live.pos.set(c.target[0] + ox * Math.cos(a) - oz * Math.sin(a), c.position[1], c.target[2] + ox * Math.sin(a) + oz * Math.cos(a))
       live.target.set(...c.target)
+    } else if (key.startsWith('establish:')) {
+      const id = key.split(':')[1] as InteriorId
+      const e = INTERIORS[id].establish
+      const drift = Math.sin(s.time * 0.3) * 0.15
+      live.pos.set(...roomToWorld(id, e.position[0] + drift, e.position[2], e.position[1]))
+      live.target.set(...roomToWorld(id, e.target[0], e.target[2], e.target[1]))
     } else {
       const [kind, id] = key.split(':')
       const shot = kind === 'project' ? getProject(id)?.camera : getLocation(id)?.cameraTarget

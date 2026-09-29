@@ -56,6 +56,15 @@ export interface AddOptions {
   uv?: [number, number, number, number]
 }
 
+/** Materials that get ±3% brightness variation per instance (avoids flat, plastic repetition). */
+const JITTER = new Set<MatKind>(['matte', 'fabric', 'gloss', 'foliage'])
+function jitter(color: number, seed: number) {
+  const h = Math.sin(seed * 12.9898) * 43758.5453
+  const k = 1 + ((h - Math.floor(h)) - 0.5) * 0.07
+  const ch = (v: number) => Math.max(0, Math.min(255, Math.round(v * k)))
+  return (ch((color >> 16) & 255) << 16) | (ch((color >> 8) & 255) << 8) | ch(color & 255)
+}
+
 const _q = new Quaternion()
 const _qf = new Quaternion()
 const _e = new Euler()
@@ -117,11 +126,12 @@ export class PartBuilder {
       _qf.multiply(_q)
     }
     const m = new Matrix4().compose(_p.set(wx, wy, wz), _qf, _s.set(scale[0], scale[1], scale[2]))
+    const mat = opts.mat ?? 'matte'
     this.parts.push({
       geo,
-      mat: opts.mat ?? 'matte',
+      mat,
       matrix: m,
-      color,
+      color: JITTER.has(mat) ? jitter(color, this.parts.length) : color,
       // small details never cast shadows: keeps the shadow pass lean
       cast: opts.cast ?? big >= 0.9,
       uv: opts.uv,

@@ -8,7 +8,7 @@ import { probeAsset } from '@/utils/assetProbe'
  * because of a missing file. The AudioContext is created on the first user
  * gesture (browser autoplay policy).
  */
-type SfxKey = 'footstep' | 'jump' | 'land' | 'click' | 'interact' | 'open' | 'close' | 'hover'
+type SfxKey = 'footstep' | 'jump' | 'land' | 'click' | 'interact' | 'open' | 'close' | 'hover' | 'bell'
 
 interface PlayOpts {
   volume?: number
@@ -197,6 +197,10 @@ class SoundManager {
         break
       case 'open':
         ;[523, 659, 784, 1047].forEach((f, i) => this.tone(f, 'sine', t + i * 0.06, 0.008, 0.08 * vol, 0.45))
+        break
+      case 'bell':
+        ;[1318, 1976, 2637].forEach((f, i) => this.tone(f, 'sine', t + i * 0.004, 0.003, 0.12 * vol / (i + 1), 1.8))
+        ;[1318, 1976].forEach((f) => this.tone(f, 'sine', t + 0.35, 0.003, 0.08 * vol, 1.4))
         break
       case 'close':
         ;[784, 587, 440].forEach((f, i) => this.tone(f, 'sine', t + i * 0.06, 0.008, 0.07 * vol, 0.35))

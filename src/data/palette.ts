@@ -1,59 +1,61 @@
 /**
- * Art-direction palette. Late-afternoon pastel neighbourhood:
- * warm pinks, soft blues, cream, lavender, muted greens and warm browns.
+ * Art direction: stylised realism in warm daylight. Muted architectural
+ * colours (plaster, brick, sand, sage, slate), natural greens, neutral stone
+ * paving and restrained accents. Key names are kept stable because the
+ * generators reference them; the values define the look.
  */
 export const PALETTE = {
   // facades
-  cream: 0xf6ecdc,
-  ivory: 0xfbf5ea,
-  blush: 0xf4c3cc,
-  rose: 0xe89aab,
-  peach: 0xf6c4a4,
-  coral: 0xef8a78,
-  lavender: 0xbfaee0,
-  lilac: 0xa996d4,
-  periwinkle: 0x9fb2e6,
-  sky: 0xa9cdec,
-  powder: 0xcfe0f2,
-  mint: 0xbfe3cf,
-  sage: 0x9cc3a0,
-  butter: 0xf5dd92,
-  mustard: 0xe9b949,
-  terracotta: 0xc9765e,
-  brick: 0xb86a5c,
-  cocoa: 0x8a5f4d,
-  walnut: 0x6e4a3b,
-  stone: 0xd6cfd9,
-  slate: 0x8c86a3,
-  charcoal: 0x3b3650,
-  ink: 0x2b2350,
+  cream: 0xeee4d2,
+  ivory: 0xf6f1e8,
+  blush: 0xdcbcb0,
+  rose: 0xc4968a,
+  peach: 0xe2bf9f,
+  coral: 0xc27a60,
+  lavender: 0xb8b3c2,
+  lilac: 0x9c93ad,
+  periwinkle: 0x8fa2bd,
+  sky: 0xa9bdcc,
+  powder: 0xd0d8dc,
+  mint: 0xbccdbb,
+  sage: 0x93a887,
+  butter: 0xe3d2a2,
+  mustard: 0xc49a4e,
+  terracotta: 0xb06a4c,
+  brick: 0x9b5442,
+  cocoa: 0x785a48,
+  walnut: 0x5c4535,
+  stone: 0xcdc6b9,
+  slate: 0x757a84,
+  charcoal: 0x3b3e44,
+  ink: 0x24262c,
   white: 0xffffff,
   // accents
-  teal: 0x4fb3a9,
-  cobalt: 0x2f3fb8,
-  cherry: 0xe0506a,
-  tangerine: 0xf39a4a,
+  teal: 0x3f7f78,
+  cobalt: 0x2f4a8a,
+  cherry: 0xa4433d,
+  tangerine: 0xc98a45,
   // world
-  asphalt: 0x6f6784,
-  asphaltDark: 0x5c5572,
-  paver: 0xe3cfe0,
-  curb: 0xf1e6f0,
-  grass: 0x93c47d,
-  grassDark: 0x79ad6b,
-  soil: 0x9b7560,
-  water: 0x7ec8e8,
-  leafA: 0x7cbf6a,
-  leafB: 0x5fa55e,
-  leafC: 0xa6cf5c,
-  leafD: 0xe6a0b8, // blossom
-  leafE: 0xf1c75b, // autumn gold
-  trunk: 0x8a5f4d,
-  windowLit: 0xffd9a0,
-  windowLit2: 0xffc98a,
-  windowLit3: 0xfff0c8,
-  glassBlue: 0x5d7fb3,
-  glassTeal: 0x5f9fb0,
-  lamp: 0xfff1c9,
+  asphalt: 0x5d5f64,
+  asphaltDark: 0x4f5156,
+  paver: 0xcfc7ba,
+  curb: 0xd8d4cc,
+  grass: 0x7fa35a,
+  grassDark: 0x6a8f4b,
+  soil: 0x7b6150,
+  water: 0x6fa6c6,
+  leafA: 0x6f9a4c,
+  leafB: 0x557f3f,
+  leafC: 0x8fae5a,
+  leafD: 0xd4a9ae, // soft blossom
+  leafE: 0xc99a45, // autumn
+  trunk: 0x6e5140,
+  windowLit: 0xf4dcb4,
+  windowLit2: 0xefcf9f,
+  windowLit3: 0xf7ead0,
+  glassBlue: 0x6f86a3,
+  glassTeal: 0x6a8f98,
+  lamp: 0xffe9c4,
 } as const
 
 export interface FacadeSet {
@@ -64,24 +66,21 @@ export interface FacadeSet {
 }
 
 export const FACADE_SETS: FacadeSet[] = [
-  { wall: PALETTE.blush, trim: PALETTE.ivory, accent: PALETTE.cherry, roof: PALETTE.rose },
-  { wall: PALETTE.cream, trim: PALETTE.walnut, accent: PALETTE.teal, roof: PALETTE.terracotta },
-  { wall: PALETTE.lavender, trim: PALETTE.ivory, accent: PALETTE.mustard, roof: PALETTE.lilac },
-  { wall: PALETTE.sky, trim: PALETTE.ivory, accent: PALETTE.coral, roof: PALETTE.periwinkle },
-  { wall: PALETTE.peach, trim: PALETTE.cream, accent: PALETTE.cobalt, roof: PALETTE.terracotta },
-  { wall: PALETTE.mint, trim: PALETTE.ivory, accent: PALETTE.cherry, roof: PALETTE.sage },
-  { wall: PALETTE.brick, trim: PALETTE.cream, accent: PALETTE.butter, roof: PALETTE.cocoa },
-  { wall: PALETTE.powder, trim: PALETTE.slate, accent: PALETTE.tangerine, roof: PALETTE.periwinkle },
-  { wall: PALETTE.butter, trim: PALETTE.ivory, accent: PALETTE.cobalt, roof: PALETTE.mustard },
-  { wall: PALETTE.stone, trim: PALETTE.charcoal, accent: PALETTE.coral, roof: PALETTE.slate },
-  { wall: PALETTE.rose, trim: PALETTE.ivory, accent: PALETTE.teal, roof: PALETTE.lilac },
-  { wall: PALETTE.periwinkle, trim: PALETTE.ivory, accent: PALETTE.butter, roof: PALETTE.slate },
+  { wall: 0xeee4d3, trim: 0xf7f3ec, accent: 0x3f5e4c, roof: 0x6d6a6a }, // cream plaster
+  { wall: 0xa4553f, trim: 0xeee4d2, accent: 0x2b3a33, roof: 0x4f4a48 }, // red brick
+  { wall: 0xd9c3a0, trim: 0xf6f1e8, accent: 0x2f3f66, roof: 0xa65a3e }, // warm sand
+  { wall: 0xa9b69a, trim: 0xeee4d2, accent: 0xa65a3e, roof: 0x5e6258 }, // sage
+  { wall: 0x8193a6, trim: 0xf6f1e8, accent: 0xc49a4e, roof: 0x4f5560 }, // slate blue
+  { wall: 0xb9b2a7, trim: 0x3b3e44, accent: 0x9b5442, roof: 0x5c5e62 }, // warm grey
+  { wall: 0xc47c5e, trim: 0xeee4d2, accent: 0x2f5d62, roof: 0x6b4638 }, // terracotta plaster
+  { wall: 0xe3c9bd, trim: 0xf6f1e8, accent: 0x2f3f66, roof: 0x8a6a5e }, // dusty rose plaster
+  { wall: 0xd1a95f, trim: 0xf6f1e8, accent: 0x3f5e4c, roof: 0x6d5a45 }, // ochre
+  { wall: 0xcfc8bb, trim: 0x3b3e44, accent: 0x9e3b35, roof: 0x5c5e62 }, // stone
+  { wall: 0xa7bac6, trim: 0xf6f1e8, accent: 0x9b5442, roof: 0x5a6068 }, // dusty blue
+  { wall: 0x6a6c70, trim: 0xe8e2d6, accent: 0xb08050, roof: 0x3f4145 }, // charcoal render
 ]
 
-export const CLOTHING = [
-  0xef8a78, 0x4fb3a9, 0xf5dd92, 0x9fb2e6, 0xe0506a, 0x7cbf6a, 0xa996d4, 0xf39a4a, 0x2f3fb8, 0xf6ecdc,
-  0x3b3650, 0xe89aab, 0x5d7fb3, 0xc9765e,
-]
-export const PANTS = [0x3b3650, 0x2f3fb8, 0x6e4a3b, 0x8c86a3, 0xf6ecdc, 0x4a4468, 0x5d7fb3, 0x2b2350]
-export const SKIN = [0xffdcc4, 0xf6c7a5, 0xe3a882, 0xc68660, 0x9a6444, 0xffe6d6]
-export const HAIR = [0x2b2350, 0x4a3226, 0x7a4a2c, 0xd8a45a, 0x1d1a24, 0xb85c3c, 0xe9e2f0, 0x5a4a8a]
+export const CLOTHING = [0xf3f0ea, 0x2f3f66, 0x6f7f68, 0xb8664e, 0xd9c7a6, 0x4f5d73, 0x8c3f45, 0xe8e2d6, 0x3c3c40, 0x7d8fa6]
+export const PANTS = [0x2e3445, 0x3b3a3c, 0x5d5b55, 0x8a7a64, 0x2f4358, 0xcfc4b0]
+export const SKIN = [0xf1d0b5, 0xe6b894, 0xd29e78, 0xc08a64, 0xa06e4c, 0x7d5238]
+export const HAIR = [0x1f1a1c, 0x2e2320, 0x4a3326, 0x6b4a33, 0x8c6a48, 0xb89468]

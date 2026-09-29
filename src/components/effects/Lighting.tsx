@@ -49,12 +49,12 @@ export function Lighting({ shadowMapSize = 2048, shadows = true, env = true, sha
 
   return (
     <>
-      <hemisphereLight args={['#c3ccff', '#e9a9bb', 1.4]} />
-      <ambientLight intensity={0.22} color="#e8dcff" />
+      <hemisphereLight args={['#d4e2f5', '#a39684', 1.35]} />
+      <ambientLight intensity={0.18} color="#f2efe8" />
       <directionalLight
         ref={sun}
-        color="#ffd6b0"
-        intensity={3.0}
+        color="#fff0dc"
+        intensity={3.3}
         castShadow={shadows}
         shadow-mapSize-width={shadowMapSize}
         shadow-mapSize-height={shadowMapSize}
@@ -65,10 +65,10 @@ export function Lighting({ shadowMapSize = 2048, shadows = true, env = true, sha
       />
       <object3D ref={target} />
       {env && <Environment frames={1} resolution={128} environmentIntensity={0.7}>
-        <Lightformer form="rect" intensity={2.2} color="#ffd9b8" position={[-60, 30, -70]} scale={[80, 30, 1]} target={[0, 0, 0]} />
-        <Lightformer form="rect" intensity={1.2} color="#b9c6ff" position={[0, 80, 0]} rotation-x={Math.PI / 2} scale={[160, 160, 1]} />
-        <Lightformer form="ring" intensity={0.9} color="#f6c3cf" position={[70, 10, 60]} scale={40} target={[0, 0, 0]} />
-        <Lightformer form="rect" intensity={0.6} color="#a99ae0" position={[0, 5, 90]} scale={[120, 12, 1]} target={[0, 0, 0]} />
+        <Lightformer form="rect" intensity={2.2} color="#fff1dc" position={[-60, 30, -70]} scale={[80, 30, 1]} target={[0, 0, 0]} />
+        <Lightformer form="rect" intensity={1.2} color="#cfe0ff" position={[0, 80, 0]} rotation-x={Math.PI / 2} scale={[160, 160, 1]} />
+        <Lightformer form="ring" intensity={0.9} color="#efe6da" position={[70, 10, 60]} scale={40} target={[0, 0, 0]} />
+        <Lightformer form="rect" intensity={0.6} color="#b9c7d6" position={[0, 5, 90]} scale={[120, 12, 1]} target={[0, 0, 0]} />
       </Environment>}
     </>
   )

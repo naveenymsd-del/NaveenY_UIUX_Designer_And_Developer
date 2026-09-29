@@ -4,8 +4,8 @@ import { BackSide, Color, type Group, MeshBasicMaterial, ShaderMaterial, SphereG
 import { createRng } from '@/utils/rng'
 import { worldUniforms } from '@/utils/materials'
 
-/** Late-afternoon gradient sky with a soft low sun and drifting pastel clouds. */
-export const SUN_DIRECTION = new Vector3(-0.55, 0.32, -0.62).normalize()
+/** Natural daylight sky: blue zenith, warm hazy horizon, soft sun and drifting clouds. */
+export const SUN_DIRECTION = new Vector3(-0.5, 0.62, -0.48).normalize()
 
 export function Sky() {
   const mat = useMemo(
@@ -15,10 +15,10 @@ export function Sky() {
         depthWrite: false,
         fog: false,
         uniforms: {
-          uTop: { value: new Color('#4f63c2') },
-          uMid: { value: new Color('#a99ae0') },
-          uHorizon: { value: new Color('#f6c3cf') },
-          uGlow: { value: new Color('#ffd9b8') },
+          uTop: { value: new Color('#4f86cf') },
+          uMid: { value: new Color('#9ec2e6') },
+          uHorizon: { value: new Color('#e9e2d8') },
+          uGlow: { value: new Color('#fff0d6') },
           uSun: { value: SUN_DIRECTION },
           uTime: worldUniforms.uTime,
         },
@@ -68,7 +68,7 @@ export function Sky() {
     }
     return list
   }, [])
-  const cloudMat = useMemo(() => new MeshBasicMaterial({ color: '#ffe3ec', fog: false, transparent: true, opacity: 0.9 }), [])
+  const cloudMat = useMemo(() => new MeshBasicMaterial({ color: '#fbfbf8', fog: false, transparent: true, opacity: 0.92 }), [])
   const cloudGeo = useMemo(() => new SphereGeometry(1, 14, 10), [])
   const cloudGroup = useRef<Group>(null!)
   // clouds drift very slowly around the city

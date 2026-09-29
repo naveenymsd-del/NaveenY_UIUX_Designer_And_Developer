@@ -594,7 +594,7 @@ export function buildSpec(def: BuildingDef): Spec {
   return {
     def, w: def.w, d: def.d, floors: def.floors, gH, fH, H: gH + (def.floors - 1) * fH, pal, rng,
     windowStyle: rng.pick(styles),
-    litChance: def.backdrop ? 0.4 : 0.32,
+    litChance: def.backdrop ? 0.12 : 0.14,
     far: !!def.backdrop,
     shop: def.shop ? SHOPS[def.shop] : undefined,
   }

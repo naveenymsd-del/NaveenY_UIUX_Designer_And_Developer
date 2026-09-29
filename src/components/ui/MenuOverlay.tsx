@@ -4,18 +4,19 @@ import { navigate } from '@/app/routes'
 import { requestTeleport } from '@/core/runtime'
 import { soundManager } from '@/core/sound/SoundManager'
 import { LOCATIONS } from '@/data/locations'
+import { PROFILE } from '@/data/portfolioContent'
 import { useGameStore } from '@/stores/gameStore'
 import { type MenuSection, useUIStore } from '@/stores/uiStore'
 
 const ITEMS: { id: MenuSection; label: string; hint: string }[] = [
   { id: 'home', label: 'Home', hint: 'Back to the street' },
-  { id: 'about', label: 'About', hint: 'The mind behind the avenue' },
+  { id: 'about', label: 'About', hint: 'Naveen · UI/UX Designer' },
   { id: 'projects', label: 'Projects', hint: 'Five pavilions of work' },
   { id: 'workflow', label: 'AI Workflow', hint: 'How the work gets made' },
   { id: 'contact', label: 'Contact', hint: 'Say hello' },
 ]
 
-const PLACES = LOCATIONS.filter((l) => l.action === 'OPEN_LOCATION')
+const PLACES = LOCATIONS.filter((l) => l.marker)
 
 /** Elegant full-screen menu: large navigation on the left, content on the right. */
 export function MenuOverlay() {
@@ -94,19 +95,20 @@ export function MenuOverlay() {
             <div className="ui-menu__section">
               <p className="ui-kicker">About</p>
               <h2>Thinking, made walkable.</h2>
-              <p>Mindscape Avenue is what a portfolio looks like from the inside of a designer’s head: a street where ideas take a walk. It is a portfolio you can walk: every building holds a piece of the practice, from research at the café to finished work in the plaza.</p>
-              <p>Design, art direction and creative development, with an obsession for small details and calm interfaces.</p>
+              <p>I’m <b>{PROFILE.name}</b>, a {PROFILE.role} with {PROFILE.experience}, currently designing at {PROFILE.company}.</p>
+              <p>Mindscape Avenue is my portfolio as a place: my education on the campus, my workplace at NFC Solutions, my story at home, my process and AI workflow in the Design Park — and finished work in the Project District.</p>
             </div>
           )}
           {section === 'workflow' && (
             <div className="ui-menu__section">
               <p className="ui-kicker">AI Workflow</p>
-              <h2>Human taste, machine speed.</h2>
+              <h2>AI is my design partner.</h2>
+              <p>AI helps me explore faster. I stay the decision-maker. Visit the AI area in the Design Park to see the full workflow.</p>
               <ol className="ui-steps">
-                <li><b>Research</b><span>Interviews and references, summarised and clustered with AI assistants.</span></li>
-                <li><b>Explore</b><span>Rapid concept boards and prompt-driven variations, curated by hand.</span></li>
-                <li><b>Build</b><span>Production code and 3D pipelines, pair-programmed and reviewed.</span></li>
-                <li><b>Refine</b><span>Every pixel checked by a person before it ships.</span></li>
+                <li><b>Human problem</b><span>Start from people, context and a real need.</span></li>
+                <li><b>AI exploration</b><span>Research, ideas, variations and content explored with AI.</span></li>
+                <li><b>Human evaluation</b><span>Empathy, judgment and product thinking decide what stays.</span></li>
+                <li><b>Design → prototype → test → refine</b><span>AI speeds up iteration; users and I validate.</span></li>
               </ol>
             </div>
           )}
@@ -114,11 +116,11 @@ export function MenuOverlay() {
             <div className="ui-menu__section">
               <p className="ui-kicker">Contact</p>
               <h2>Let’s build something.</h2>
-              <p>Open for collaborations, commissions and interesting problems.</p>
+              <p>Open to conversations about design, products and interactive experiences.</p>
               <div className="ui-contact">
-                <a className="ui-btn ui-btn--primary" href="mailto:hello@example.com" tabIndex={open ? 0 : -1}>hello@example.com</a>
-                <a className="ui-btn ui-btn--glass" href="#linkedin" tabIndex={open ? 0 : -1}>LinkedIn</a>
-                <a className="ui-btn ui-btn--glass" href="#dribbble" tabIndex={open ? 0 : -1}>Dribbble</a>
+                <a className="ui-btn ui-btn--primary" href="#contact" tabIndex={open ? 0 : -1}>[ADD EMAIL]</a>
+                <a className="ui-btn ui-btn--glass" href="#linkedin" tabIndex={open ? 0 : -1}>[ADD LINKEDIN]</a>
+                <a className="ui-btn ui-btn--glass" href="#portfolio" tabIndex={open ? 0 : -1}>[ADD PORTFOLIO LINK]</a>
               </div>
             </div>
           )}

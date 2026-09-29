@@ -46,7 +46,8 @@ export function Ground({ lawns, tiles }: { lawns: RectArea[]; tiles: RectArea[] 
     const slabs = slabGeometry(BLOCKS.map((b) => ({ x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, y0: 0, h: SIDEWALK_Y })), 2)
     const tileGeo = slabGeometry(tiles.map((t) => ({ ...t, y0: t.y, h: 0.006 })), 4)
     const lawnGeo = lawns.length ? slabGeometry(lawns.map((l) => ({ ...l, y0: SIDEWALK_Y, h: l.y - SIDEWALK_Y })), 5) : null
-    const plane = new PlaneGeometry(700, 700)
+    // ends well before the interior rooms (x ≥ 300) so their floors never z-fight with it
+    const plane = new PlaneGeometry(520, 520)
     plane.rotateX(-Math.PI / 2)
     return { road, paver, tile, grass, slabs, tileGeo, lawnGeo, plane }
   }, [lawns, tiles])

@@ -105,10 +105,10 @@ export function getMaterial(kind: MatKind): Material {
       break
     case 'emissive':
       // brighter than 1.0 so bloom picks it up: lamps, neon, headlights
-      m = new MeshBasicMaterial({ color: new Color(2.5, 2.5, 2.5), toneMapped: true })
+      m = new MeshBasicMaterial({ color: new Color(1.6, 1.6, 1.6), toneMapped: true })
       break
     case 'foliage':
-      m = withWind(new MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, metalness: 0, flatShading: true }))
+      m = withWind(new MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0, flatShading: false }))
       break
     case 'fabric':
       m = new MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, metalness: 0, side: DoubleSide })
@@ -125,7 +125,7 @@ export function getMaterial(kind: MatKind): Material {
     case 'lightPool':
       m = new MeshBasicMaterial({
         color: 0xffffff, map: lightPoolTexture(), transparent: true, depthWrite: false,
-        blending: AdditiveBlending, opacity: 0.55, toneMapped: false,
+        blending: AdditiveBlending, opacity: 0.16, toneMapped: false,
         polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4,
       })
       break

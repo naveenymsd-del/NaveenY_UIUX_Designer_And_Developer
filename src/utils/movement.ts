@@ -34,16 +34,16 @@ export function easeInOutCubic(t: number) {
 
 /** Player tuning — edit here to change game feel. */
 export const MOVE = {
-  walkSpeed: 3.4,
-  runSpeed: 6.8,
-  groundAccel: 11,
-  groundDecel: 14,
+  walkSpeed: 2.3,
+  runSpeed: 5.6,
+  groundAccel: 7.5,
+  groundDecel: 9,
   airAccel: 3.2,
-  gravity: 24,
-  jumpVelocity: 7.8,
+  gravity: 19,
+  jumpVelocity: 6.4,
   maxFall: 30,
   coyoteTime: 0.12,
   jumpBuffer: 0.14,
-  turnLambda: 13,
-  maxTurnSpeed: 11,
+  turnLambda: 9,
+  maxTurnSpeed: 7.5,
 }

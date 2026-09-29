@@ -13,7 +13,9 @@ import {
   type PropKind, type PropPlacement, type TreeKind,
 } from './propGen'
 import { createRng } from './rng'
-import { genCafe, genEntry, genExperience, genGallery, genPark, genPlaza, genStore, genStudio } from './specialGen'
+import { genEntry, genGallery, genPark, genPlaza, genStudio } from './specialGen'
+import { genEducation, genHome, genOffice } from './landmarkGen'
+import { genInteriors } from './interiorGen'
 import { AtlasBuilder } from './textures'
 
 export interface CityData {
@@ -38,7 +40,7 @@ export interface CityData {
   walls: BoxColliderDef[]
 }
 
-const PAINT = 0xf4eef7
+const PAINT = 0xe9e6de
 const PAINT_Y = 0.006
 
 function roadHalfAt(axis: 'x' | 'z', c: number) {
@@ -68,8 +70,8 @@ function markings(b: PartBuilder) {
       const mid = t + len / 2
       if (inGap(mid) || inGap(t) || inGap(t + len)) continue
       if (isAvenue) {
-        paint(r.c - 0.14, mid, 0.12, len + 0.01, 0xf5dd92)
-        paint(r.c + 0.14, mid, 0.12, len + 0.01, 0xf5dd92)
+        paint(r.c - 0.14, mid, 0.12, len + 0.01, 0xd9bd62)
+        paint(r.c + 0.14, mid, 0.12, len + 0.01, 0xd9bd62)
       } else if (r.axis === 'z') paint(r.c, mid, 0.14, len)
       else paint(mid, r.c, len, 0.14)
     }
@@ -287,7 +289,7 @@ export function generateCity(options: { modelBuildingIds?: Set<string>; replaceP
   propRegistry.placements = []
   const b = new PartBuilder()
   const signs = new AtlasBuilder(2048, 2048)
-  const decor = new AtlasBuilder(2048, 2048)
+  const decor = new AtlasBuilder(2048, 3072)
   const ctx: GenContext = {
     b, signs, decor, screens: [], lamps: [], glassPanes: [], seats: [], lawns: [], tiles: [], waters: [],
   }
@@ -321,17 +323,18 @@ export function generateCity(options: { modelBuildingIds?: Set<string>; replaceP
       continue
     }
     switch (def.special) {
-      case 'store': genStore(ctx, def); break
-      case 'cafe': genCafe(ctx, def); break
-      case 'gallery': genGallery(ctx, def); break
-      case 'studio': genStudio(ctx, def); break
-      case 'experience': genExperience(ctx, def); break
+      case 'home': genHome(ctx, def); break
+      case 'office': genOffice(ctx, def); break
+      case 'library': genGallery(ctx, def); break
+      case 'district': genStudio(ctx, def); break
+      case 'education': genEducation(ctx, def); break
       default: generateBuilding(ctx, def)
     }
   }
   genEntry(ctx)
   genPlaza(ctx, PROJECTS)
   genPark(ctx)
+  genInteriors(ctx)
   cityProps(ctx)
   const walls = boundaries(b)
 

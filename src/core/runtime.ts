@@ -6,7 +6,7 @@ import { Vector3 } from 'three'
  * avoid re-renders. Zustand stores hold only low-frequency, UI-facing state.
  */
 export type MoveState = 'idle' | 'walk' | 'run' | 'jump' | 'fall' | 'land'
-export type SpecialPose = 'none' | 'sit' | 'talk' | 'look' | 'phone'
+export type SpecialPose = 'none' | 'sit' | 'talk' | 'look' | 'phone' | 'wave' | 'work' | 'read' | 'coffee' | 'sitTalk'
 
 export interface CharacterAnim {
   state: MoveState
@@ -32,13 +32,16 @@ export interface CharacterAnim {
   /** stride length (metres per full gait cycle) at walk / run */
   walkStride: number
   runStride: number
+  /** head-turn target relative to the body (radians) and how strongly to use it */
+  gaze: number
+  gazeWeight: number
 }
 
 export function createAnim(overrides: Partial<CharacterAnim> = {}): CharacterAnim {
   return {
     state: 'idle', speed: 0, phase: 0, turnRate: 0, strafe: 0, vy: 0, grounded: true,
-    landImpact: 0, pose: 'none', active: true, walkSpeed: 3.4, runSpeed: 6.8,
-    walkStride: 1.35, runStride: 2.3,
+    landImpact: 0, pose: 'none', active: true, walkSpeed: 2.3, runSpeed: 5.6, gaze: 0, gazeWeight: 0,
+    walkStride: 1.62, runStride: 2.7,
     ...overrides,
   }
 }
@@ -60,13 +63,13 @@ export const playerRuntime = {
 }
 
 export const CAMERA_DEFAULTS = {
-  distance: 7.0,
-  pitch: 0.36,
+  distance: 5.4,
+  pitch: 0.28,
   minPitch: -0.18,
   maxPitch: 1.15,
-  minDistance: 3.2,
-  maxDistance: 11,
-  targetHeight: 1.7,
+  minDistance: 2.4,
+  maxDistance: 9,
+  targetHeight: 1.5,
 }
 
 export const cameraRuntime = {

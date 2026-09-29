@@ -1,0 +1,501 @@
+import { useFrame } from '@react-three/fiber'
+import { useMemo, useRef } from 'react'
+import {
+  BoxGeometry, CanvasTexture, Color, CylinderGeometry, DoubleSide, type Group, type Mesh, MeshBasicMaterial,
+  MeshStandardMaterial, PlaneGeometry, SRGBColorSpace, TorusGeometry,
+} from 'three'
+import { playerRuntime } from '@/core/runtime'
+import { AI_AREA, ACTIVITY_SPOTS, PROCESS_STATIONS } from '@/data/locations'
+import { AI_WORKFLOW, DESIGN_PROCESS, EDUCATION_TIMELINE, PROFILE } from '@/data/portfolioContent'
+import { INTERIORS, roomToWorld, type InteriorId } from '@/data/interiors'
+import { useGameStore } from '@/stores/gameStore'
+import { damp } from '@/utils/movement'
+import { UI_FONT } from '@/utils/textures'
+import { storyEvents } from './InteractionManager'
+
+/**
+ * Environmental storytelling objects. They react to the player's presence
+ * (boards rise, books open, plaques light up, the chalkboard writes itself)
+ * so information is discovered in the world before any UI appears.
+ */
+
+// ── shared resources ────────────────────────────────────────────────────────
+const G = {
+  box: new BoxGeometry(1, 1, 1),
+  plane: new PlaneGeometry(1, 1),
+  cyl: new CylinderGeometry(0.5, 0.5, 1, 16),
+  torus: new TorusGeometry(0.5, 0.06, 6, 32),
+}
+const matCache = new Map<string, MeshStandardMaterial>()
+function mat(color: string | number, rough = 0.8) {
+  const k = `${color}-${rough}`
+  let m = matCache.get(k)
+  if (!m) matCache.set(k, (m = new MeshStandardMaterial({ color, roughness: rough })))
+  return m
+}
+
+interface TextSpec {
+  w: number
+  h: number
+  bg: string
+  lines: { text: string; size: number; weight?: number; color: string; gap?: number }[]
+  align?: 'left' | 'center'
+  pad?: number
+  border?: string
+}
+const texCache = new Map<string, CanvasTexture>()
+function textTexture(spec: TextSpec) {
+  const key = JSON.stringify(spec)
+  const hit = texCache.get(key)
+  if (hit) return hit
+  const c = document.createElement('canvas')
+  c.width = spec.w
+  c.height = spec.h
+  const ctx = c.getContext('2d')!
+  ctx.fillStyle = spec.bg
+  ctx.fillRect(0, 0, spec.w, spec.h)
+  if (spec.border) {
+    ctx.strokeStyle = spec.border
+    ctx.lineWidth = 6
+    ctx.strokeRect(3, 3, spec.w - 6, spec.h - 6)
+  }
+  const pad = spec.pad ?? 24
+  let y = pad
+  for (const l of spec.lines) {
+    ctx.font = `${l.weight ?? 600} ${l.size}px ${UI_FONT}`
+    ctx.fillStyle = l.color
+    ctx.textBaseline = 'top'
+    ctx.textAlign = spec.align === 'center' ? 'center' : 'left'
+    const x = spec.align === 'center' ? spec.w / 2 : pad
+    // simple word wrap
+    const words = l.text.split(' ')
+    let line = ''
+    for (const w of words) {
+      const test = line ? `${line} ${w}` : w
+      if (ctx.measureText(test).width > spec.w - pad * 2 && line) {
+        ctx.fillText(line, x, y)
+        y += l.size * 1.2
+        line = w
+      } else line = test
+    }
+    ctx.fillText(line, x, y)
+    y += l.size * 1.2 + (l.gap ?? 8)
+  }
+  const t = new CanvasTexture(c)
+  t.colorSpace = SRGBColorSpace
+  t.anisotropy = 8
+  texCache.set(key, t)
+  return t
+}
+const basicCache = new Map<CanvasTexture, MeshBasicMaterial>()
+function textMat(t: CanvasTexture) {
+  let m = basicCache.get(t)
+  if (!m) basicCache.set(t, (m = new MeshBasicMaterial({ map: t, toneMapped: true, side: DoubleSide })))
+  return m
+}
+
+function distTo(x: number, z: number) {
+  const p = playerRuntime.position
+  return Math.hypot(p.x - x, p.z - z)
+}
+const easeTo = (v: number, t: number, dt: number, l = 5) => damp(v, t, l, dt)
+
+// ── Design Park ─────────────────────────────────────────────────────────────
+function ProcessBoard({ index }: { index: number }) {
+  const [x, z] = PROCESS_STATIONS[index]
+  const step = DESIGN_PROCESS[index]
+  const board = useRef<Group>(null!)
+  const glow = useRef<Mesh>(null!)
+  const st = useRef({ a: 0 })
+  const tex = useMemo(
+    () => textTexture({
+      w: 320, h: 220, bg: '#f4efe4', border: '#6f9a4c',
+      lines: [
+        { text: step.n, size: 34, weight: 800, color: '#6f9a4c', gap: 0 },
+        { text: step.title.toUpperCase(), size: 40, weight: 800, color: '#2c3a2a', gap: 10 },
+        { text: step.text, size: 22, weight: 500, color: '#4b5646' },
+      ],
+    }),
+    [step],
+  )
+  const glowMat = useMemo(() => new MeshBasicMaterial({ color: new Color('#b8d98c'), transparent: true, opacity: 0, depthWrite: false }), [])
+  // face the path direction toward the next station
+  const next = PROCESS_STATIONS[Math.min(index + 1, PROCESS_STATIONS.length - 1)]
+  const prev = PROCESS_STATIONS[Math.max(index - 1, 0)]
+  const yaw = Math.atan2(next[0] - prev[0], next[1] - prev[1]) + Math.PI / 2
+  useFrame((_, dt) => {
+    const d = distTo(x, z)
+    const s = st.current
+    s.a = easeTo(s.a, d < 3.6 ? 1 : 0, dt, 4)
+    board.current.position.y = 0.95 + s.a * 0.35
+    board.current.rotation.x = -0.35 + s.a * 0.3
+    glowMat.opacity = s.a * 0.55
+    glow.current.scale.setScalar(1 + s.a * 0.15)
+  })
+  return (
+    <group position={[x, 0.25, z]} rotation-y={yaw}>
+      <mesh geometry={G.cyl} material={mat('#8a6a4c')} position={[0, 0.55, -0.02]} scale={[0.08, 1.1, 0.08]} castShadow />
+      <group ref={board}>
+        <mesh geometry={G.box} material={mat('#6e5140')} scale={[1.14, 0.8, 0.05]} position={[0, 0, -0.03]} castShadow />
+        <mesh geometry={G.plane} material={textMat(tex)} scale={[1.06, 0.72, 1]} />
+      </group>
+      <mesh ref={glow} geometry={G.cyl} material={glowMat} position={[0, 0.05, 0]} scale={[1.55, 0.02, 1.55]} />
+    </group>
+  )
+}
+
+function AIRing() {
+  const panels = useRef<(Mesh | null)[]>([])
+  const st = useRef({ inside: 0, t: 0 })
+  const texes = useMemo(
+    () => AI_WORKFLOW.map((label, i) => {
+      const human = i === 0 || i === 3
+      return textTexture({
+        w: 256, h: 150, bg: human ? '#fdf3e9' : '#fff7ef', border: human ? '#3b3e44' : '#e8792e', align: 'center', pad: 20,
+        lines: [
+          { text: `0${i + 1}`, size: 26, weight: 800, color: '#e8792e', gap: 2 },
+          { text: label.toUpperCase(), size: 26, weight: 800, color: '#3a2a1c', gap: 4 },
+          { text: human ? 'HUMAN LED' : 'AI ASSISTED', size: 16, weight: 700, color: human ? '#3b3e44' : '#b85a1c' },
+        ],
+      })
+    }),
+    [],
+  )
+  const glowMats = useMemo(() => AI_WORKFLOW.map(() => new MeshBasicMaterial({ color: '#ffb570', transparent: true, opacity: 0, depthWrite: false })), [])
+  useFrame((_, dt) => {
+    const s = st.current
+    const d = distTo(AI_AREA[0], AI_AREA[1])
+    s.inside = easeTo(s.inside, d < 6.5 ? 1 : 0, dt, 3)
+    s.t += dt
+    const active = Math.floor(s.t * 0.8) % AI_WORKFLOW.length
+    glowMats.forEach((m, i) => {
+      const on = i === active ? 1 : i === (active + AI_WORKFLOW.length - 1) % AI_WORKFLOW.length ? 0.35 : 0
+      m.opacity = easeTo(m.opacity, on * s.inside * 0.8, dt, 6)
+      const p = panels.current[i]
+      if (p) p.position.y = 1.55 + (i === active ? 0.06 : 0) * s.inside
+    })
+  })
+  return (
+    <group position={[AI_AREA[0], 0.4, AI_AREA[1]]}>
+      {AI_WORKFLOW.map((_, i) => {
+        // panels sit between the gazebo posts, facing the centre
+        const a = (i / 8) * Math.PI * 2 + Math.PI / 8 + Math.PI / 8
+        const r = 2.55
+        return (
+          <group key={i} position={[Math.cos(a) * r, 0, Math.sin(a) * r]} rotation-y={Math.atan2(-Math.cos(a), -Math.sin(a))}>
+            <mesh ref={(m) => { panels.current[i] = m }} geometry={G.plane} material={textMat(texes[i])} position={[0, 1.55, 0]} scale={[0.95, 0.56, 1]} />
+            <mesh geometry={G.box} material={mat('#e8792e', 0.5)} position={[0, 1.55, -0.03]} scale={[1.0, 0.61, 0.03]} />
+            <mesh geometry={G.plane} material={glowMats[i]} position={[0, 1.55, -0.05]} scale={[1.2, 0.8, 1]} />
+          </group>
+        )
+      })}
+      <mesh geometry={G.cyl} material={mat('#f6ecdc', 0.6)} position={[0, 0.5, 0]} scale={[0.6, 1.0, 0.6]} castShadow />
+      <mesh geometry={G.plane} material={textMat(textTexture({ w: 300, h: 120, bg: '#2a1c14', align: 'center', pad: 18, lines: [{ text: 'AI IS MY', size: 22, weight: 700, color: '#ffd9b3', gap: 0 }, { text: 'DESIGN PARTNER', size: 30, weight: 800, color: '#ffffff' }] }))} position={[0, 1.05, 0.305]} scale={[0.56, 0.22, 1]} />
+    </group>
+  )
+}
+
+function ActivityObjects() {
+  const cover = useRef<Mesh>(null!)
+  const lid = useRef<Group>(null!)
+  const screen = useRef<MeshBasicMaterial>(null!)
+  const sculpt = useRef<Group>(null!)
+  const flash = useRef<MeshBasicMaterial>(null!)
+  const st = useRef({ book: 0, lid: 0, spin: 0, flashT: 0 })
+  const L = ACTIVITY_SPOTS
+  useFrame((_, dt) => {
+    const s = st.current
+    s.book = easeTo(s.book, distTo(L.learning.pos[0], L.learning.pos[2]) < 2.6 ? 1 : 0, dt, 3)
+    cover.current.rotation.z = -s.book * 2.9
+    s.lid = easeTo(s.lid, distTo(L.uiux.pos[0], L.uiux.pos[2]) < 2.8 ? 1 : 0, dt, 3)
+    lid.current.rotation.x = -0.1 - s.lid * 1.75
+    screen.current.opacity = s.lid
+    const near3d = distTo(L.interactive.pos[0], L.interactive.pos[2]) < 3.5
+    s.spin += dt * (near3d ? 1.6 : 0.3)
+    sculpt.current.rotation.y = s.spin
+    sculpt.current.rotation.x = Math.sin(s.spin * 0.7) * 0.4
+    if (distTo(L.visual.pos[0], L.visual.pos[2]) < 2.6) s.flashT += dt
+    flash.current.opacity = s.flashT > 0 && s.flashT % 3.2 < 0.12 ? 0.95 : 0
+  })
+  const screenTex = useMemo(() => textTexture({ w: 256, h: 160, bg: '#f4f5f7', pad: 16, lines: [{ text: 'Wireframes → UI', size: 22, weight: 800, color: '#2f4a8a', gap: 6 }, { text: 'Hierarchy · spacing · states', size: 16, weight: 600, color: '#5d6b82' }] }), [])
+  return (
+    <>
+      {/* learning: a book on the bench */}
+      <group position={[L.learning.pos[0] + 0.3, 0.73, 22.35]}>
+        <mesh geometry={G.box} material={mat('#f6f1e8')} scale={[0.34, 0.03, 0.24]} castShadow />
+        <mesh ref={cover} geometry={G.box} material={mat('#7a3f3a')} position={[0, 0.02, 0]} scale={[0.36, 0.02, 0.25]} />
+      </group>
+      {/* visual exploration: camera on a tripod by the pond */}
+      <group position={L.visual.pos} rotation-y={L.visual.yaw}>
+        {[-0.5, 0.5, 0].map((a, i) => (
+          <mesh key={i} geometry={G.cyl} material={mat('#3b3e44')} position={[Math.sin(a * 4) * 0.2, 0.6, i === 2 ? -0.22 : 0.12]} rotation={[i === 2 ? 0.3 : -0.15, 0, a * 0.5]} scale={[0.03, 1.2, 0.03]} />
+        ))}
+        <mesh geometry={G.box} material={mat('#2a2626', 0.4)} position={[0, 1.28, 0]} scale={[0.26, 0.17, 0.12]} castShadow />
+        <mesh geometry={G.cyl} material={mat('#1f1f22', 0.3)} position={[0, 1.28, 0.1]} rotation-x={Math.PI / 2} scale={[0.1, 0.1, 0.1]} />
+        <mesh geometry={G.plane} position={[0.08, 1.37, 0.07]} scale={[0.07, 0.04, 1]}>
+          <meshBasicMaterial ref={flash} color={new Color(3, 3, 3)} transparent opacity={0} />
+        </mesh>
+      </group>
+      {/* UI/UX design: laptop on the picnic table */}
+      <group position={[L.uiux.pos[0], 0.99, L.uiux.pos[2]]}>
+        <mesh geometry={G.box} material={mat('#c9ccd2', 0.35)} scale={[0.4, 0.02, 0.28]} castShadow />
+        <group ref={lid} position={[0, 0.01, -0.14]}>
+          <mesh geometry={G.box} material={mat('#c9ccd2', 0.35)} position={[0, 0.14, 0]} scale={[0.4, 0.28, 0.015]} />
+          <mesh geometry={G.plane} position={[0, 0.14, 0.009]} scale={[0.36, 0.24, 1]}>
+            <meshBasicMaterial ref={screen} map={screenTex} transparent opacity={0} toneMapped />
+          </mesh>
+        </group>
+      </group>
+      {/* interactive design: a slowly turning sculpture on the lookout deck */}
+      <group position={[L.interactive.pos[0], L.interactive.pos[1], L.interactive.pos[2]]}>
+        <mesh geometry={G.cyl} material={mat('#e9e0cf', 0.7)} position={[0, 0.35, 0]} scale={[0.6, 0.7, 0.6]} castShadow />
+        <group ref={sculpt} position={[0, 1.15, 0]}>
+          <mesh geometry={G.torus} material={mat('#2f4a8a', 0.35)} scale={0.7} castShadow />
+          <mesh geometry={G.torus} material={mat('#c27a60', 0.35)} rotation-x={Math.PI / 2} scale={0.55} castShadow />
+          <mesh geometry={G.box} material={mat('#c49a4e', 0.35)} rotation={[0.6, 0.6, 0]} scale={0.22} castShadow />
+        </group>
+      </group>
+    </>
+  )
+}
+
+// ── Interiors ───────────────────────────────────────────────────────────────
+function useRoomPos(room: InteriorId, x: number, z: number, y = 0) {
+  return useMemo(() => roomToWorld(room, x, z, y), [room, x, z, y])
+}
+
+function Timeline() {
+  const plaques = useRef<(Group | null)[]>([])
+  const base = useRoomPos('education', -11.9, 0, 0)
+  const texes = useMemo(
+    () => EDUCATION_TIMELINE.map((it, i) => textTexture({
+      w: 300, h: 260, bg: '#faf6ef', border: '#4f6b58', pad: 20,
+      lines: [
+        { text: `STEP ${i + 1}`, size: 22, weight: 800, color: '#4f6b58', gap: 2 },
+        { text: it.label.toUpperCase(), size: 28, weight: 800, color: '#24262c', gap: 10 },
+        { text: it.text, size: 19, weight: 500, color: it.placeholder ? '#8a5a22' : '#4b4f57' },
+      ],
+    })),
+    [],
+  )
+  const zs = [-5.6, -2.8, 0, 2.8, 5.6]
+  useFrame((_, dt) => {
+    const p = playerRuntime.position
+    zs.forEach((z, i) => {
+      const g = plaques.current[i]
+      if (!g) return
+      const d = Math.hypot(p.x - (base[0] + 1.6), p.z - (base[2] + z))
+      const on = d < 2.4 ? 1 : 0
+      g.position.z = easeTo(g.position.z, 0.06 + on * 0.12, dt, 6)
+      g.scale.setScalar(easeTo(g.scale.x, 1 + on * 0.08, dt, 6))
+    })
+  })
+  return (
+    <group position={base} rotation-y={Math.PI / 2}>
+      {zs.map((z, i) => (
+        <group key={i} position={[-z, 1.75, 0.06]} ref={(g) => { plaques.current[i] = g }}>
+          <mesh geometry={G.box} material={mat('#4f6b58')} position={[0, 0, -0.03]} scale={[1.36, 1.2, 0.04]} />
+          <mesh geometry={G.plane} material={textMat(texes[i])} scale={[1.28, 1.11, 1]} />
+          <mesh geometry={G.cyl} material={mat('#c49a4e', 0.4)} position={[0, 0.8, -0.02]} rotation-x={Math.PI / 2} scale={[0.14, 0.04, 0.14]} />
+        </group>
+      ))}
+    </group>
+  )
+}
+
+function Chalkboard() {
+  const writing = useRef<Mesh>(null!)
+  const pos = useRoomPos('education', 6, -8.83, 1.85)
+  const st = useRef({ p: 0 })
+  const tex = useMemo(() => {
+    const t = textTexture({
+      w: 640, h: 200, bg: '#2f3f38', pad: 22,
+      lines: [
+        { text: 'DESIGN FOUNDATIONS', size: 34, weight: 800, color: '#f1efe6', gap: 8 },
+        { text: 'Hierarchy · Typography · Colour · Layout · Usability', size: 24, weight: 500, color: '#dfe6d8', gap: 6 },
+        { text: '[ADD WHAT YOU STUDIED]', size: 22, weight: 500, color: '#e3c28a' },
+      ],
+    })
+    return t
+  }, [])
+  const m = useMemo(() => new MeshBasicMaterial({ map: tex.clone(), toneMapped: true }), [tex])
+  useFrame((_, dt) => {
+    const s = st.current
+    const d = distTo(pos[0], pos[2] + 3.5)
+    s.p = easeTo(s.p, d < 4.2 ? 1 : 0, dt, 1.4)
+    const p = Math.max(0.001, s.p)
+    // wipe-reveal: the text "writes" from left to right
+    m.map!.repeat.set(p, 1)
+    writing.current.scale.set(6 * p, 1.85, 1)
+    writing.current.position.x = pos[0] - 3 + 3 * p
+  })
+  return <mesh ref={writing} geometry={G.plane} material={m} position={[pos[0], pos[1], pos[2]]} />
+}
+
+function OpenBook({ room, x, z, y, color = '#7a3f3a' }: { room: InteriorId; x: number; z: number; y: number; color?: string }) {
+  const pos = useRoomPos(room, x, z, y)
+  const cover = useRef<Mesh>(null!)
+  const st = useRef({ a: 0 })
+  useFrame((_, dt) => {
+    st.current.a = easeTo(st.current.a, distTo(pos[0], pos[2]) < 2.4 ? 1 : 0, dt, 3)
+    cover.current.rotation.z = -st.current.a * 2.95
+  })
+  return (
+    <group position={pos}>
+      <mesh geometry={G.box} material={mat('#f6f1e8')} scale={[0.36, 0.04, 0.26]} castShadow />
+      <group>
+        <mesh ref={cover} geometry={G.box} material={mat(color)} position={[0, 0.025, 0]} scale={[0.38, 0.02, 0.27]} />
+      </group>
+    </group>
+  )
+}
+
+function Certificates() {
+  const frames = useRef<(Group | null)[]>([])
+  const base = useRoomPos('education', 11.92, 1.4, 0)
+  const tex = useMemo(() => textTexture({ w: 256, h: 190, bg: '#fbf7ee', border: '#c49a4e', align: 'center', pad: 26, lines: [{ text: 'CERTIFICATE', size: 26, weight: 800, color: '#6e5140', gap: 12 }, { text: '[ADD CERTIFICATION]', size: 18, weight: 600, color: '#8a5a22' }] }), [])
+  useFrame((_, dt) => {
+    const p = playerRuntime.position
+    ;[-1.6, 0, 1.6].forEach((dz, i) => {
+      const g = frames.current[i]
+      if (!g) return
+      const on = Math.hypot(p.x - (base[0] - 1.8), p.z - (base[2] + dz)) < 2 ? 1 : 0
+      g.scale.setScalar(easeTo(g.scale.x, 1 + on * 0.12, dt, 6))
+      g.position.z = easeTo(g.position.z, 0.05 + on * 0.12, dt, 6)
+    })
+  })
+  return (
+    <group position={base} rotation-y={-Math.PI / 2}>
+      {[-1.6, 0, 1.6].map((dz, i) => (
+        <group key={i} position={[dz, 1.75, 0.05]} ref={(g) => { frames.current[i] = g }}>
+          <mesh geometry={G.box} material={mat('#6e5140')} position={[0, 0, -0.03]} scale={[1.12, 0.86, 0.04]} />
+          <mesh geometry={G.plane} material={textMat(tex)} scale={[1.02, 0.76, 1]} />
+        </group>
+      ))}
+    </group>
+  )
+}
+
+function Bell() {
+  const pos = useRoomPos('education', -3.2, 8.8, 2.2)
+  const bell = useRef<Group>(null!)
+  useFrame(() => {
+    const t = (performance.now() - storyEvents.bellAt) / 1000
+    bell.current.rotation.x = t < 2.5 ? Math.sin(t * 14) * 0.6 * Math.exp(-t * 1.6) : 0
+  })
+  return (
+    <group position={pos} rotation-y={Math.PI}>
+      <mesh geometry={G.box} material={mat('#6e5140')} position={[0, 0.15, 0.1]} scale={[0.08, 0.4, 0.2]} />
+      <group ref={bell} position={[0, 0.3, 0.25]}>
+        <mesh geometry={G.cyl} material={mat('#c49a4e', 0.3)} position={[0, -0.18, 0]} scale={[0.3, 0.3, 0.3]} castShadow />
+        <mesh geometry={G.cyl} material={mat('#c49a4e', 0.3)} position={[0, -0.34, 0]} scale={[0.38, 0.04, 0.38]} />
+      </group>
+    </group>
+  )
+}
+
+function HomeProps() {
+  const lid = useRef<Group>(null!)
+  const screen = useRef<MeshBasicMaterial>(null!)
+  const curtainL = useRef<Mesh>(null!)
+  const curtainR = useRef<Mesh>(null!)
+  const book = useRef<Mesh>(null!)
+  const frames = useRef<(Group | null)[]>([])
+  const st = useRef({ lid: 0, cur: 0, book: 0 })
+  const hw = INTERIORS.home.width / 2
+  const hd = INTERIORS.home.depth / 2
+  const laptop = useRoomPos('home', 1.1, -hd + 0.8, 0.79)
+  const win = useRoomPos('home', -4.8, -hd + 0.1, 1.9)
+  const shelf = useRoomPos('home', -hw + 0.3, -0.4, 1.4)
+  const journey = useRoomPos('home', hw - 0.08, -2.2, 1.7)
+  const hello = useRoomPos('home', 1.4, 3.9, 0.8)
+  const helloTex = useMemo(() => textTexture({ w: 300, h: 220, bg: '#faf6ef', border: '#b06a4c', align: 'center', pad: 26, lines: [{ text: 'HELLO!', size: 34, weight: 800, color: '#b06a4c', gap: 6 }, { text: `I’m ${PROFILE.name}`, size: 30, weight: 700, color: '#24262c', gap: 4 }, { text: `${PROFILE.role} · ${PROFILE.experience}`, size: 18, weight: 600, color: '#5c4535' }] }), [])
+  const screenTex = useMemo(() => textTexture({ w: 256, h: 160, bg: '#1f2430', pad: 16, lines: [{ text: 'MY DESIGN TOOLS', size: 20, weight: 800, color: '#ffffff', gap: 8 }, { text: '[ADD YOUR TOOLS]', size: 18, weight: 600, color: '#e3c28a' }] }), [])
+  const journeyTex = useMemo(() => ['Now · ' + PROFILE.company, '[ADD EARLIER ROLE]', '[ADD FIRST STEP]'].map((t, i) => textTexture({ w: 220, h: 160, bg: '#faf6ef', border: '#5c4535', align: 'center', pad: 22, lines: [{ text: `0${3 - i}`, size: 26, weight: 800, color: '#b06a4c', gap: 6 }, { text: t, size: 18, weight: 600, color: /\[/.test(t) ? '#8a5a22' : '#24262c' }] })), [])
+  useFrame((_, dt) => {
+    const s = st.current
+    s.lid = easeTo(s.lid, distTo(laptop[0], laptop[2] + 1.6) < 2.2 ? 1 : 0, dt, 3)
+    lid.current.rotation.x = -0.12 - s.lid * 1.7
+    screen.current.opacity = s.lid
+    s.cur = easeTo(s.cur, distTo(win[0], win[2] + 1.8) < 2.4 ? 1 : 0, dt, 2)
+    curtainL.current.position.x = win[0] - 0.55 - s.cur * 0.55
+    curtainR.current.position.x = win[0] + 0.55 + s.cur * 0.55
+    s.book = easeTo(s.book, distTo(shelf[0] + 1.3, shelf[2]) < 2.3 ? 1 : 0, dt, 4)
+    book.current.position.x = shelf[0] + s.book * 0.2
+    const p = playerRuntime.position
+    frames.current.forEach((g, i) => {
+      if (!g) return
+      const on = Math.hypot(p.x - (journey[0] - 1.6), p.z - (journey[2] + (i - 1) * 1.1)) < 1.6 ? 1 : 0
+      g.scale.setScalar(easeTo(g.scale.x, 1 + on * 0.12, dt, 6))
+    })
+  })
+  return (
+    <>
+      <group position={laptop}>
+        <mesh geometry={G.box} material={mat('#c9ccd2', 0.35)} scale={[0.36, 0.018, 0.25]} castShadow />
+        <group ref={lid} position={[0, 0.01, -0.125]}>
+          <mesh geometry={G.box} material={mat('#c9ccd2', 0.35)} position={[0, 0.125, 0]} scale={[0.36, 0.25, 0.012]} />
+          <mesh geometry={G.plane} position={[0, 0.125, 0.008]} scale={[0.33, 0.21, 1]}>
+            <meshBasicMaterial ref={screen} map={screenTex} transparent opacity={0} />
+          </mesh>
+        </group>
+      </group>
+      <mesh ref={curtainL} geometry={G.box} material={mat('#ece2d2', 0.95)} position={[win[0] - 0.55, win[1], win[2] + 0.12]} scale={[1.0, 1.9, 0.03]} />
+      <mesh ref={curtainR} geometry={G.box} material={mat('#ece2d2', 0.95)} position={[win[0] + 0.55, win[1], win[2] + 0.12]} scale={[1.0, 1.9, 0.03]} />
+      <mesh ref={book} geometry={G.box} material={mat('#2f4a8a')} position={[shelf[0], shelf[1], shelf[2]]} scale={[0.26, 0.3, 0.07]} />
+      <group position={journey} rotation-y={-Math.PI / 2}>
+        {journeyTex.map((t, i) => (
+          <group key={i} position={[(i - 1) * 1.1, 0, 0.04]} ref={(g) => { frames.current[i] = g }}>
+            <mesh geometry={G.box} material={mat('#2a2626')} position={[0, 0, -0.02]} scale={[0.92, 0.7, 0.03]} />
+            <mesh geometry={G.plane} material={textMat(t)} scale={[0.86, 0.63, 1]} />
+          </group>
+        ))}
+      </group>
+      <group position={hello} rotation-y={Math.PI + 0.35}>
+        <mesh geometry={G.box} material={mat('#6e5140')} position={[0, 0.2, -0.03]} rotation-x={-0.25} scale={[0.66, 0.5, 0.03]} />
+        <mesh geometry={G.plane} material={textMat(helloTex)} position={[0, 0.2, 0]} rotation-x={-0.25} scale={[0.6, 0.44, 1]} />
+      </group>
+    </>
+  )
+}
+
+function OfficeProps() {
+  const plate = useRoomPos('office', 11, 2.72, 0.8)
+  const tex = useMemo(() => textTexture({ w: 256, h: 80, bg: '#2e3035', align: 'center', pad: 18, lines: [{ text: PROFILE.name.toUpperCase(), size: 30, weight: 800, color: '#ffffff' }] }), [])
+  return (
+    <group position={plate} rotation-y={Math.PI}>
+      <mesh geometry={G.box} material={mat('#2e3035')} rotation-x={-0.5} scale={[0.34, 0.1, 0.02]} />
+      <mesh geometry={G.plane} material={textMat(tex)} position={[0, 0.004, 0.011]} rotation-x={-0.5} scale={[0.32, 0.09, 1]} />
+    </group>
+  )
+}
+
+/**
+ * All story objects. Interior props only mount while the player is inside
+ * that room (they're far away otherwise), keeping per-frame work minimal.
+ */
+export function StoryProps() {
+  const interior = useGameStore((s) => s.interior)
+  return (
+    <>
+      {!interior && (
+        <>
+          {PROCESS_STATIONS.map((_, i) => <ProcessBoard key={i} index={i} />)}
+          <AIRing />
+          <ActivityObjects />
+        </>
+      )}
+      {interior === 'education' && (
+        <>
+          <Timeline />
+          <Chalkboard />
+          <OpenBook room="education" x={-6} z={-4.8} y={0.79} />
+          <Certificates />
+          <Bell />
+        </>
+      )}
+      {interior === 'home' && <HomeProps />}
+      {interior === 'office' && <OfficeProps />}
+    </>
+  )
+}

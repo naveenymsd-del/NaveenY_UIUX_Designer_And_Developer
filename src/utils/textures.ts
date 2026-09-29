@@ -49,11 +49,11 @@ export function paverTexture() {
     const S = 512
     const { c, ctx } = canvas(S, S)
     const rng = createRng(7)
-    ctx.fillStyle = '#b89fbe'
+    ctx.fillStyle = '#9c948a'
     ctx.fillRect(0, 0, S, S)
     // seamless basket-weave: 2u x 2u cells alternating two horizontal / two vertical bricks
     const u = S / 16
-    const tones = ['#dcc3dc', '#d4bad6', '#e2cde0', '#cfb5d2', '#dbc1d8', '#e6d2e3']
+    const tones = ['#cfc6b8', '#c7bdae', '#d6cec1', '#c2b8aa', '#cbc2b4', '#d9d1c4']
     const cells = S / (2 * u)
     for (let i = 0; i < cells; i++) {
       for (let j = 0; j < cells; j++) {
@@ -69,7 +69,7 @@ export function paverTexture() {
     }
     // subtle grain
     for (let k = 0; k < 3500; k++) {
-      ctx.fillStyle = `rgba(90,60,110,${rng.range(0.02, 0.07)})`
+      ctx.fillStyle = `rgba(60,50,40,${rng.range(0.03, 0.08)})`
       ctx.fillRect(rng.next() * S, rng.next() * S, 2, 2)
     }
     return toTexture(c)
@@ -82,18 +82,18 @@ export function tileTexture() {
     const S = 512
     const { c, ctx } = canvas(S, S)
     const rng = createRng(11)
-    ctx.fillStyle = '#b7a4c6'
+    ctx.fillStyle = '#a39b90'
     ctx.fillRect(0, 0, S, S)
     const n = 4
     const t = S / n
-    const tones = ['#e8d8e6', '#e0cfe4', '#eedcdc', '#dccde6', '#e6d6e0']
+    const tones = ['#dad3c8', '#d2cabd', '#e0d9ce', '#cfc6ba', '#d8d0c3']
     for (let i = 0; i < n; i++)
       for (let j = 0; j < n; j++) {
-        ctx.fillStyle = (i + j) % 3 === 0 ? '#cfc0e6' : tones[Math.floor(rng.next() * tones.length)]
+        ctx.fillStyle = (i + j) % 3 === 0 ? '#c9c0b3' : tones[Math.floor(rng.next() * tones.length)]
         ctx.fillRect(i * t + 3, j * t + 3, t - 6, t - 6)
       }
     for (let k = 0; k < 2500; k++) {
-      ctx.fillStyle = `rgba(110,80,130,${rng.range(0.02, 0.06)})`
+      ctx.fillStyle = `rgba(70,60,50,${rng.range(0.02, 0.06)})`
       ctx.fillRect(rng.next() * S, rng.next() * S, 2, 2)
     }
     return toTexture(c)
@@ -125,11 +125,11 @@ export function asphaltTexture() {
     const S = 512
     const { c, ctx } = canvas(S, S)
     const rng = createRng(3)
-    ctx.fillStyle = '#655d7d'
+    ctx.fillStyle = '#5b5d62'
     ctx.fillRect(0, 0, S, S)
     for (let k = 0; k < 16000; k++) {
       const v = rng.next()
-      ctx.fillStyle = v > 0.5 ? `rgba(255,240,255,${rng.range(0.02, 0.08)})` : `rgba(30,20,50,${rng.range(0.03, 0.1)})`
+      ctx.fillStyle = v > 0.5 ? `rgba(235,235,230,${rng.range(0.02, 0.07)})` : `rgba(20,20,25,${rng.range(0.03, 0.1)})`
       const s = rng.range(1, 3)
       ctx.fillRect(rng.next() * S, rng.next() * S, s, s)
     }
@@ -156,11 +156,11 @@ export function grassTexture() {
     const S = 512
     const { c, ctx } = canvas(S, S)
     const rng = createRng(9)
-    ctx.fillStyle = '#93c47d'
+    ctx.fillStyle = '#7a9e55'
     ctx.fillRect(0, 0, S, S)
     for (let k = 0; k < 9000; k++) {
       const v = rng.next()
-      ctx.strokeStyle = v > 0.5 ? `rgba(200,240,160,${rng.range(0.08, 0.2)})` : `rgba(50,110,60,${rng.range(0.08, 0.2)})`
+      ctx.strokeStyle = v > 0.5 ? `rgba(190,215,140,${rng.range(0.08, 0.2)})` : `rgba(45,80,35,${rng.range(0.1, 0.22)})`
       ctx.lineWidth = 1.4
       const x = rng.next() * S
       const y = rng.next() * S
@@ -169,7 +169,7 @@ export function grassTexture() {
       ctx.lineTo(x + rng.range(-2, 2), y - rng.range(3, 7))
       ctx.stroke()
     }
-    for (let k = 0; k < 40; k++) {
+    for (let k = 0; k < 12; k++) {
       ctx.fillStyle = ['#ffffff', '#ffd6e4', '#fff1a8'][k % 3]
       ctx.beginPath()
       ctx.arc(rng.next() * S, rng.next() * S, 2.2, 0, Math.PI * 2)
@@ -439,7 +439,7 @@ export function signPainter(text: string, style: SignStyle): DrawFn {
 
 export type InteriorKind =
   | 'grocery' | 'bakery' | 'books' | 'florist' | 'records' | 'noodle' | 'boutique' | 'ceramics'
-  | 'lobby' | 'studio' | 'cafe' | 'pharmacy' | 'arcade' | 'laundry' | 'gallery'
+  | 'lobby' | 'studio' | 'cafe' | 'pharmacy' | 'arcade' | 'laundry' | 'gallery' | 'office'
 
 const INTERIOR_THEME: Record<InteriorKind, { wall: string; floor: string; items: string[]; shelf: string }> = {
   grocery: { wall: '#fff6e0', floor: '#e9d9c5', items: ['#ef8a78', '#4fb3a9', '#f5dd92', '#9fb2e6', '#e0506a', '#7cbf6a'], shelf: '#ffffff' },
@@ -457,6 +457,7 @@ const INTERIOR_THEME: Record<InteriorKind, { wall: string; floor: string; items:
   arcade: { wall: '#3b2a6b', floor: '#2b2350', items: ['#ff6fb1', '#6ff0ff', '#f5dd92', '#a996d4', '#7cff9a'], shelf: '#1d1a36' },
   laundry: { wall: '#eaf4ff', floor: '#cfe0f2', items: ['#ffffff', '#cfe0f2', '#9fb2e6'], shelf: '#ffffff' },
   gallery: { wall: '#ffffff', floor: '#e9e4ef', items: ['#ef8a78', '#2f3fb8', '#f5dd92', '#4fb3a9'], shelf: '#ffffff' },
+  office: { wall: '#f2f1ee', floor: '#cfcac1', items: ['#2f4a8a', '#6f9a4c', '#3b3e44'], shelf: '#2e3035' },
 }
 
 /** A shop interior painted with fake perspective: back wall, shelves, ceiling lights, floor. */
@@ -514,6 +515,46 @@ export function interiorPainter(kind: InteriorKind, seed: number): DrawFn {
       ctx.arc(w * 0.22, h * 0.62, h * 0.12, 0, Math.PI * 2)
       ctx.arc(w * 0.78, h * 0.62, h * 0.12, 0, Math.PI * 2)
       ctx.fill()
+      return
+    }
+    if (kind === 'office') {
+      // bright lobby: reception counter, pendant lights, plants, a feature wall
+      ctx.fillStyle = '#a0785a'
+      for (let i = 0; i < 14; i++) ctx.fillRect(w * 0.18 + i * w * 0.02, h * 0.16, w * 0.012, h * 0.52)
+      ctx.fillStyle = '#2e3035'
+      ctx.fillRect(w * 0.2, h * 0.3, w * 0.24, h * 0.07)
+      ctx.fillStyle = '#ffffff'
+      ctx.font = `700 ${h * 0.045}px ${UI_FONT}`
+      ctx.fillText('NFC SOLUTIONS', w * 0.215, h * 0.345)
+      ctx.fillStyle = '#e9e4dc'
+      ctx.fillRect(w * 0.5, h * 0.58, w * 0.3, h * 0.14)
+      ctx.fillStyle = '#a0785a'
+      ctx.fillRect(w * 0.5, h * 0.62, w * 0.3, h * 0.1)
+      for (let i = 0; i < 4; i++) {
+        const lx = w * (0.3 + i * 0.15)
+        ctx.strokeStyle = '#3b3e44'
+        ctx.beginPath()
+        ctx.moveTo(lx, 0)
+        ctx.lineTo(lx, h * 0.2)
+        ctx.stroke()
+        ctx.fillStyle = '#fff3d6'
+        ctx.beginPath()
+        ctx.arc(lx, h * 0.22, h * 0.03, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.fillStyle = '#5a8a45'
+      for (const px of [0.12, 0.88]) {
+        ctx.beginPath()
+        ctx.arc(w * px, h * 0.62, h * 0.1, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.fillStyle = '#3b3e44'
+      for (const px of [0.62, 0.7]) {
+        ctx.beginPath()
+        ctx.arc(w * px, h * 0.46, h * 0.035, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillRect(w * px - h * 0.03, h * 0.5, h * 0.06, h * 0.12)
+      }
       return
     }
     if (kind === 'gallery') {
@@ -683,3 +724,61 @@ export function mapBoardPainter(): DrawFn {
 }
 
 export { hex }
+
+/** A daylight view through a window: sky, distant rooftops, trees. */
+export function windowViewPainter(seed: number): DrawFn {
+  return (ctx, w, h) => {
+    const rng = createRng(seed)
+    const g = ctx.createLinearGradient(0, 0, 0, h)
+    g.addColorStop(0, '#8fb6e2')
+    g.addColorStop(0.7, '#d6e3ee')
+    g.addColorStop(1, '#ece7de')
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, w, h)
+    ctx.fillStyle = 'rgba(255,255,255,0.8)'
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath()
+      ctx.ellipse(rng.range(0, w), rng.range(h * 0.1, h * 0.35), rng.range(20, 50), rng.range(8, 14), 0, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    let x = 0
+    while (x < w) {
+      const bw = rng.range(w * 0.08, w * 0.2)
+      const bh = rng.range(h * 0.2, h * 0.55)
+      ctx.fillStyle = rng.pick(['#c9b9a6', '#b7a693', '#d8cbb8', '#a9b6c2', '#c4a08a'])
+      ctx.fillRect(x, h - bh, bw, bh)
+      ctx.fillStyle = 'rgba(80,90,110,0.35)'
+      for (let yy = h - bh + 8; yy < h - 10; yy += 14) for (let xx = x + 6; xx < x + bw - 8; xx += 12) ctx.fillRect(xx, yy, 5, 7)
+      x += bw + 2
+    }
+    ctx.fillStyle = '#6f9a4c'
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath()
+      ctx.arc(rng.range(0, w), h - rng.range(0, 12), rng.range(14, 26), 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+}
+
+/** Abstract product UI for office monitors — shapes only, no fake text. */
+export function screenPainter(seed: number): DrawFn {
+  return (ctx, w, h) => {
+    const rng = createRng(seed)
+    ctx.fillStyle = rng.pick(['#f4f5f7', '#1f2430', '#eef1f6'])
+    const dark = ctx.fillStyle === '#1f2430'
+    ctx.fillRect(0, 0, w, h)
+    ctx.fillStyle = dark ? '#2b3242' : '#e2e6ee'
+    ctx.fillRect(0, 0, w * 0.18, h)
+    ctx.fillStyle = dark ? '#394257' : '#ffffff'
+    const cols = 3
+    for (let r = 0; r < 2; r++)
+      for (let c = 0; c < cols; c++) {
+        const x = w * 0.22 + c * (w * 0.25)
+        const y = h * 0.12 + r * (h * 0.42)
+        ctx.fillRect(x, y, w * 0.22, h * 0.36)
+        ctx.fillStyle = rng.pick(['#2f4a8a', '#3f7f78', '#c27a60', '#c49a4e', '#8fa2bd'])
+        ctx.fillRect(x + 6, y + 6, w * 0.22 - 12, h * 0.14)
+        ctx.fillStyle = dark ? '#394257' : '#ffffff'
+      }
+  }
+}

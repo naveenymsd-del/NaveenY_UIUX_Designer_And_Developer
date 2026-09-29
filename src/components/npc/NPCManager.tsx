@@ -6,7 +6,9 @@ import { agentPositions, createAnim, playerRuntime, type CharacterAnim } from '@
 import { ROUTES, SIT_HINTS, STANDERS, WALKERS, WANDER_AREAS, type RouteDef } from '@/data/npcPaths'
 import { PROJECTS } from '@/data/projects'
 import { SIDEWALK_Y } from '@/data/cityLayout'
-import { randomLook, type CharacterLook } from '@/components/models/characterLook'
+import { INTERIOR_PEOPLE, INTERIOR_ROUTES, roomToWorld } from '@/data/interiors'
+import { useGameStore } from '@/stores/gameStore'
+import { randomLook, type CharacterLook, type HandProp } from '@/components/models/characterLook'
 import { useCityData } from '@/components/environment/City'
 import { useUIStore } from '@/stores/uiStore'
 import { qualitySettings } from '@/utils/performance'
@@ -15,7 +17,7 @@ import { dampAngle } from '@/utils/movement'
 import type { SeatDef } from '@/utils/buildingGen'
 import { NPC, type NPCHandle } from './NPC'
 
-type Kind = 'walker' | 'wander' | 'sit' | 'talk' | 'look' | 'phone'
+type Kind = 'walker' | 'wander' | 'sit' | 'talk' | 'still' | 'greeter'
 
 export interface Agent {
   id: string
@@ -41,6 +43,12 @@ export interface Agent {
   groundTimer: number
   handle: NPCHandle | null
   lod: 0 | 1 | 2
+  /** seated in a chair / on a bench (no capsule, no blob shadow) */
+  seated: boolean
+  baseYaw: number
+  basePose: CharacterAnim['pose']
+  greeted: boolean
+  greetT: number
 }
 
 const FAR = 78
@@ -129,14 +137,20 @@ export function NPCManager() {
     const rng = createRng(606)
     const list: Agent[] = []
     let n = 0
-    const base = (kind: Kind, x: number, z: number, yaw: number): Agent => {
+    const base = (kind: Kind, x: number, z: number, yaw: number, outfit?: 'office' | 'student' | 'teacher', prop?: HandProp): Agent => {
       const seed = 11 + n++ * 17
-      const look = randomLook(seed)
+      const r = createRng(seed)
+      const over: Partial<CharacterLook> = { prop: prop ?? 'none' }
+      if (outfit === 'office') Object.assign(over, { topStyle: r.pick(['shirt', 'blouse', 'sweater', 'jacket'] as const), accessory: r.chance(0.55) ? 'lanyard' : 'none', bottomStyle: r.chance(0.2) ? 'skirt' : 'trousers', longSleeves: true })
+      if (outfit === 'student') Object.assign(over, { accessory: r.chance(0.6) ? 'backpack' : 'totebag', topStyle: r.pick(['hoodie', 'tee', 'sweater'] as const) })
+      if (outfit === 'teacher') Object.assign(over, { topStyle: 'jacket', accessory: 'glasses', bottomStyle: 'trousers' })
+      const look = randomLook(seed, over)
       return {
         id: `npc-${n}`, kind, look, yaw, speed: 1.2,
-        anim: createAnim({ walkSpeed: 1.6, runSpeed: 4, walkStride: 0.78 * look.height, runStride: 1.6 }),
+        anim: createAnim({ walkSpeed: 1.6, runSpeed: 4, walkStride: 1.3 * look.height, runStride: 2.2 }),
         pos: new Vector3(x, SIDEWALK_Y, z), seg: 1, dir: 1, pauseChance: 0.2, wait: 0,
         target: new Vector3(), talkTimer: rng.range(0, 4), groundY: SIDEWALK_Y, groundTimer: rng.range(0, 0.5), handle: null, lod: 0,
+        seated: false, baseYaw: yaw, basePose: 'none', greeted: false, greetT: 0,
       }
     }
     for (const w of WALKERS) {
@@ -165,13 +179,39 @@ export function NPCManager() {
       const a = base('sit', seat.position[0], seat.position[2], seat.yaw)
       a.pos.y = seat.position[1]
       a.anim.pose = 'sit'
+      a.seated = true
       list.push(a)
     }
     const standStart = list.length
     STANDERS.forEach((s) => {
-      const a = base(s.pose, s.pos[0], s.pos[1], s.yaw)
-      a.anim.pose = s.pose === 'talk' ? 'talk' : s.pose
+      const a = base(s.pose === 'talk' ? 'talk' : 'still', s.pos[0], s.pos[1], s.yaw, undefined, s.prop)
+      a.anim.pose = s.pose
       if (s.pair !== undefined) a.partner = standStart + s.pair
+      list.push(a)
+    })
+    // people inside the rooms
+    for (const p of INTERIOR_PEOPLE) {
+      const [x, y, z] = roomToWorld(p.room, p.x, p.z, p.seatY ?? 0)
+      const a = base(p.greeter ? 'greeter' : 'still', x, z, p.yaw, p.outfit, p.prop)
+      a.pos.y = y
+      a.anim.pose = p.pose
+      a.basePose = p.pose
+      a.seated = p.seatY !== undefined
+      list.push(a)
+    }
+    INTERIOR_ROUTES.forEach((r, i) => {
+      const points = r.points.map(([px, pz]) => {
+        const w = roomToWorld(r.room, px, pz)
+        return [w[0], w[2]] as [number, number]
+      })
+      const route: RouteDef = { id: `room-${r.room}-${i}`, mode: 'loop', points }
+      const a = base('walker', route.points[0][0], route.points[0][1], 0, r.room === 'office' ? 'office' : 'student', r.room === 'office' ? 'cup' : 'none')
+      a.pos.y = 0
+      a.route = route
+      a.seg = 1
+      a.speed = r.speed
+      a.pauseChance = 0.35
+      a.anim.walkSpeed = r.speed * 1.2
       list.push(a)
     })
     return list
@@ -199,6 +239,7 @@ export function NPCManager() {
       if (lod === 1 && (frame.current + i) % 3 !== 0) continue
       const step = lod === 1 ? dt * 3 : dt
       update(a, step, agents)
+      updateGaze(a)
       if (a.kind === 'walker' || a.kind === 'wander') {
         a.groundTimer -= step
         if (a.groundTimer <= 0) {
@@ -225,9 +266,68 @@ export function NPCManager() {
 
 const _to = new Vector3()
 
+/**
+ * Scripted but natural office greeting: shortly after the player walks in,
+ * the colleague by the entrance looks up, turns toward them, gives a small
+ * wave, then goes back to their tablet. Everyone else keeps working.
+ */
+function greeter(a: Agent, dt: number) {
+  const g = useGameStore.getState()
+  const anim = a.anim
+  anim.speed = 0
+  anim.state = 'idle'
+  if (g.interior !== 'office') {
+    a.greeted = false
+    a.greetT = 0
+    a.yaw = a.baseYaw
+    anim.pose = a.basePose
+    return
+  }
+  const since = performance.now() - g.interiorSince
+  if (!a.greeted && since > 2600) {
+    a.greeted = true
+    a.greetT = 3.4
+  }
+  if (a.greetT > 0) {
+    a.greetT -= dt
+    const p = playerRuntime.position
+    const toPlayer = Math.atan2(p.x - a.pos.x, p.z - a.pos.z)
+    a.yaw = dampAngle(a.yaw, toPlayer, 4, dt, 3)
+    anim.pose = a.greetT < 3.0 && a.greetT > 0.6 ? 'wave' : 'none'
+    anim.gaze = 0
+    if (a.greetT <= 0) anim.pose = a.basePose
+  } else {
+    a.yaw = dampAngle(a.yaw, a.baseYaw, 2.5, dt, 2)
+  }
+}
+
+/** People glance at the player walking past (head turn only, no staring). */
+function updateGaze(a: Agent) {
+  const anim = a.anim
+  if (a.lod > 0 || anim.pose === 'work' || a.kind === 'greeter') {
+    anim.gazeWeight = 0
+    return
+  }
+  const p = playerRuntime.position
+  const dx = p.x - a.pos.x
+  const dz = p.z - a.pos.z
+  const d = Math.hypot(dx, dz)
+  let rel = Math.atan2(dx, dz) - a.yaw
+  while (rel > Math.PI) rel -= Math.PI * 2
+  while (rel < -Math.PI) rel += Math.PI * 2
+  if (d < 4.2 && Math.abs(rel) < 1.9) {
+    anim.gaze = Math.max(-1.1, Math.min(1.1, rel))
+    anim.gazeWeight = 1 - d / 5
+  } else anim.gazeWeight = 0
+}
+
 function update(a: Agent, dt: number, all: Agent[]) {
   const anim = a.anim
-  if (a.kind === 'sit' || a.kind === 'look' || a.kind === 'phone') {
+  if (a.kind === 'greeter') {
+    greeter(a, dt)
+    return
+  }
+  if (a.kind === 'sit' || a.kind === 'still') {
     anim.speed = 0
     anim.state = 'idle'
     return

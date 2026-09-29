@@ -1,4 +1,5 @@
 import { navigate } from '@/app/routes'
+import { activateLocation } from '@/components/interactions/InteractionManager'
 import { LOCATIONS, getLocation } from '@/data/locations'
 import { PROJECTS } from '@/data/projects'
 import { useGameStore } from '@/stores/gameStore'
@@ -19,11 +20,11 @@ export function A11yLayer() {
     <>
       <nav className="sr-only sr-only-focusable ui-a11y" aria-label="Places and projects (accessible overview)">
         <h2>Mindscape Avenue — overview</h2>
-        <p>An explorable neighbourhood. You can also open each place directly:</p>
+        <p>The interactive portfolio of Naveen, UI/UX designer. Every place and story can also be opened directly:</p>
         <ul>
-          {LOCATIONS.filter((l) => l.action === 'OPEN_LOCATION').map((l) => (
+          {LOCATIONS.filter((l) => l.marker || l.type === 'story').map((l) => (
             <li key={l.id}>
-              <button disabled={!ready} onClick={() => { navigate('/street'); openLocation(l.id) }}>{l.name} — {l.kicker}</button>
+              <button disabled={!ready} onClick={() => { navigate('/street'); if (l.action === 'OPEN_LOCATION') openLocation(l.id); else activateLocation(l) }}>{l.name} — {l.kicker}</button>
             </li>
           ))}
           {PROJECTS.map((p) => (

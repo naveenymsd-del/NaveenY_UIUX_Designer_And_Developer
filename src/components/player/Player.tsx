@@ -5,6 +5,7 @@ import { type Group, Vector3 } from 'three'
 import { input, moveVector } from '@/core/input'
 import { cameraRuntime, playerRuntime, SPAWN, SPAWN_YAW } from '@/core/runtime'
 import { WORLD_BOUNDS } from '@/data/cityLayout'
+import { insideInterior } from '@/data/interiors'
 import { controlsEnabled, useGameStore } from '@/stores/gameStore'
 import { usePlayerStore } from '@/stores/playerStore'
 import { CharacterModel } from '@/components/models/CharacterModel'
@@ -12,8 +13,8 @@ import { PLAYER_LOOK } from '@/components/models/characterLook'
 import { BlobShadow } from '@/components/effects/BlobShadow'
 import { clamp, dampAngle, MOVE, wrapAngle } from '@/utils/movement'
 
-const CAPSULE_HALF = 0.42
-const CAPSULE_RADIUS = 0.33
+const CAPSULE_HALF = 0.56
+const CAPSULE_RADIUS = 0.28
 const _desired = new Vector3()
 const _next = new Vector3()
 
@@ -35,7 +36,7 @@ export function Player() {
   useEffect(() => {
     const c = world.createCharacterController(0.02)
     c.setUp({ x: 0, y: 1, z: 0 })
-    c.enableAutostep(0.4, 0.12, true)
+    c.enableAutostep(0.42, 0.05, true)
     c.enableSnapToGround(0.35)
     c.setMaxSlopeClimbAngle((52 * Math.PI) / 180)
     c.setMinSlopeSlideAngle((40 * Math.PI) / 180)
@@ -135,7 +136,8 @@ export function Player() {
 
     s.vy -= MOVE.gravity * dt
     if (s.vy < -MOVE.maxFall) s.vy = -MOVE.maxFall
-    if (s.grounded && s.vy < 0) s.vy = -1.5
+    // small stick-down only: snap-to-ground keeps us planted; a large value fights slopes and steps at walking speed
+    if (s.grounded && s.vy < 0) s.vy = -0.35
 
     if (s.vy > 0) controller.disableSnapToGround()
     else controller.enableSnapToGround(0.35)
@@ -147,7 +149,9 @@ export function Player() {
     s.grounded = controller.computedGrounded()
 
     // hitting a wall kills the velocity into it (no sticky accumulation)
-    if (dt > 0) {
+    // (not while climbing: on slopes and stairs the controller trades horizontal distance for height)
+    const climbing = moved.y > _desired.y + 1e-4
+    if (dt > 0 && !climbing) {
       if (Math.abs(moved.x) < Math.abs(_desired.x) - 1e-4) s.vx = moved.x / dt
       if (Math.abs(moved.z) < Math.abs(_desired.z) - 1e-4) s.vz = moved.z / dt
       if (s.vy > 0 && moved.y < _desired.y - 1e-4) s.vy = 0 // bumped a ceiling
@@ -179,9 +183,14 @@ export function Player() {
     const turnRate = wrapAngle(rt.yaw - prevYaw) / Math.max(dt, 1e-4)
 
     // ── animation data (model-agnostic) ────────────────────────────────
-    const stride = hs > MOVE.walkSpeed ? anim.runStride : anim.walkStride
-    anim.phase += ((hs * dt) / stride) * Math.PI * 2
-    anim.speed = s.grounded ? hs : anim.speed
+    // stride blends with the same walk→run weight the rig uses, so the phase
+    // speed always matches the leg swing (no skating during transitions)
+    const runT = Math.min(1, Math.max(0, (hs - MOVE.walkSpeed * 1.05) / (MOVE.runSpeed - MOVE.walkSpeed * 1.05)))
+    const stride = anim.walkStride + (anim.runStride - anim.walkStride) * runT
+    // turning on the spot: take small shuffle steps instead of spinning on planted feet
+    const shuffle = s.grounded && hs < 0.35 && Math.abs(turnRate) > 1.2 ? Math.min(1, Math.abs(turnRate) / 5) : 0
+    anim.phase += ((hs * dt) / stride) * Math.PI * 2 + shuffle * dt * 7
+    anim.speed = s.grounded ? Math.max(hs, shuffle * 0.9) : anim.speed
     anim.vy = s.vy
     anim.grounded = s.grounded
     anim.turnRate = anim.turnRate + (turnRate - anim.turnRate) * (1 - Math.exp(-10 * dt))
@@ -215,7 +224,7 @@ export function Player() {
 
     // ── safety: remember safe ground, recover if we ever leave the world ──
     s.safeTimer += dt
-    const inBounds = _next.x > WORLD_BOUNDS.minX - 2 && _next.x < WORLD_BOUNDS.maxX + 2 && _next.z > WORLD_BOUNDS.minZ - 2 && _next.z < WORLD_BOUNDS.maxZ + 2
+    const inBounds = (_next.x > WORLD_BOUNDS.minX - 2 && _next.x < WORLD_BOUNDS.maxX + 2 && _next.z > WORLD_BOUNDS.minZ - 2 && _next.z < WORLD_BOUNDS.maxZ + 2) || insideInterior(_next.x, _next.z) !== null
     if (s.grounded && inBounds && s.safeTimer > 0.5 && _next.y < 3) {
       rt.lastSafe.copy(_next)
       s.safeTimer = 0

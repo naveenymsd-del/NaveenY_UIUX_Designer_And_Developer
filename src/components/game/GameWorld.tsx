@@ -4,6 +4,8 @@ import { City } from '@/components/environment/City'
 import { Sky } from '@/components/environment/Sky'
 import { Lighting } from '@/components/effects/Lighting'
 import { AmbientParticles, Birds, DustPuffs, FeedbackPulse, FountainSpray, WorldClock } from '@/components/effects/EnvironmentEffects'
+import { AICompanion } from '@/components/effects/AICompanion'
+import { StoryProps } from '@/components/interactions/StoryProps'
 import { InteractionManager } from '@/components/interactions/InteractionManager'
 import { InteractiveObjects } from '@/components/interactions/InteractiveObject'
 import { NPCManager } from '@/components/npc/NPCManager'
@@ -15,7 +17,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { offFlags, qualitySettings } from '@/utils/performance'
 import { GameCamera } from './GameCamera'
 
-export const FOG_COLOR = '#e6bdd3'
+export const FOG_COLOR = '#dcdad4'
 
 /** Everything that lives in the 3D world. */
 export function GameWorld() {
@@ -24,7 +26,7 @@ export function GameWorld() {
   const off = offFlags()
   return (
     <>
-      <fog attach="fog" args={[FOG_COLOR, 95, 420]} />
+      <fog attach="fog" args={[FOG_COLOR, 110, 460]} />
       <color attach="background" args={[FOG_COLOR]} />
       <WorldClock />
       <Sky />
@@ -40,6 +42,8 @@ export function GameWorld() {
       <FountainSpray />
       <DustPuffs />
       <FeedbackPulse />
+      <StoryProps />
+      <AICompanion />
       <Birds />
       <ReadySignal />
     </>

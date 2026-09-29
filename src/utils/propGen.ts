@@ -41,7 +41,7 @@ export function tree(ctx: GenContext, rng: Rng, kind: TreeKind, scale = 1, grate
   const trunkH = (kind === 'tall' ? 2.6 : kind === 'cypress' ? 1.0 : 1.9) * s
   const trunkColor = rng.chance(0.5) ? PALETTE.trunk : PALETTE.walnut
   if (grate) {
-    b.box(0x8f86a6, [0, 0.01, 0], [1.3, 0.03, 1.3], { cast: false })
+    b.box(0x8a8781, [0, 0.01, 0], [1.3, 0.03, 1.3], { cast: false }) // granite kerb
     b.box(PALETTE.soil, [0, 0.02, 0], [1.05, 0.03, 1.05], { cast: false })
   }
   b.add('cyl8', trunkColor, [0, trunkH / 2, 0], [0.26 * s, trunkH, 0.26 * s])
@@ -51,8 +51,8 @@ export function tree(ctx: GenContext, rng: Rng, kind: TreeKind, scale = 1, grate
     round: [PALETTE.leafA, PALETTE.leafB, PALETTE.leafC],
     tall: [PALETTE.leafB, PALETTE.leafA],
     bushy: [PALETTE.leafC, PALETTE.leafA],
-    blossom: [PALETTE.leafD, 0xf3b8cb, 0xf7cad8],
-    gold: [PALETTE.leafE, 0xe8b24a, 0xf5d27a],
+    blossom: [PALETTE.leafD, 0xdcbcbc, 0xc9a2a4], // muted cherry, not candy pink
+    gold: [PALETTE.leafE, 0xc4a05a, 0xb89247],
     cypress: [0x4f9a5c, PALETTE.leafB],
   }
   const leaves = leafSets[kind]

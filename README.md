@@ -1,6 +1,6 @@
 # Mindscape Avenue
 
-A playable 3D neighbourhood for the browser. You walk a stylised city street in third person, visit a café, gallery, store, studio and landmark, and browse five project pavilions. Everything is original, procedural geometry: there are no downloaded models, textures or sounds. Any piece can be swapped for your own GLB or audio files without touching gameplay code.
+A playable 3D portfolio neighbourhood for the browser. You walk a naturally lit street in third person. You can visit the **Education** campus, the **NFC Solutions** office, **My Home** (profile) and the **Design Park** (design process, AI workflow and activities), then browse five project pavilions in the **Project District**. The campus, office and home can be entered: each is a furnished room with story objects to explore. Everything is original, procedural geometry: there are no downloaded models, textures or sounds. Any piece can be swapped for your own GLB or audio files without touching gameplay code.
 
 ```bash
 npm install
@@ -60,15 +60,37 @@ src/
 - **Atlases.** All shop signs share one canvas atlas and one draw call. Shop interiors, artwork and the map board share a second one. Per-instance UVs are applied in the shader.
 - **One draw call per character.** Each character, player and NPCs alike, is a single `SkinnedMesh`: every primitive part is merged and rigidly bound to a procedural bone.
 - **Simple physics.** Colliders are simple cuboids and cylinders, with no trimesh anywhere. The player uses Rapier's kinematic character controller. NPCs and vehicles are kinematic and path-driven, so there are no dynamic bodies.
-- **NPC LOD by distance.** Near NPCs update fully. Mid-distance ones update every third frame. Far ones are paused and hidden.
+- **NPC LOD by distance.** Near NPCs update fully. Mid-distance ones update every third frame. Far ones are paused and hidden. Street pedestrians use a lighter mesh (about 40 % fewer triangles). The player and people indoors keep full detail.
 - **Quality tiers.** `low`, `medium` and `high` are picked from the device and GPU class. `PerformanceMonitor` then adapts resolution and can step the tier down. Lower tiers use cheaper shadows, updated every other frame, and FXAA instead of MSAA. Small details never cast shadows.
 - **Shadow frustum.** The shadow frustum follows the player and is snapped to shadow-map texels, so edges don't shimmer.
 
 ### Game feel
 
 - **Movement** accelerates and decelerates smoothly, with speed-limited turning, coyote time and jump buffering.
-- **Animations.** A landing squash scales with fall height. Legs, knees and feet are driven by a gait phase advanced by *distance travelled*, and swing amplitude comes from stride length, so feet don't skate. Blends cover idle, walk, run, jump, fall, land, turn lean and strafe cross-steps. NPCs add sit, talk, window-shopping and phone poses.
+- **Animations.** A landing squash scales with fall height. Legs, knees and feet are driven by a gait phase advanced by *distance travelled*, and swing amplitude comes from stride length, so feet don't skate. The walk has a heel-to-toe roll, and the pelvis bobs, sways and turns against the chest. Blends cover idle, walk, run, jump, fall, land, turn-in-place and strafe cross-steps. Overlays add talk, wave, work, read, coffee and phone poses, plus seated variants, head gaze and blinking. An office colleague turns and waves when you arrive.
 - **Camera.** Third person, with lag, clamped pitch and collision (it pulls in fast and eases out slowly). It auto-aligns gently when you walk forward. Foliage near the camera dissolves with a dither instead of filling the screen. Landmarks get a short cinematic reveal the first time you enter their zone.
+
+## Portfolio content and placeholders
+
+All personal text lives in **`src/data/portfolioContent.ts`**. Nothing in it is invented. Anything that needs a real fact is a `[BRACKETED PLACEHOLDER]`. These placeholders render highlighted in the panels until you replace them. Search the file for `[` to find them:
+
+- `PROFILE`: name, role, location, contact links
+- `EDUCATION_TIMELINE` / `EDUCATION_STORIES`: degree, institution, years, certificates
+- `OFFICE_STORIES`: role, responsibilities and team at NFC Solutions
+- `HOME_STORIES`: about me, personal journey, interests
+- `DESIGN_PROCESS` (steps 01–09), `AI_WORKFLOW`, `ACTIVITY_STORIES`: the Design Park texts
+
+The NFC Solutions building uses text signage only. To use the official logo, add it and reference it in `landmarkGen.genOffice` / `interiorGen`, keeping its aspect ratio.
+
+### Interiors
+
+Rooms are real geometry placed far east of the city (x = 320), and entering one fades and teleports you there. They are defined in `src/data/interiors.ts`, which holds:
+
+- size, palette, entry and exit poses and the establishing shot
+- desks, people and walking routes
+- story anchors (`INTERIOR_STORIES`)
+
+`src/utils/interiorGen.ts` builds the furniture. Animated story props (timeline, chalkboard, laptop, curtains, nameplate and so on) live in `components/interactions/StoryProps.tsx`. The enter/exit sequence is `src/core/interiors.ts`.
 
 ## Adding or changing content
 
@@ -126,6 +148,7 @@ The sound button toggles everything. The preference is saved in `localStorage` (
 npm run dev
 npm run qa                       # all scenarios (CHROME_PATH=... to use another Chromium)
 npm run qa:collision             # facade / fountain / ramp / boundary / traffic checks
+node scripts/qa-rooms.mjs        # enter and exit every interior
 ```
 
 Known third-party notice: Rapier's WASM loader logs `using deprecated parameters for the initialization function` once at startup. It comes from the library, not from this code, and is harmless.

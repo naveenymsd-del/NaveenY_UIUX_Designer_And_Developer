@@ -52,16 +52,17 @@ export function NPC({ agent }: { agent: Agent }) {
     }
   }, [agent])
 
-  const sitting = agent.kind === 'sit'
+  const sitting = agent.seated
   return (
     <>
       {!sitting && (
         <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[agent.pos.x, agent.pos.y, agent.pos.z]}>
-          <CapsuleCollider args={[0.4, 0.28]} position={[0, 0.7, 0]} />
+          <CapsuleCollider args={[0.58, 0.25]} position={[0, 0.84, 0]} />
         </RigidBody>
       )}
       <group ref={group}>
-        <CharacterModel anim={agent.anim} look={agent.look} asset="npc" castShadow={false} />
+        {/* interior people are seen up close; street pedestrians use the lighter mesh */}
+        <CharacterModel anim={agent.anim} look={agent.look} asset="npc" castShadow={false} detail={agent.pos.x > 300 ? 'high' : 'low'} />
         {!sitting && <BlobShadow size={0.95} opacity={0.35} />}
       </group>
     </>

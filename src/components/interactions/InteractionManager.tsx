@@ -2,9 +2,12 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useRef } from 'react'
 import { Vector3 } from 'three'
 import { cinematicRuntime, playerRuntime, screenAnchors } from '@/core/runtime'
-import { LOCATIONS, ZONES, getLocation } from '@/data/locations'
+import { LOCATIONS, ZONES, getLocation, type InteractiveDef } from '@/data/locations'
 import { soundManager } from '@/core/sound/SoundManager'
 import { controlsEnabled, useGameStore } from '@/stores/gameStore'
+import { enterInterior, exitInterior } from '@/core/interiors'
+import type { InteriorId } from '@/data/interiors'
+import { navigate } from '@/app/routes'
 
 const _v = new Vector3()
 
@@ -91,8 +94,37 @@ export function triggerNearby() {
   if (!controlsEnabled(game) || !game.nearbyId) return false
   const loc = getLocation(game.nearbyId)
   if (!loc) return false
-  soundManager.play('open')
-  if (loc.action === 'OPEN_PROJECT') game.openProject(loc.destination)
-  else game.openLocation(loc.id)
+  activateLocation(loc)
   return true
 }
+
+/** Perform a location's action (shared by E, the prompt button, the menu and the accessible overview). */
+export function activateLocation(loc: InteractiveDef) {
+  const game = useGameStore.getState()
+  switch (loc.action) {
+    case 'OPEN_PROJECT':
+      soundManager.play('open')
+      game.openProject(loc.destination)
+      break
+    case 'ENTER_INTERIOR':
+      void enterInterior(loc.destination as InteriorId, loc.id)
+      break
+    case 'EXIT_INTERIOR':
+      void exitInterior(loc.destination as InteriorId)
+      break
+    case 'OPEN_PROJECTS':
+      soundManager.play('open')
+      navigate('/projects')
+      break
+    case 'RING_BELL':
+      soundManager.play('bell')
+      storyEvents.bellAt = performance.now()
+      break
+    default:
+      soundManager.play('open')
+      game.openLocation(loc.id)
+  }
+}
+
+/** One-shot events story objects react to (e.g. the school bell swinging). */
+export const storyEvents = { bellAt: -1e9 }

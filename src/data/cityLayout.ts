@@ -105,7 +105,7 @@ export const SHOPS: Record<string, ShopInfo> = {
 }
 
 export type BuildingStyle = 'shop' | 'apartment' | 'corner' | 'townhouse' | 'tower' | 'special'
-export type SpecialKind = 'store' | 'cafe' | 'gallery' | 'studio' | 'experience'
+export type SpecialKind = 'home' | 'office' | 'library' | 'district' | 'education'
 
 export interface BuildingDef {
   id: string
@@ -139,7 +139,7 @@ function B(
 
 const handPlaced: BuildingDef[] = [
   // ── Store block (x -46..-5, z -46..-4)
-  B(-15.5, -25, 14, 13, 'E', 'special', 2, { special: 'store', id: 'store' }),
+  B(-15.5, -25, 14, 13, 'E', 'special', 2, { special: 'home', id: 'home' }),
   B(-15, -37, 10, 12, 'E', 'corner', 3, { shop: 'moon', palette: 3 }),
   B(-15, -13, 10, 12, 'E', 'shop', 2, { shop: 'bloom', palette: 0 }),
   B(-27, -37, 12, 10, 'N', 'apartment', 4, { palette: 2 }),
@@ -149,13 +149,13 @@ const handPlaced: BuildingDef[] = [
   B(-37, -25, 14, 10, 'W', 'apartment', 4, { palette: 9, shop: 'vinyl' }),
 
   // ── Plaza block (x 5..46, z -46..-4)
-  B(36, -25, 16, 12, 'W', 'special', 3, { special: 'studio', id: 'studio' }),
+  B(36, -25, 16, 12, 'W', 'special', 3, { special: 'district', id: 'district' }),
   B(36, -37.5, 12, 9, 'N', 'apartment', 5, { palette: 10, shop: 'studio9' }),
   B(36, -12.5, 12, 9, 'S', 'corner', 3, { palette: 1, shop: 'plum' }),
 
   // ── Café block (x 5..46, z 4..46)
-  B(21, 17, 12, 10, 'W', 'special', 2, { special: 'cafe', id: 'cafe' }),
-  B(34, 13, 16, 10, 'N', 'apartment', 4, { palette: 11, shop: 'sol' }),
+  B(23, 17, 18, 14, 'W', 'special', 4, { special: 'office', id: 'nfc-office' }),
+  B(37, 13, 10, 10, 'N', 'apartment', 4, { palette: 11, shop: 'sol' }),
   B(15, 30, 8, 12, 'W', 'shop', 2, { shop: 'kiln', palette: 1 }),
   B(15, 38, 12, 8, 'S', 'corner', 3, { shop: 'peach', palette: 5 }),
   B(26, 37, 10, 10, 'S', 'townhouse', 3, { shop: 'maple', palette: 6 }),
@@ -163,8 +163,8 @@ const handPlaced: BuildingDef[] = [
   B(37, 25, 14, 10, 'E', 'shop', 2, { shop: 'cloud', palette: 7 }),
 
   // ── North block: Experience Row (front at z ≈ -58)
-  B(0, -68, 26, 18, 'S', 'special', 3, { special: 'experience', id: 'experience' }),
-  B(-30, -67, 18, 16, 'S', 'special', 2, { special: 'gallery', id: 'gallery' }),
+  B(0, -68, 26, 18, 'S', 'special', 3, { special: 'education', id: 'education' }),
+  B(-30, -67, 18, 16, 'S', 'special', 2, { special: 'library', id: 'library' }),
   B(-17, -65, 7, 12, 'S', 'townhouse', 3, { shop: 'fig', palette: 5 }),
   B(-46, -65, 12, 14, 'S', 'apartment', 5, { shop: 'pixel', palette: 2 }),
   B(-62, -65, 14, 14, 'S', 'apartment', 4, { palette: 8 }),

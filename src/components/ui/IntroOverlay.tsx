@@ -22,7 +22,7 @@ export function IntroOverlay() {
   return (
     <div className={`ui-intro ${phase === 'transition' ? 'is-leaving' : ''}`}>
       <div className="ui-intro__center">
-        <p className="ui-intro__eyebrow">A small neighbourhood you can walk</p>
+        <p className="ui-intro__eyebrow">Naveen · UI/UX Designer · Interactive portfolio</p>
         <h1 className="ui-intro__title">
           <span>Mindscape</span>
           <span className="ui-intro__title-street">AVENUE</span>

@@ -194,17 +194,31 @@ async function runProjects(browser) {
   await sleep(600)
   await shot(page, '35-menu-workflow')
   // quick travel to the café, then open it with E
-  await page.locator('.ui-place', { hasText: 'Lumen Café' }).click()
+  await page.locator('.ui-place', { hasText: 'NFC Solutions' }).click()
   await sleep(2500)
   await shot(page, '36-travel-cafe')
   const near = await page.evaluate(() => document.querySelector('.ui-prompt.is-visible')?.textContent ?? null)
-  console.log('prompt near café:', near)
+  console.log('prompt near NFC Solutions:', near)
   await page.keyboard.press('KeyE')
   await sleep(2200)
-  await shot(page, '37-cafe-open')
+  await sleep(4500)
+  await shot(page, '37-office-inside')
+  // story card in the Design Park
+  await page.evaluate(() => window.__teleport(-21.6, 22.4, Math.PI))
+  await sleep(2500)
+  await page.keyboard.press('KeyE')
+  await sleep(2000)
+  await shot(page, '38-process-card')
+  console.log('story card:', await page.evaluate(() => document.querySelector('.ui-panel.is-visible h2')?.textContent ?? null))
   await page.keyboard.press('Escape')
-  await sleep(1600)
-  await shot(page, '38-cafe-closed')
+  await sleep(1000)
+  await page.evaluate(() => window.__teleport(-25.5, 21.5, Math.PI))
+  await sleep(2500)
+  await page.keyboard.press('KeyE')
+  await sleep(2000)
+  await shot(page, '39-ai-card')
+  console.log('ai card:', await page.evaluate(() => document.querySelector('.ui-panel.is-visible h2')?.textContent ?? null))
+  await page.keyboard.press('Escape')
   // sound toggle persistence
   await page.getByRole('button', { name: /Mute sound|Turn sound on/ }).click()
   const pref = await page.evaluate(() => localStorage.getItem('mindscape-avenue:sound'))
@@ -310,20 +324,31 @@ async function runTour(browser) {
   await start(page)
   await page.keyboard.press('Escape')
   const stops = [
-    ['50-store', -3.5, -27, -Math.PI / 2],
-    ['51-plaza', 8, -22, Math.PI / 2 + 0.3],
-    ['52-park', -6.5, 22, -Math.PI / 2 - 0.3],
-    ['53-cafe', 4, 22, Math.PI / 2 + 0.4],
-    ['54-north', 3, -47, Math.PI],
-    ['55-gallery', -24, -52, Math.PI - 0.4],
-    ['56-avenue-south', 0, -40, 0],
-    ['57-park-inside', -25.5, 12, Math.PI],
-    ['58-east-edge', 52, 20, -Math.PI / 2],
+    ['50-education', 2.5, -47, Math.PI - 0.1],
+    ['51-nfc-office', 6.5, 21.5, Math.PI / 2 + 0.35],
+    ['52-home', -6.4, -21.5, -Math.PI / 2 - 0.4],
+    ['53-design-park', -13.5, 25.2, Math.PI + 0.3],
+    ['54-ai-area', -21, 25, -Math.PI / 2],
+    ['55-project-district', 8, -22, Math.PI / 2 + 0.3],
   ]
   for (const [name, x, z, yaw] of stops) {
     await page.evaluate(([x, z, yaw]) => window.__teleport(x, z, yaw), [x, z, yaw])
-    await sleep(2200)
+    await sleep(2600)
     await shot(page, name)
+  }
+  // enter each building through its door
+  for (const [name, x, z, yaw] of [['60-enter-education', 0, -55.4, Math.PI], ['61-enter-office', 13.2, 17, Math.PI / 2], ['62-enter-home', -11.6, -25, -Math.PI / 2]]) {
+    await page.evaluate(([x, z, yaw]) => window.__teleport(x, z, yaw), [x, z, yaw])
+    await sleep(1400)
+    await page.keyboard.press('KeyE')
+    await sleep(1800)
+    await shot(page, name + '-establish')
+    await sleep(3200)
+    await shot(page, name + '-inside')
+    await page.keyboard.down('KeyW'); await sleep(1500); await page.keyboard.up('KeyW')
+    await sleep(600)
+    await shot(page, name + '-walk')
+    console.log(name, await stats(page))
   }
   console.log('stats', await stats(page))
   await ctx.close()

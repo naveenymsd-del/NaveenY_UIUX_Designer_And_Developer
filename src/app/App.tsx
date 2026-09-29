@@ -16,6 +16,8 @@ import { TipsOverlay } from '@/components/ui/TipsOverlay'
 import { TopNavigation } from '@/components/ui/TopNavigation'
 import { WebGLFallback, hasWebGL } from '@/components/ui/WebGLFallback'
 import { ZoneToast } from '@/components/ui/ZoneToast'
+import { FadeOverlay } from '@/components/ui/FadeOverlay'
+import { CompanionBubble } from '@/components/ui/CompanionBubble'
 import { useKeyboardControls } from '@/hooks/useKeyboardControls'
 import { useResponsive } from '@/hooks/useResponsive'
 import { useSoundBridge } from '@/hooks/useSoundBridge'
@@ -66,6 +68,8 @@ export function App() {
         <LocationPanel />
         <ProjectPanel />
         <ProjectRail />
+        <CompanionBubble />
+        <FadeOverlay />
         <IntroOverlay />
         <MenuOverlay />
         <LoadingScreen />
