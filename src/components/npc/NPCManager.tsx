@@ -1,4 +1,4 @@
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useRapier } from '@react-three/rapier'
 import { useMemo, useRef } from 'react'
 import { Vector3 } from 'three'
@@ -16,6 +16,9 @@ import { createRng } from '@/utils/rng'
 import { dampAngle } from '@/utils/movement'
 import type { SeatDef } from '@/utils/buildingGen'
 import { NPC, type NPCHandle } from './NPC'
+import { COLLEAGUES } from '@/data/colleagues'
+import { nameTag } from '@/components/ui/NameTag'
+import type { SpecialPose } from '@/core/runtime'
 
 type Kind = 'walker' | 'wander' | 'sit' | 'talk' | 'still' | 'greeter'
 
@@ -49,7 +52,18 @@ export interface Agent {
   basePose: CharacterAnim['pose']
   greeted: boolean
   greetT: number
+  /** colleague shown on approach (never permanently) */
+  name?: string
+  role?: string
+  fidget?: SpecialPose[]
+  fidgetT: number
+  fidgetOn: boolean
 }
+
+// believable workplace wardrobe: shirts, blouses, knits and jackets in muted tones
+const OFFICE_TOPS = [0xf3f0ea, 0xdfe6ee, 0x2f3f66, 0x4f5d73, 0x6f7f68, 0xd9c7a6, 0x7a3f45, 0x3c3c40, 0xe8e2d6, 0x9fb1c4]
+const OFFICE_BOTTOMS = [0x2b2d33, 0x2e3445, 0x5d5b55, 0x8a7a64, 0x1f2126, 0x4b4038]
+const OFFICE_SHOES = [0x2a2626, 0x5b3f2c, 0x2a2626, 0xf3f1ec, 0x3d3530]
 
 const FAR = 78
 const MID = 46
@@ -132,16 +146,33 @@ export function NPCManager() {
   const shadowDist = qualitySettings(quality).npcShadowDistance
   const { world, rapier } = useRapier()
   const frame = useRef(0)
+  const camera = useThree((s) => s.camera)
+  const size = useThree((s) => s.size)
+  const tagState = useRef({ id: '', shown: false })
 
   const agents = useMemo(() => {
     const rng = createRng(606)
     const list: Agent[] = []
     let n = 0
-    const base = (kind: Kind, x: number, z: number, yaw: number, outfit?: 'office' | 'student' | 'teacher', prop?: HandProp): Agent => {
+    const base = (kind: Kind, x: number, z: number, yaw: number, outfit?: 'office' | 'student' | 'teacher', prop?: HandProp, name?: string): Agent => {
+      const colleague = name ? COLLEAGUES.find((c) => c.name === name) : undefined
+      const lookFor = colleague?.look ?? (n % 3 === 1 ? 'b' : 'a')
       const seed = 11 + n++ * 17
       const r = createRng(seed)
       const over: Partial<CharacterLook> = { prop: prop ?? 'none' }
-      if (outfit === 'office') Object.assign(over, { topStyle: r.pick(['shirt', 'blouse', 'sweater', 'jacket'] as const), accessory: r.chance(0.55) ? 'lanyard' : 'none', bottomStyle: r.chance(0.2) ? 'skirt' : 'trousers', longSleeves: true })
+      if (outfit === 'office') {
+        const b = lookFor === 'b'
+        Object.assign(over, {
+          topStyle: b ? r.pick(['blouse', 'shirt', 'sweater', 'jacket'] as const) : r.pick(['shirt', 'shirt', 'sweater', 'jacket'] as const),
+          hairStyle: b ? r.pick(['long', 'bun', 'ponytail', 'side'] as const) : r.pick(['short', 'side', 'short', 'buzz', 'curly'] as const),
+          bottomStyle: b && r.chance(0.35) ? 'skirt' : 'trousers',
+          top: r.pick(OFFICE_TOPS), topAccent: r.pick([0xf3f0ea, 0xe8e2d6, 0x3c3c40]), bottom: r.pick(OFFICE_BOTTOMS), shoes: r.pick(OFFICE_SHOES),
+          accessory: r.chance(0.4) ? 'lanyard' : r.chance(0.25) ? 'glasses' : 'none',
+          longSleeves: r.chance(0.75),
+          height: b ? r.range(0.93, 0.99) : r.range(0.98, 1.05),
+          build: b ? r.range(0.9, 0.98) : r.range(0.98, 1.08),
+        })
+      }
       if (outfit === 'student') Object.assign(over, { accessory: r.chance(0.6) ? 'backpack' : 'totebag', topStyle: r.pick(['hoodie', 'tee', 'sweater'] as const) })
       if (outfit === 'teacher') Object.assign(over, { topStyle: 'jacket', accessory: 'glasses', bottomStyle: 'trousers' })
       const look = randomLook(seed, over)
@@ -151,6 +182,7 @@ export function NPCManager() {
         pos: new Vector3(x, SIDEWALK_Y, z), seg: 1, dir: 1, pauseChance: 0.2, wait: 0,
         target: new Vector3(), talkTimer: rng.range(0, 4), groundY: SIDEWALK_Y, groundTimer: rng.range(0, 0.5), handle: null, lod: 0,
         seated: false, baseYaw: yaw, basePose: 'none', greeted: false, greetT: 0,
+        name: colleague?.name, role: colleague?.role, fidgetT: 6 + rng.range(0, 12), fidgetOn: false,
       }
     }
     for (const w of WALKERS) {
@@ -192,7 +224,8 @@ export function NPCManager() {
     // people inside the rooms
     for (const p of INTERIOR_PEOPLE) {
       const [x, y, z] = roomToWorld(p.room, p.x, p.z, p.seatY ?? 0)
-      const a = base(p.greeter ? 'greeter' : 'still', x, z, p.yaw, p.outfit, p.prop)
+      const a = base(p.greeter ? 'greeter' : 'still', x, z, p.yaw, p.outfit, p.prop, p.name)
+      a.fidget = p.fidget
       a.pos.y = y
       a.anim.pose = p.pose
       a.basePose = p.pose
@@ -205,7 +238,7 @@ export function NPCManager() {
         return [w[0], w[2]] as [number, number]
       })
       const route: RouteDef = { id: `room-${r.room}-${i}`, mode: 'loop', points }
-      const a = base('walker', route.points[0][0], route.points[0][1], 0, r.room === 'office' ? 'office' : 'student', r.room === 'office' ? 'cup' : 'none')
+      const a = base('walker', route.points[0][0], route.points[0][1], 0, r.room === 'office' ? 'office' : 'student', r.prop ?? 'none', r.name)
       a.pos.y = 0
       a.route = route
       a.seg = 1
@@ -253,6 +286,7 @@ export function NPCManager() {
       }
       a.handle?.sync(a.pos, a.yaw)
     }
+    updateNameTag(agents, tagState.current, camera, size)
   }, -1)
 
   return (
@@ -265,6 +299,66 @@ export function NPCManager() {
 }
 
 const _to = new Vector3()
+const _tag = new Vector3()
+
+/** proximity name card: the nearest named colleague within reach */
+function updateNameTag(agents: Agent[], st: { id: string; shown: boolean }, camera: import('three').Camera, size: { width: number; height: number }) {
+  const card = nameTag.card
+  const anchor = nameTag.anchor
+  if (!card || !anchor) return
+  const g = useGameStore.getState()
+  const p = playerRuntime.position
+  let best: Agent | null = null
+  let bd = 2.9
+  if (g.phase === 'playing' && !g.activeLocationId && !g.activeProjectId && !g.establishing) {
+    for (const a of agents) {
+      if (!a.name || a.lod > 0) continue
+      const d = Math.hypot(a.pos.x - p.x, a.pos.z - p.z)
+      if (d < bd && Math.abs(a.pos.y - p.y) < 1.5) {
+        bd = d
+        best = a
+      }
+    }
+  }
+  if (best) {
+    if (st.id !== best.id) {
+      st.id = best.id
+      if (nameTag.name) nameTag.name.textContent = best.name!
+      if (nameTag.role) nameTag.role.textContent = best.role ?? ''
+    }
+    _tag.set(best.pos.x, best.pos.y + (best.seated ? 1.55 : 2.08) * best.look.height, best.pos.z).project(camera)
+    if (_tag.z < 1) {
+      const x = (_tag.x * 0.5 + 0.5) * size.width
+      const y = (-_tag.y * 0.5 + 0.5) * size.height
+      anchor.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`
+      if (!st.shown) {
+        st.shown = true
+        card.classList.add('is-visible')
+      }
+      return
+    }
+  }
+  if (st.shown) {
+    st.shown = false
+    card.classList.remove('is-visible')
+  }
+}
+
+/** occasional alternate poses (a phone check, a stretch, a glance) on a random clock */
+function fidget(a: Agent, dt: number) {
+  if (!a.fidget?.length) return
+  a.fidgetT -= dt
+  if (a.fidgetT > 0) return
+  if (a.fidgetOn) {
+    a.fidgetOn = false
+    a.anim.pose = a.basePose
+    a.fidgetT = 7 + Math.random() * 14
+  } else {
+    a.fidgetOn = true
+    a.anim.pose = a.fidget[Math.floor(Math.random() * a.fidget.length)]
+    a.fidgetT = 2.5 + Math.random() * 3.5
+  }
+}
 
 /**
  * Scripted but natural office greeting: shortly after the player walks in,
@@ -330,6 +424,7 @@ function update(a: Agent, dt: number, all: Agent[]) {
   if (a.kind === 'sit' || a.kind === 'still') {
     anim.speed = 0
     anim.state = 'idle'
+    fidget(a, dt)
     return
   }
   if (a.kind === 'talk') {

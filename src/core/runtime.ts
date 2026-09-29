@@ -48,15 +48,19 @@ export function createAnim(overrides: Partial<CharacterAnim> = {}): CharacterAni
 
 export const SPAWN = new Vector3(0, 0.16, 72.5)
 export const SPAWN_YAW = Math.PI // facing north (-z)
+/** during the intro the avatar faces the hero camera; it turns up the avenue on start */
+export const INTRO_FACING = 0.32
 
 export const playerRuntime = {
   position: SPAWN.clone(),
   velocity: new Vector3(),
-  yaw: SPAWN_YAW,
+  yaw: INTRO_FACING,
   grounded: true,
   anim: createAnim(),
   lastSafe: SPAWN.clone(),
   teleportRequest: null as null | { position: Vector3; yaw?: number },
+  /** turn on the spot toward this yaw (intro hand-off, greetings); cleared when reached */
+  faceYaw: null as number | null,
   onFootstep: new Set<(run: boolean) => void>(),
   onJump: new Set<() => void>(),
   onLand: new Set<(impact: number) => void>(),

@@ -93,7 +93,7 @@ export function streetLamp(ctx: GenContext, rng: Rng, style: 'classic' | 'modern
     b.add('cone', pole, [0.9, 4.45, 0], [0.5, 0.26, 0.5])
     if (rng.chance(0.5)) {
       // hanging flower basket / banner
-      b.box(rng.pick([PALETTE.coral, PALETTE.teal, PALETTE.lilac, PALETTE.mustard]), [-0.22, 3.1, 0], [0.04, 1.0, 0.5], { mat: 'fabric', cast: false })
+      b.box(rng.pick([PALETTE.coral, PALETTE.teal, PALETTE.sage, PALETTE.mustard]), [-0.22, 3.1, 0], [0.04, 1.0, 0.5], { mat: 'fabric', cast: false })
     }
     const [wx, , wz] = b.toWorld(0.9, 0, 0)
     ctx.lamps.push([wx, 4.1, wz])
@@ -133,7 +133,7 @@ export function bin(b: PartBuilder, color: number = PALETTE.teal) {
 }
 
 export function planter(b: PartBuilder, rng: Rng, w = 1.4, d = 0.8) {
-  b.add('rbox', rng.pick([0xe8e0ee, 0xf6ecdc, PALETTE.terracotta, 0xcfc6db]), [0, 0.3, 0], [w, 0.6, d])
+  b.add('rbox', rng.pick([0xdcd6cb, 0xe9e2d6, PALETTE.terracotta, 0x8f8b86]), [0, 0.3, 0], [w, 0.6, d])
   b.box(PALETTE.soil, [0, 0.58, 0], [w - 0.15, 0.04, d - 0.15], { cast: false })
   const n = Math.max(2, Math.round(w / 0.5))
   for (let i = 0; i < n; i++) {
@@ -181,7 +181,7 @@ export function busStop(ctx: GenContext, name: string) {
   b.box(frame, [1.8, 1.25, -0.5], [0.1, 2.5, 0.1])
   b.box(frame, [-1.8, 1.25, 0.5], [0.1, 2.5, 0.1])
   b.box(frame, [1.8, 1.25, 0.5], [0.1, 2.5, 0.1])
-  b.box(PALETTE.periwinkle, [0, 2.55, 0], [3.9, 0.12, 1.4])
+  b.box(PALETTE.charcoal, [0, 2.55, 0], [3.9, 0.12, 1.4])
   b.box(0xb8d4ef, [0, 1.35, -0.5], [3.6, 2.0, 0.04], { mat: 'glass', cast: false })
   b.box(PALETTE.walnut, [0, 0.5, -0.25], [3.0, 0.08, 0.4])
   // ad panel

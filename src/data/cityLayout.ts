@@ -235,13 +235,13 @@ function backdrop(): BuildingDef[] {
   for (let z = -80; z <= 100; z += 14) ring.push([86 + rng.range(0, 10), z, 'W'])
   for (const [x, z, f] of ring) {
     const tall = rng.chance(0.45)
-    out.push(B(x, z, rng.range(10, 13), rng.range(10, 14), f, tall ? 'tower' : 'apartment', tall ? rng.int(7, 13) : rng.int(4, 7), { palette: rng.int(0, 11), backdrop: true }))
+    out.push(B(x, z, rng.range(10, 13), rng.range(10, 14), f, tall ? 'tower' : 'apartment', tall ? rng.int(7, 13) : rng.int(4, 7), { palette: rng.pick([0, 1, 3, 5, 9, 11]), backdrop: true }))
   }
   // a second layer of towers for the skyline silhouette
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2
     const r = rng.range(125, 150)
-    out.push(B(Math.cos(a) * r, 15 + Math.sin(a) * r, rng.range(12, 18), rng.range(12, 18), 'S', 'tower', rng.int(10, 18), { palette: rng.int(0, 11), backdrop: true }))
+    out.push(B(Math.cos(a) * r, 15 + Math.sin(a) * r, rng.range(12, 18), rng.range(12, 18), 'S', 'tower', rng.int(10, 18), { palette: rng.pick([0, 1, 3, 5, 9, 11]), backdrop: true }))
   }
   return out
 }

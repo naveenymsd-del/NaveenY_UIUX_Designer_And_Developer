@@ -3,6 +3,7 @@ import { BLOCKS, BUILDINGS, ROADS, footprint } from '@/data/cityLayout'
 import { LOCATIONS, type InteractiveDef } from '@/data/locations'
 import { controlsEnabled, useGameStore } from '@/stores/gameStore'
 import { usePlayerStore } from '@/stores/playerStore'
+import { useCurrentPlace } from '@/hooks/useCurrentPlace'
 
 const VIEW = { x0: -60, x1: 60, z0: -80, z1: 94 }
 
@@ -17,6 +18,8 @@ const ICONS: Record<Icon, string> = {
   info: 'M0 -3 V-2.6 M0 -1 V3.5',
 }
 const MARKERS = LOCATIONS.filter((l) => l.marker)
+/** which marker the "where am I" label corresponds to */
+const HERE: Record<string, string> = { 'Education Campus': 'education', 'NFC Solutions': 'nfc', 'My Home': 'home', 'Design Park': 'park-ai' }
 
 /** North-up neighbourhood map with the five story destinations and a live player marker. */
 export function Minimap() {
@@ -26,6 +29,7 @@ export function Minimap() {
   const mode = useGameStore((s) => s.mode)
   const interior = useGameStore((s) => s.interior)
   const visible = phase === 'playing' && mode === 'street' && !interior
+  const here = HERE[useCurrentPlace().name]
   return (
     <div className={`ui-minimap ${visible ? 'is-visible' : ''} ${enabled ? '' : 'is-dim'}`} aria-hidden="true">
       <svg viewBox={`${VIEW.x0} ${VIEW.z0} ${VIEW.x1 - VIEW.x0} ${VIEW.z1 - VIEW.z0}`} preserveAspectRatio="xMidYMid slice">
@@ -35,13 +39,24 @@ export function Minimap() {
           const near = nearby === l.id
           const w = m.label.length * 3.7 + 14
           return (
-            <g key={l.id} transform={`translate(${l.position[0]} ${l.position[2]})`} className={`ui-minimap__marker ${near ? 'is-near' : ''}`} style={{ ['--accent' as string]: l.accent }}>
+            <g key={l.id} transform={`translate(${m.mapAt?.[0] ?? l.position[0]} ${m.mapAt?.[1] ?? l.position[2]})`} className={`ui-minimap__marker ${near ? 'is-near' : ''} ${here === l.id ? 'is-here' : ''}`} style={{ ['--accent' as string]: l.accent }}>
               <rect x={-w / 2} y={-5.5} width={w} height={11} rx={5.5} className="ui-minimap__label-bg" />
               <g transform={`translate(${-w / 2 + 6.5} 0) scale(0.62)`}>
                 <circle r={6.2} className="ui-minimap__icon-bg" />
                 <path d={ICONS[m.icon]} className="ui-minimap__icon" />
               </g>
               <text x={3.5} textAnchor="middle" y={1.9} className="ui-minimap__label">{m.label}</text>
+              {m.sub && (
+                // projects live inside this building: a small tethered chip
+                <g transform="translate(0 10.5)">
+                  <path d="M0 -5 V-2.6" stroke="currentColor" strokeWidth={0.6} className="ui-minimap__tether" />
+                  <rect x={-(m.sub.length * 1.25 + 8) / 2} y={-2.6} width={m.sub.length * 1.25 + 8} height={6.2} rx={3.1} className="ui-minimap__sub-bg" />
+                  <g transform={`translate(${-(m.sub.length * 1.25 + 8) / 2 + 3.4} 0.5) scale(0.32)`}>
+                    <path d={ICONS.projects} className="ui-minimap__icon" style={{ stroke: '#fff' }} />
+                  </g>
+                  <text x={1.6} y={1.8} textAnchor="middle" className="ui-minimap__sub">{m.sub}</text>
+                </g>
+              )}
             </g>
           )
         })}

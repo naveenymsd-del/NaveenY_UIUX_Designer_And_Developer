@@ -55,7 +55,7 @@ export interface GenContext {
 
 const LIT = [PALETTE.windowLit, PALETTE.windowLit2, PALETTE.windowLit3, 0xffc6c0, 0xffe2b0]
 const GLASS = [0x7d8fc4, 0x8aa2d2, 0x7686b9, 0x93a9d8, 0x6f94b8]
-const ROOF_FLAT = 0xb9b1c9
+const ROOF_FLAT = 0x8f8b86 // membrane roof: warm grey
 
 export function lighten(c: number, amt: number) {
   const r = Math.min(255, ((c >> 16) & 255) + amt)
@@ -389,8 +389,8 @@ export function flatRoof(ctx: GenContext, s: Spec) {
     const pz = rng.range(-d / 2 + 1.4, d / 2 - 1.8)
     const k = rng.next()
     if (k < 0.4) {
-      b.box(0xe8e4ee, [px, H + 0.6, pz], [1.2, 0.7, 0.9])
-      b.add('cyl', 0x8c86a3, [px, H + 0.97, pz], [0.7, 0.04, 0.7], { cast: false })
+      b.box(0xc9c6c0, [px, H + 0.6, pz], [1.2, 0.7, 0.9])
+      b.add('cyl', 0x7d7a76, [px, H + 0.97, pz], [0.7, 0.04, 0.7], { cast: false })
     } else if (k < 0.6 && s.floors >= 4) {
       // water tank
       b.add('cyl', PALETTE.cocoa, [px, H + 1.9, pz], [1.5, 1.6, 1.5])
@@ -403,7 +403,7 @@ export function flatRoof(ctx: GenContext, s: Spec) {
       b.box(PALETTE.charcoal, [px, H + 1.2, pz + 0.91], [0.8, 1.7, 0.03], { cast: false })
     } else if (k < 0.88) {
       // solar panels
-      for (let j = 0; j < 3; j++) b.box(0x3a4a8a, [px + j * 1.1 - 1.1, H + 0.75, pz], [1.0, 0.05, 1.5], { rot: [-0.45, 0, 0], mat: 'glass' })
+      for (let j = 0; j < 3; j++) b.box(0x2c3544, [px + j * 1.1 - 1.1, H + 0.75, pz], [1.0, 0.05, 1.5], { rot: [-0.45, 0, 0], mat: 'glass' })
     } else {
       // antenna + dish
       b.add('cyl8', PALETTE.slate, [px, H + 1.6, pz], [0.06, 2.6, 0.06], { cast: false })

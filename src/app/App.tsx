@@ -18,6 +18,9 @@ import { WebGLFallback, hasWebGL } from '@/components/ui/WebGLFallback'
 import { ZoneToast } from '@/components/ui/ZoneToast'
 import { FadeOverlay } from '@/components/ui/FadeOverlay'
 import { CompanionBubble } from '@/components/ui/CompanionBubble'
+import { FinalPanel } from '@/components/ui/FinalPanel'
+import { NameTag } from '@/components/ui/NameTag'
+import { initJourney } from '@/core/journey'
 import { useKeyboardControls } from '@/hooks/useKeyboardControls'
 import { useResponsive } from '@/hooks/useResponsive'
 import { useSoundBridge } from '@/hooks/useSoundBridge'
@@ -36,13 +39,14 @@ export function App() {
   useSoundBridge()
 
   useEffect(() => initRouter(), [])
+  useEffect(() => initJourney(), [])
 
   useEffect(() => {
     const setLoading = useGameStore.getState().setLoading
     const fonts = Promise.all([
-      document.fonts.load('700 48px "Outfit Variable"'),
-      document.fonts.load('800 48px "Inter Variable"', 'MINDSCAPE AVENUE'),
-      document.fonts.load('600 24px "Inter Variable"'),
+      document.fonts.load('640 48px "Bricolage Grotesque Variable"', 'NAVEEN'),
+      document.fonts.load('800 48px "Bricolage Grotesque Variable"', 'NFC SOLUTIONS'),
+      document.fonts.load('500 24px "Instrument Sans Variable"'),
     ])
       .then(() => document.fonts.ready)
       .catch(() => undefined)
@@ -67,6 +71,8 @@ export function App() {
         <TipsOverlay />
         <LocationPanel />
         <ProjectPanel />
+        <FinalPanel />
+        <NameTag />
         <ProjectRail />
         <CompanionBubble />
         <FadeOverlay />

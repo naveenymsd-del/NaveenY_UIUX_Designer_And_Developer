@@ -298,8 +298,8 @@ export class AtlasBuilder {
 // Painters used by the city generator
 // ---------------------------------------------------------------------------
 
-export const UI_FONT = '"Outfit Variable", "Outfit", "Inter Variable", system-ui, sans-serif'
-export const GREEK_FONT = '"Inter Variable", "Inter", system-ui, sans-serif'
+export const UI_FONT = '"Bricolage Grotesque Variable", "Instrument Sans Variable", system-ui, sans-serif'
+export const GREEK_FONT = '"Instrument Sans Variable", system-ui, sans-serif'
 
 export interface SignStyle {
   bg: string

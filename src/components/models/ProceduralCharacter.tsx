@@ -178,11 +178,15 @@ export function ProceduralCharacter({ anim, look, castShadow = true, detail = 'h
       p.spinePitch = 0.02
       p.spineYaw = Math.sin(t * 0.21) * 0.03
       p.chestPitch = -0.02 + breath * 0.012
-      p.armL = 0.05 + breath * 0.01
-      p.armR = 0.05 - breath * 0.01
-      p.armOutL = 0.07
-      p.armOutR = -0.07
-      p.elbowL = p.elbowR = 0.14
+      // relaxed, not a mannequin: arms slightly forward and away from the hips,
+      // elbows softly bent, hands loosely curled; the weight side's arm hangs a touch lower
+      p.armL = 0.07 + breath * 0.01 + pos(shift) * 0.03
+      p.armR = 0.07 - breath * 0.01 + pos(-shift) * 0.03
+      p.armOutL = 0.11 + pos(-shift) * 0.02
+      p.armOutR = -0.11 - pos(shift) * 0.02
+      p.elbowL = 0.24 + pos(shift) * 0.05
+      p.elbowR = 0.24 + pos(-shift) * 0.05
+      p.handL = p.handR = 0.12
       p.headYaw = s.lookYaw * (1 - ov.talk * 0.6) * (1 - ov.work)
       p.headPitch = -0.02 + Math.sin(t * 0.7) * 0.02
       p.headRoll = -shift * 0.02

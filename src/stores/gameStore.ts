@@ -4,6 +4,8 @@ import type { InteriorId } from '@/data/interiors'
 
 export type Phase = 'loading' | 'intro' | 'transition' | 'playing'
 export type Mode = 'street' | 'projects'
+/** the journey's milestones (drives companion guidance and the menu's progress) */
+export type Place = 'education' | 'home' | 'office' | 'park' | 'ai' | 'projects' | 'final'
 
 export interface LoadingState {
   worldReady: boolean
@@ -40,6 +42,9 @@ interface GameState {
   fade: boolean
   /** establishing camera shot after entering a room */
   establishing: InteriorId | null
+  /** named spot inside the room the establishing shot frames (e.g. the Project Studio) */
+  establishSpot: string | null
+  discovered: Place[]
   /** location whose camera shot is shown during an approach (before a fade) */
   cameraShot: string | null
   /** feedback pulses consumed by fx */
@@ -59,6 +64,7 @@ interface GameState {
   clearZoneToast: () => void
   setTipsOpen: (open: boolean) => void
   firePulse: (kind: 'open' | 'close' | 'enter' | 'select') => void
+  discover: (place: Place) => void
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -80,6 +86,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   interiorSince: 0,
   fade: false,
   establishing: null,
+  establishSpot: null,
+  discovered: [],
   cameraShot: null,
   pulse: null,
 
@@ -110,6 +118,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   clearZoneToast: () => set({ zoneToast: null }),
   setTipsOpen: (tipsOpen) => set({ tipsOpen }),
   firePulse: (kind) => set({ pulse: { kind, at: performance.now() } }),
+  discover: (place) => set((s) => (s.discovered.includes(place) ? s : { discovered: [...s.discovered, place] })),
 }))
 
 /** True when the player should receive movement input. */

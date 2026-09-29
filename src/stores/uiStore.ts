@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { detectQuality, isTouchDevice, type Quality } from '@/utils/performance'
 
-export type MenuSection = 'home' | 'about' | 'projects' | 'workflow' | 'contact' | 'places'
+export type MenuSection = 'places' | 'about' | 'workflow' | 'contact' | 'feedback'
 
 const SOUND_KEY = 'mindscape-avenue:sound'
 
@@ -31,7 +31,7 @@ interface UIState {
 
 export const useUIStore = create<UIState>((set, get) => ({
   menuOpen: false,
-  menuSection: 'home',
+  menuSection: 'places',
   soundEnabled: readSoundPref(),
   isTouch: isTouchDevice(),
   quality: detectQuality(),

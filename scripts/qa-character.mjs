@@ -1,0 +1,22 @@
+// Close-ups of the player avatar: hero (front 3/4), then walking/running from behind.
+import { chromium } from 'playwright-core'
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe', args: ['--use-angle=d3d11'] })
+const p = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage()
+const errors = []
+p.on('pageerror', (e) => errors.push(e.message))
+await p.goto('http://localhost:5173/street?desktop')
+await p.waitForFunction(() => document.querySelector('.ui-intro__skip'), null, { timeout: 90000 })
+await sleep(800)
+await p.keyboard.press('Escape')
+await sleep(2600)
+await p.screenshot({ path: 'qa-screens/96-avatar-hero.png', clip: { x: 760, y: 280, width: 520, height: 520 } })
+await p.getByRole('button', { name: 'Start exploring' }).click()
+await sleep(4200)
+await p.keyboard.down('KeyW'); await sleep(1400)
+await p.screenshot({ path: 'qa-screens/97-avatar-walk.png' })
+await p.keyboard.down('ShiftLeft'); await sleep(1200)
+await p.screenshot({ path: 'qa-screens/98-avatar-run.png' })
+await p.keyboard.up('ShiftLeft'); await p.keyboard.up('KeyW')
+console.log('errors:', errors.length ? errors : 'none')
+await b.close()

@@ -1,25 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
-import { navigate } from '@/app/routes'
+import { goToProjects } from '@/core/journey'
 import { soundManager } from '@/core/sound/SoundManager'
 import { getLocation, type InteractiveDef } from '@/data/locations'
 import { useGameStore } from '@/stores/gameStore'
 import { useUIStore } from '@/stores/uiStore'
-
-const isPlaceholder = (t: string) => /\[[^\]]+\]/.test(t)
-
-/** Renders text, visually flagging [PLACEHOLDER] segments so they're easy to spot and replace. */
-function Rich({ text }: { text: string }) {
-  if (!isPlaceholder(text)) return <>{text}</>
-  const parts = text.split(/(\[[^\]]+\])/)
-  return <>{parts.map((p, i) => (isPlaceholder(p) ? <mark key={i} className="ui-placeholder">{p}</mark> : <span key={i}>{p}</span>))}</>
-}
+import { Rich } from './Rich'
 
 /**
  * Compact glass card for a place or story object. It appears after the camera
  * has begun moving to the object's close-up, so the world stays the hero.
  */
 export function LocationPanel() {
-  const id = useGameStore((s) => s.activeLocationId)
+  // the Lookout has its own ending panel (FinalPanel)
+  const id = useGameStore((s) => (s.activeLocationId === 'final' ? null : s.activeLocationId))
   const close = useGameStore((s) => s.closePanels)
   const [shown, setShown] = useState<InteractiveDef | null>(null)
   const [visible, setVisible] = useState(false)
@@ -52,7 +45,7 @@ export function LocationPanel() {
     if (!c?.cta) return
     soundManager.play('click')
     close()
-    if (c.cta.action === 'projects') navigate('/projects')
+    if (c.cta.action === 'projects') goToProjects()
     else {
       useUIStore.getState().setMenuSection('contact')
       useUIStore.getState().setMenuOpen(true)

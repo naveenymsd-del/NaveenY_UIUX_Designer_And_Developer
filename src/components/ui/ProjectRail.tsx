@@ -1,6 +1,8 @@
 import { soundManager } from '@/core/sound/SoundManager'
 import { PROJECTS } from '@/data/projects'
 import { useGameStore } from '@/stores/gameStore'
+import { navigate } from '@/app/routes'
+import { goToProjects } from '@/core/journey'
 
 /** Projects mode: a rail of the five pavilions. Hover previews, click opens. */
 export function ProjectRail() {
@@ -15,8 +17,15 @@ export function ProjectRail() {
     <div className={`ui-rail ${visible ? 'is-visible' : ''} ${active ? 'is-compact' : ''}`} aria-hidden={!visible}>
       {!active && (
         <div className="ui-rail__intro">
-          <p className="ui-kicker">Project Plaza</p>
-          <h2>Five pavilions, five stories.</h2>
+          <p className="ui-kicker">Project overview</p>
+          <h2>All projects at a glance.</h2>
+          <button
+            className="ui-btn ui-btn--quiet ui-rail__studio"
+            tabIndex={visible ? 0 : -1}
+            onClick={() => { soundManager.play('open'); navigate('/street'); window.setTimeout(goToProjects, 400) }}
+          >
+            See them in the Project Studio at NFC Solutions →
+          </button>
         </div>
       )}
       <ul className="ui-rail__list">
@@ -34,7 +43,7 @@ export function ProjectRail() {
               <span className="ui-rail__num">{p.number}</span>
               <span className="ui-rail__text">
                 <b>{p.title}</b>
-                <small>{p.category}</small>
+                <small>{p.category.startsWith('[') ? 'Case study' : p.category}</small>
               </span>
             </button>
           </li>

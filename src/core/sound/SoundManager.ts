@@ -8,7 +8,17 @@ import { probeAsset } from '@/utils/assetProbe'
  * because of a missing file. The AudioContext is created on the first user
  * gesture (browser autoplay policy).
  */
-type SfxKey = 'footstep' | 'jump' | 'land' | 'click' | 'interact' | 'open' | 'close' | 'hover' | 'bell'
+type SfxKey = 'footstep' | 'jump' | 'land' | 'click' | 'interact' | 'open' | 'close' | 'hover' | 'bell' | 'companion' | 'discover' | 'screen'
+
+export type Soundscape = 'street' | 'park' | 'office' | 'education' | 'home'
+type Layer = 'street' | 'outdoor' | 'park' | 'office' | 'room'
+const SCAPES: Record<Soundscape, Record<Layer, number>> = {
+  street: { street: 1, outdoor: 1, park: 0.15, office: 0, room: 0 },
+  park: { street: 0.4, outdoor: 1.3, park: 1, office: 0, room: 0 },
+  office: { street: 0.05, outdoor: 0.04, park: 0, office: 1, room: 0.5 },
+  education: { street: 0.05, outdoor: 0.08, park: 0, office: 0.22, room: 1 },
+  home: { street: 0.04, outdoor: 0.1, park: 0, office: 0, room: 0.8 },
+}
 
 interface PlayOpts {
   volume?: number
@@ -28,6 +38,8 @@ class SoundManager {
   private engineGain: GainNode | null = null
   private timers: number[] = []
   private lastPlay = new Map<string, number>()
+  private layers: Partial<Record<Layer, GainNode>> = {}
+  private scape: Soundscape = 'street'
 
   get unlocked() {
     return !!this.ctx && this.ctx.state === 'running'
@@ -205,6 +217,19 @@ class SoundManager {
       case 'close':
         ;[784, 587, 440].forEach((f, i) => this.tone(f, 'sine', t + i * 0.06, 0.008, 0.07 * vol, 0.35))
         break
+      case 'companion':
+        // the companion's signature: a soft, rising two-note "hm-hm"
+        this.tone(660, 'sine', t, 0.012, 0.06 * vol, 0.16, 740)
+        this.tone(990, 'sine', t + 0.11, 0.012, 0.05 * vol, 0.22, 1180)
+        break
+      case 'discover':
+        ;[587, 880, 1175].forEach((f, i) => this.tone(f, 'sine', t + i * 0.09, 0.01, 0.06 * vol, 0.7))
+        break
+      case 'screen':
+        // display waking up: a faint rising hum and a soft tick
+        this.tone(180, 'sine', t, 0.05, 0.03 * vol, 0.5, 420)
+        this.tone(2200, 'sine', t + 0.18, 0.002, 0.02 * vol, 0.08)
+        break
     }
   }
 
@@ -213,8 +238,21 @@ class SoundManager {
     const ctx = this.ctx
     if (!ctx || this.loopsStarted) return
     this.loopsStarted = true
+    const layer = (name: Layer) => {
+      const g = ctx.createGain()
+      g.gain.value = SCAPES[this.scape][name]
+      g.connect(this.ambience)
+      this.layers[name] = g
+      return g
+    }
+    const streetL = layer('street')
+    const outdoorL = layer('outdoor')
+    const parkL = layer('park')
+    const officeL = layer('office')
+    const roomL = layer('room')
+    this.buildInteriorBeds(parkL, officeL, roomL)
     const amb = this.buffers.get('ambient')
-    if (amb) this.loopBuffer(amb, this.ambience, 0.6)
+    if (amb) this.loopBuffer(amb, streetL, 0.6)
     else {
       // city hum: filtered noise with a slow swell
       const src = ctx.createBufferSource()
@@ -230,13 +268,13 @@ class SoundManager {
       const lfoGain = ctx.createGain()
       lfoGain.gain.value = 0.06
       lfo.connect(lfoGain).connect(g.gain)
-      src.connect(lp).connect(g).connect(this.ambience)
+      src.connect(lp).connect(g).connect(streetL)
       src.start()
       lfo.start()
     }
     const birds = this.buffers.get('birds')
-    if (birds) this.loopBuffer(birds, this.ambience, 0.35)
-    else this.scheduleBirds()
+    if (birds) this.loopBuffer(birds, outdoorL, 0.35)
+    else this.scheduleBirds(outdoorL)
     // vehicle engine hum, gain driven by the nearest car
     const engine = ctx.createOscillator()
     engine.type = 'sawtooth'
@@ -246,7 +284,7 @@ class SoundManager {
     lp.frequency.value = 190
     this.engineGain = ctx.createGain()
     this.engineGain.gain.value = 0
-    engine.connect(lp).connect(this.engineGain).connect(this.ambience)
+    engine.connect(lp).connect(this.engineGain).connect(streetL)
     engine.start()
     const music = this.buffers.get('music')
     if (music) this.loopBuffer(music, this.musicBus, 0.5)
@@ -276,10 +314,82 @@ class SoundManager {
     this.loops = []
     this.timers.forEach((t) => clearTimeout(t))
     this.timers = []
+    // silence synthesised beds by detaching their layers
+    Object.values(this.layers).forEach((g) => g?.disconnect())
+    this.layers = {}
     this.loopsStarted = false
   }
 
-  private scheduleBirds() {
+  /** park water, office murmur + keyboard ticks, quiet room tone — all synthesised */
+  private buildInteriorBeds(parkL: GainNode, officeL: GainNode, roomL: GainNode) {
+    const ctx = this.ctx!
+    const bed = (dest: GainNode, type: BiquadFilterType, freq: number, q: number, vol: number, lfoHz = 0, lfoDepth = 0) => {
+      const src = ctx.createBufferSource()
+      src.buffer = this.noise
+      src.loop = true
+      src.playbackRate.value = 0.7 + Math.random() * 0.2
+      const f = ctx.createBiquadFilter()
+      f.type = type
+      f.frequency.value = freq
+      f.Q.value = q
+      const g = ctx.createGain()
+      g.gain.value = vol
+      if (lfoHz) {
+        const lfo = ctx.createOscillator()
+        lfo.frequency.value = lfoHz
+        const lg = ctx.createGain()
+        lg.gain.value = lfoDepth
+        lfo.connect(lg).connect(g.gain)
+        lfo.start()
+      }
+      src.connect(f).connect(g).connect(dest)
+      src.start()
+    }
+    // park: a trickle of water that swells gently
+    bed(parkL, 'bandpass', 1500, 0.6, 0.05, 0.23, 0.02)
+    // office: soft voices far off (band-limited, slowly breathing) + a low air-handling hum
+    bed(officeL, 'bandpass', 480, 0.9, 0.05, 0.31, 0.025)
+    bed(officeL, 'bandpass', 760, 1.2, 0.025, 0.47, 0.015)
+    // rooms: warm, quiet room tone
+    bed(roomL, 'lowpass', 190, 0.7, 0.07)
+    // keyboard ticks come in little typing runs while the office layer is up
+    const type = () => {
+      const g = this.layers.office
+      if (ctx.state === 'running' && this.enabled && g && g.gain.value > 0.2) {
+        const t = ctx.currentTime
+        const n = 3 + Math.floor(Math.random() * 7)
+        for (let i = 0; i < n; i++) {
+          const st = t + i * (0.07 + Math.random() * 0.09)
+          const src = ctx.createBufferSource()
+          src.buffer = this.noise
+          const f = ctx.createBiquadFilter()
+          f.type = 'bandpass'
+          f.frequency.value = 2600 + Math.random() * 1600
+          f.Q.value = 3
+          const e = ctx.createGain()
+          this.env(e, st, 0.001, 0.012 + Math.random() * 0.008, 0.02)
+          const pan = ctx.createStereoPanner()
+          pan.pan.value = Math.random() * 1.4 - 0.7
+          src.connect(f).connect(e).connect(pan).connect(g)
+          src.start(st, Math.random())
+          src.stop(st + 0.05)
+        }
+      }
+      this.timers.push(window.setTimeout(type, 700 + Math.random() * 2600))
+    }
+    this.timers.push(window.setTimeout(type, 1200))
+  }
+
+  /** Crossfade the ambience to a place (street, park, office, education, home). */
+  setSoundscape(kind: Soundscape) {
+    if (kind === this.scape) return
+    this.scape = kind
+    if (!this.ctx) return
+    const t = this.ctx.currentTime
+    for (const [name, g] of Object.entries(this.layers) as [Layer, GainNode][]) g.gain.setTargetAtTime(SCAPES[kind][name], t, 0.9)
+  }
+
+  private scheduleBirds(dest: GainNode) {
     const chirp = () => {
       const ctx = this.ctx
       if (ctx && this.enabled && ctx.state === 'running') {
@@ -296,7 +406,7 @@ class SoundManager {
           this.env(g, st, 0.01, 0.022, 0.07)
           const pan = ctx.createStereoPanner()
           pan.pan.value = Math.random() * 1.6 - 0.8
-          o.connect(g).connect(pan).connect(this.ambience)
+          o.connect(g).connect(pan).connect(dest)
           o.start(st)
           o.stop(st + 0.12)
         }

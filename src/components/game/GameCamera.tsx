@@ -3,6 +3,7 @@ import { interactionGroups, useRapier } from '@react-three/rapier'
 import { useEffect, useRef } from 'react'
 import { type PerspectiveCamera, Vector3 } from 'three'
 import { CAMERA_DEFAULTS, cameraRuntime, cinematicRuntime, playerRuntime } from '@/core/runtime'
+import { INTRO, introCamera, introRuntime } from '@/core/intro'
 import { getLocation } from '@/data/locations'
 import { INTERIORS, roomToWorld, type InteriorId } from '@/data/interiors'
 import { getProject, PROJECTS_OVERVIEW_CAMERA } from '@/data/projects'
@@ -19,8 +20,9 @@ interface CamPose {
 
 function shotKey(): string {
   const g = useGameStore.getState()
-  if (g.phase === 'loading' || g.phase === 'intro') return 'intro'
-  if (g.establishing) return `establish:${g.establishing}`
+  if (g.shotOverride) return 'override'
+  if (g.phase === 'loading' || g.phase === 'intro') return introRuntime.t >= INTRO.heroAt ? 'hero' : 'intro'
+  if (g.establishing) return `establish:${g.establishing}:${g.establishSpot ?? ''}`
   if (g.cameraShot) return `loc:${g.cameraShot}`
   if (g.activeProjectId) return `project:${g.activeProjectId}`
   if (g.activeLocationId) return `loc:${g.activeLocationId}`
@@ -32,7 +34,9 @@ function durationFor(from: string, to: string) {
   // cut instantly into a room (we are behind a fade), then ease out of the establishing shot
   if (to.startsWith('establish')) return 0.001
   if (from.startsWith('establish')) return 1.8
-  if (from === 'intro' && to === 'follow') return 3.6
+  // the flight lands exactly on the hero pose; a skip glides there instead of cutting
+  if (from === 'intro' && to === 'hero') return introRuntime.skipped ? 1.7 : 0.001
+  if ((from === 'intro' || from === 'hero') && to === 'follow') return 3.2
   if (to === 'follow') return 1.35
   if (from === 'follow') return 1.6
   if (to === 'projects' || from === 'projects') return 1.8
@@ -77,6 +81,10 @@ export function GameCamera() {
     const s = st.current
     s.time += dt
     const game = useGameStore.getState()
+    if (game.phase === 'intro') {
+      introRuntime.running = true
+      introRuntime.t += dt
+    }
 
     // ── follow camera simulation ───────────────────────────────────────
     const f = s.follow
@@ -142,10 +150,11 @@ export function GameCamera() {
       s.key = key
     }
     const live = s.live
-    if (key === 'intro') {
-      const a = 0.65 + s.time * 0.035
-      live.pos.set(Math.sin(a) * 118, 74 + Math.sin(s.time * 0.2) * 3, 12 + Math.cos(a) * 118)
-      live.target.set(0, 0, 4)
+    if (key === 'override' && game.shotOverride) {
+      live.pos.set(...game.shotOverride.position)
+      live.target.set(...game.shotOverride.target)
+    } else if (key === 'intro' || key === 'hero') {
+      introCamera(introRuntime.t, live.pos, live.target, portrait)
     } else if (key === 'follow') {
       live.pos.copy(f.pos)
       live.target.copy(followTarget)
@@ -157,14 +166,16 @@ export function GameCamera() {
       live.pos.set(c.target[0] + ox * Math.cos(a) - oz * Math.sin(a), c.position[1], c.target[2] + ox * Math.sin(a) + oz * Math.cos(a))
       live.target.set(...c.target)
     } else if (key.startsWith('establish:')) {
-      const id = key.split(':')[1] as InteriorId
-      const e = INTERIORS[id].establish
+      const [, id, spot] = key.split(':') as [string, InteriorId, string]
+      const e = (spot && INTERIORS[id].spots?.[spot]?.establish) || INTERIORS[id].establish
       const drift = Math.sin(s.time * 0.3) * 0.15
       live.pos.set(...roomToWorld(id, e.position[0] + drift, e.position[2], e.position[1]))
       live.target.set(...roomToWorld(id, e.target[0], e.target[2], e.target[1]))
     } else {
       const [kind, id] = key.split(':')
-      const shot = kind === 'project' ? getProject(id)?.camera : getLocation(id)?.cameraTarget
+      const proj = kind === 'project' ? getProject(id) : null
+      // inside the office a project is framed on its studio screen; on the street, at its pavilion
+      const shot = proj ? (game.interior === 'office' ? getLocation(`studio-${proj.id}`)?.cameraTarget : proj.camera) : getLocation(id)?.cameraTarget
       if (shot) {
         const sway = Math.sin(s.time * 0.5) * 0.12
         live.pos.set(shot.position[0] + sway, shot.position[1] + Math.sin(s.time * 0.37) * 0.06, shot.position[2])

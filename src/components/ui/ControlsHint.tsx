@@ -6,10 +6,9 @@ import { KeyCap } from './KeyCap'
 export function ControlsHint() {
   const isTouch = useUIStore((s) => s.isTouch)
   const enabled = useGameStore((s) => controlsEnabled(s))
-  const tips = useGameStore((s) => s.tipsOpen)
   if (isTouch) return null
   return (
-    <div className={`ui-hint ${enabled && !tips ? 'is-visible' : ''}`} aria-hidden={!enabled}>
+    <div className={`ui-hint ${enabled ? 'is-visible' : ''}`} aria-hidden={!enabled}>
       <span className="ui-hint__group"><KeyCap k="W" /><KeyCap k="A" /><KeyCap k="S" /><KeyCap k="D" /> Move</span>
       <span className="ui-hint__group"><KeyCap k="Shift" wide /> Run</span>
       <span className="ui-hint__group"><KeyCap k="Space" wide /> Jump</span>

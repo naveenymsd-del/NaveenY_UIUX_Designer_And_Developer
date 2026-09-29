@@ -1,128 +1,296 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
-import { Color, type Group, type Mesh, MeshBasicMaterial, MeshStandardMaterial, SphereGeometry, TorusGeometry, Vector3 } from 'three'
+import {
+  CapsuleGeometry, CircleGeometry, Color, type Group, type Mesh, MeshBasicMaterial, MeshStandardMaterial, SphereGeometry, Vector3,
+} from 'three'
+import { companion, emote, say, tickCompanion } from '@/core/companion'
+import { INTRO, introCompanion, introRuntime } from '@/core/intro'
+import { tickJourney } from '@/core/journey'
 import { playerRuntime } from '@/core/runtime'
 import { AI_AREA, PROCESS_STATIONS, getLocation } from '@/data/locations'
 import { useGameStore } from '@/stores/gameStore'
-import { damp } from '@/utils/movement'
+import { damp, dampAngle } from '@/utils/movement'
 
 /** DOM bubble the companion writes into directly (registered by CompanionBubble). */
 export const companionBubble: { anchor: HTMLElement | null; bubble: HTMLElement | null } = { anchor: null, bubble: null }
 
 const _target = new Vector3()
 const _proj = new Vector3()
+const _look = new Vector3()
+const _prev = new Vector3()
 
 /**
- * The orange AI companion: a small floating orb, not a humanoid robot. It
- * trails the player at shoulder height, leans toward nearby story objects,
- * glides to the AI area and speaks through a small bubble. Hidden indoors.
+ * The AI companion: a small orange character, not a robot and not a clock.
+ * A soft pebble body with a glossy face visor, two expressive eyes, little
+ * floating hands and a warm glow on top. It flies in during the intro, then
+ * hovers at the visitor's shoulder, looks at what matters, points the way,
+ * and reacts (wave, think, explain, excited, celebrate) — always subtly.
  */
 export function AICompanion() {
-  const group = useRef<Group>(null!)
-  const body = useRef<Mesh>(null!)
-  const halo = useRef<Mesh>(null!)
+  const root = useRef<Group>(null!)
+  const body = useRef<Group>(null!)
+  const eyeL = useRef<Mesh>(null!)
+  const eyeR = useRef<Mesh>(null!)
+  const armL = useRef<Group>(null!)
+  const armR = useRef<Group>(null!)
+  const tip = useRef<Mesh>(null!)
+  const shadow = useRef<Mesh>(null!)
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
-  const res = useMemo(
-    () => ({
-      body: new SphereGeometry(0.2, 24, 16),
-      eye: new SphereGeometry(0.03, 10, 8),
-      halo: new TorusGeometry(0.27, 0.012, 6, 40),
-      shell: new MeshStandardMaterial({ color: '#e8792e', roughness: 0.28, metalness: 0.1, emissive: new Color('#7a2f08'), emissiveIntensity: 0.25 }),
-      visor: new MeshStandardMaterial({ color: '#2a1c14', roughness: 0.15, metalness: 0.2 }),
-      eyeMat: new MeshBasicMaterial({ color: new Color(1.6, 1.4, 1.1) }),
-      haloMat: new MeshBasicMaterial({ color: '#ffd9b3', transparent: true, opacity: 0.7 }),
-    }),
-    [],
-  )
-  const st = useRef({ pos: new Vector3(0, 2, 80), t: 0, message: '', showUntil: 0, greeted: false, trailHint: false, aiHint: 0 })
+
+  const res = useMemo(() => {
+    const shell = new MeshStandardMaterial({ color: '#ec7a2c', roughness: 0.36, metalness: 0.02, emissive: new Color('#6a2606'), emissiveIntensity: 0.18 })
+    const shellLight = new MeshStandardMaterial({ color: '#f7a765', roughness: 0.42, metalness: 0 })
+    return {
+      body: new SphereGeometry(0.2, 32, 24),
+      visor: new SphereGeometry(0.2, 28, 18),
+      eye: new CapsuleGeometry(0.021, 0.026, 4, 12),
+      hand: new SphereGeometry(0.045, 16, 12),
+      tip: new SphereGeometry(0.026, 12, 10),
+      stem: new CapsuleGeometry(0.009, 0.05, 3, 6),
+      shadow: new CircleGeometry(0.22, 24),
+      shell,
+      shellLight,
+      visorMat: new MeshStandardMaterial({ color: '#1b1511', roughness: 0.12, metalness: 0.35 }),
+      eyeMat: new MeshBasicMaterial({ color: new Color(1.55, 1.3, 1.05) }),
+      tipMat: new MeshBasicMaterial({ color: new Color(1.7, 1.2, 0.75) }),
+      shadowMat: new MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.22, depthWrite: false }),
+    }
+  }, [])
+
+  const st = useRef({
+    pos: new Vector3(0, 2, 80),
+    vel: new Vector3(),
+    yaw: 0,
+    t: 0,
+    blinkAt: 2,
+    blink: 0,
+    trailHint: false,
+    aiHint: 0,
+    introFired: 0,
+    arrived: false,
+    wake: 0,
+  })
 
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, 1 / 20)
     const s = st.current
     s.t += dt
-    const g = useGameStore.getState()
-    const hide = !!g.interior || g.phase === 'loading' || g.phase === 'intro' || g.mode === 'projects'
-    group.current.visible = !hide
-    const p = playerRuntime.position
-    if (hide) {
-      s.pos.set(p.x, p.y + 2, p.z)
-      setBubble(null)
-      return
-    }
-    const yaw = playerRuntime.yaw
-    const fx = Math.sin(yaw)
-    const fz = Math.cos(yaw)
-    // default: trail behind-right of the player
-    _target.set(p.x - fz * -0.85 - fx * 0.7, p.y + 1.95, p.z + fx * -0.85 - fz * 0.7)
     const now = performance.now()
-    const dAI = Math.hypot(p.x - AI_AREA[0], p.z - AI_AREA[1])
-    const near = g.nearbyId ? getLocation(g.nearbyId) : null
-    if (dAI < 7) {
-      // glide to the heart of the AI area and circle slowly
-      const a = s.t * 0.6
-      _target.set(AI_AREA[0] + Math.cos(a) * 0.6, 2.35, AI_AREA[1] + Math.sin(a) * 0.6)
-      if (now - s.aiHint > 9000) {
-        s.aiHint = now
-        say(s, 'Let’s explore how <b>I use AI</b> — as a design partner, never the decision-maker.', 6500)
-      }
-    } else if (near && near.type === 'story') {
-      // lean toward the object being looked at
-      _target.lerp(_proj.set(near.position[0], near.position[1] + 1.5, near.position[2]), 0.45)
-    }
-    if (!s.greeted && g.phase === 'playing') {
-      s.greeted = true
-      say(s, 'Hi! I’m your AI companion. Explore <b>Naveen’s</b> neighbourhood — go anywhere.', 6000)
-    }
-    if (!s.trailHint && Math.hypot(p.x - PROCESS_STATIONS[0][0], p.z - PROCESS_STATIONS[0][1]) < 5) {
-      s.trailHint = true
-      say(s, 'Follow the stepping stones — each board is a step of the <b>design process</b>.', 6000)
-    }
-    s.pos.x = damp(s.pos.x, _target.x, 2.4, dt)
-    s.pos.y = damp(s.pos.y, _target.y, 2.0, dt)
-    s.pos.z = damp(s.pos.z, _target.z, 2.4, dt)
-    group.current.position.set(s.pos.x, s.pos.y + Math.sin(s.t * 2.1) * 0.06, s.pos.z)
-    // face the player (or the camera when talking)
-    const lookX = (now < s.showUntil ? camera.position.x : p.x) - s.pos.x
-    const lookZ = (now < s.showUntil ? camera.position.z : p.z) - s.pos.z
-    group.current.rotation.y = Math.atan2(lookX, lookZ)
-    body.current.rotation.z = Math.sin(s.t * 1.3) * 0.08
-    halo.current.rotation.x = Math.PI / 2 + Math.sin(s.t * 1.7) * 0.25
-    halo.current.rotation.y = s.t * 0.8
+    const g = useGameStore.getState()
+    const p = playerRuntime.position
+    const inIntro = g.phase === 'loading' || g.phase === 'intro'
+    const hide = g.phase === 'loading' || g.mode === 'projects'
 
-    // speech bubble
-    if (now < s.showUntil && companionBubble.anchor) {
-      _proj.copy(group.current.position).setY(group.current.position.y + 0.4).project(camera)
-      if (_proj.z < 1) {
+    // ── where to be ────────────────────────────────────────────────────
+    let visible = !hide
+    let wake = 1
+    if (inIntro) {
+      const c = introCompanion(introRuntime.t, _target)
+      visible = visible && c.visible
+      wake = c.wake
+      // intro lines, in order, once the companion has arrived
+      while (s.introFired < INTRO.messages.length && introRuntime.t >= INTRO.messages[s.introFired].at) {
+        const m = INTRO.messages[s.introFired++]
+        say(m.text, { ms: m.ms, emote: s.introFired === 1 ? 'wave' : 'explain' })
+      }
+      if (!s.arrived && introRuntime.t >= INTRO.aiArriveAt) {
+        s.arrived = true
+        emote('excited', 1400)
+      }
+    } else {
+      const yaw = playerRuntime.yaw
+      const fx = Math.sin(yaw)
+      const fz = Math.cos(yaw)
+      // hover a little ahead of the right shoulder, like a guide — away from the camera behind
+      _target.set(p.x + fx * 0.45 - fz * 0.85, p.y + 1.9, p.z + fz * 0.45 + fx * 0.85)
+      const dAI = Math.hypot(p.x - AI_AREA[0], p.z - AI_AREA[1])
+      const near = g.nearbyId ? getLocation(g.nearbyId) : null
+      if (!g.interior && dAI < 7) {
+        const a = s.t * 0.5
+        _target.set(AI_AREA[0] + Math.cos(a) * 0.6, 2.3, AI_AREA[1] + Math.sin(a) * 0.6)
+        if (now - s.aiHint > 30000) {
+          s.aiHint = now
+          say('This is where I help him <b>explore possibilities</b>. He makes the decisions.', { emote: 'think' })
+        }
+      } else if (companion.point) {
+        // step out to the side facing the destination, arm extended
+        _look.copy(companion.point).sub(p).setY(0).normalize()
+        _target.set(p.x + _look.x * 0.9 - _look.z * 0.5, p.y + 2.0, p.z + _look.z * 0.9 + _look.x * 0.5)
+      } else if (near && (near.type === 'story' || near.type === 'project')) {
+        _target.lerp(_proj.set(near.position[0], p.y + 1.7, near.position[2]), 0.35)
+      }
+      if (!g.interior && !s.trailHint && Math.hypot(p.x - PROCESS_STATIONS[0][0], p.z - PROCESS_STATIONS[0][1]) < 5) {
+        s.trailHint = true
+        say('Each stone is a step of the <b>design process</b>. Walk the trail.', { emote: 'point' })
+      }
+      tickJourney(now)
+    }
+    s.wake = damp(s.wake, wake, 5, dt)
+    // never crowd the lens: keep a comfortable distance from the camera (establishing shots, tight rooms)
+    if (!inIntro) {
+      _look.copy(_target).sub(camera.position)
+      const dc = _look.length()
+      const minD = g.interior ? 3.2 : 2.6
+      if (dc < minD) _target.copy(camera.position).addScaledVector(_look.normalize(), minD)
+    }
+
+    // ── motion ─────────────────────────────────────────────────────────
+    _prev.copy(s.pos)
+    const teleported = s.pos.distanceTo(_target) > 25 && !inIntro
+    if (teleported || (inIntro && introRuntime.t < INTRO.aiArriveAt)) s.pos.copy(_target)
+    else {
+      s.pos.x = damp(s.pos.x, _target.x, inIntro ? 6 : 2.6, dt)
+      s.pos.y = damp(s.pos.y, _target.y, inIntro ? 6 : 2.2, dt)
+      s.pos.z = damp(s.pos.z, _target.z, inIntro ? 6 : 2.6, dt)
+    }
+    s.vel.lerp(_proj.copy(s.pos).sub(_prev).divideScalar(Math.max(dt, 1e-4)), 1 - Math.exp(-6 * dt))
+
+    const e = companion.emote
+    const et = (now - companion.emoteSince) / 1000
+    let hop = 0
+    let spin = 0
+    if (e === 'excited') hop = Math.abs(Math.sin(et * 7)) * 0.07 * Math.max(0, 1 - et / 1.6)
+    if (e === 'celebrate') {
+      hop = Math.abs(Math.sin(et * 5)) * 0.1 * Math.max(0, 1 - et / 2.4)
+      spin = Math.min(1, et / 0.9) * Math.PI * 2
+    }
+    const bob = Math.sin(s.t * 2.1) * 0.035
+    root.current.visible = visible
+    root.current.position.set(s.pos.x, s.pos.y + bob + hop, s.pos.z)
+    root.current.scale.setScalar(0.55 + 0.45 * Math.min(1, s.wake * 1.4))
+
+    // facing: talk to the camera, look at pointed targets, otherwise watch the player
+    const talking = now < companion.showUntil
+    let faceX = p.x
+    let faceZ = p.z
+    if (inIntro || talking) {
+      faceX = camera.position.x
+      faceZ = camera.position.z
+    }
+    if (companion.point) {
+      faceX = companion.point.x
+      faceZ = companion.point.z
+    }
+    const want = Math.atan2(faceX - s.pos.x, faceZ - s.pos.z)
+    s.yaw = dampAngle(s.yaw, want, 5, dt)
+    root.current.rotation.y = s.yaw + spin
+    // lean into the direction of travel (body-local)
+    const cy = Math.cos(s.yaw)
+    const sy = Math.sin(s.yaw)
+    const fwd = s.vel.x * sy + s.vel.z * cy
+    const side = s.vel.x * cy - s.vel.z * sy
+    body.current.rotation.x = damp(body.current.rotation.x, Math.max(-0.35, Math.min(0.35, fwd * 0.12)), 6, dt)
+    body.current.rotation.z = damp(body.current.rotation.z, Math.max(-0.3, Math.min(0.3, -side * 0.12)) + Math.sin(s.t * 1.3) * 0.04, 6, dt)
+    if (e === 'think') body.current.rotation.z = damp(body.current.rotation.z, 0.16, 4, dt)
+
+    // ── eyes: blink, look, squint-smile ──────────────────────────────────
+    if (s.t > s.blinkAt) {
+      s.blink = 1
+      s.blinkAt = s.t + 2.6 + Math.random() * 3.6
+    }
+    s.blink = Math.max(0, s.blink - dt * 9)
+    const happy = e === 'wave' || e === 'greet' || e === 'excited' || e === 'celebrate'
+    const open = s.wake < 0.5 ? 0.1 + s.wake : 1 - (s.blink > 0.5 ? (1 - s.blink) * 2 : s.blink * 2) * 0.9
+    const eyeScaleY = happy ? 0.42 : open
+    const lookUp = e === 'think' ? 0.012 : 0
+    const lookSide = e === 'think' ? -0.01 : 0
+    for (const [m, sx] of [[eyeL.current, -1], [eyeR.current, 1]] as const) {
+      m.scale.y = damp(m.scale.y, eyeScaleY, 14, dt)
+      m.position.y = damp(m.position.y, 0.02 + lookUp + (happy ? 0.006 : 0), 10, dt)
+      m.position.x = 0.046 * sx + lookSide
+      m.rotation.z = happy ? sx * -0.35 : 0
+    }
+
+    // ── hands ───────────────────────────────────────────────────────────
+    // z rotation: negative swings the left hand outward, positive the right
+    let lz = -0.25
+    let rz = 0.25
+    let lx = 0
+    let rx = 0
+    const float = Math.sin(s.t * 2.1 + 0.6) * 0.08
+    if (e === 'wave' || e === 'greet') {
+      rz = 2.3 + Math.sin(et * 11) * 0.35
+    } else if (e === 'point' && companion.point) {
+      // right hand extends toward the target (arm points along body-forward)
+      rx = -1.35
+      rz = 0.2
+    } else if (e === 'think') {
+      lx = -1.9
+      lz = 0.6
+    } else if (e === 'explain') {
+      lx = -0.8 + Math.sin(et * 3.2) * 0.35
+      rx = -0.8 + Math.sin(et * 3.2 + 1.8) * 0.35
+      lz = -0.5
+      rz = 0.5
+    } else if (e === 'excited' || e === 'celebrate') {
+      lz = -2.3 - Math.sin(et * 12) * 0.2
+      rz = 2.3 + Math.sin(et * 12) * 0.2
+    }
+    armL.current.rotation.z = damp(armL.current.rotation.z, lz - float, 9, dt)
+    armR.current.rotation.z = damp(armR.current.rotation.z, rz + float, 9, dt)
+    armL.current.rotation.x = damp(armL.current.rotation.x, lx, 9, dt)
+    armR.current.rotation.x = damp(armR.current.rotation.x, rx, 9, dt)
+
+    // glow tip breathes; brighter while speaking
+    const glow = 0.75 + Math.sin(s.t * 2.4) * 0.15 + (talking ? 0.35 : 0)
+    ;(tip.current.material as MeshBasicMaterial).color.setRGB(1.7 * glow, 1.2 * glow, 0.75 * glow)
+
+    // soft contact shadow on the floor below
+    const floorY = inIntro ? 0.17 : p.y + 0.02
+    const h = Math.max(0.1, root.current.position.y - floorY)
+    shadow.current.position.set(s.pos.x, floorY, s.pos.z)
+    shadow.current.visible = visible && h < 4
+    res.shadowMat.opacity = Math.max(0, 0.24 - h * 0.06)
+
+    // ── speech bubble ────────────────────────────────────────────────────
+    const msg = visible ? tickCompanion(now) : null
+    if (msg && companionBubble.anchor) {
+      _proj.copy(root.current.position).setY(root.current.position.y + 0.36).project(camera)
+      if (_proj.z < 1 && Math.abs(_proj.x) < 1.1 && Math.abs(_proj.y) < 1.1) {
         const x = (_proj.x * 0.5 + 0.5) * size.width
         const y = (-_proj.y * 0.5 + 0.5) * size.height
-        companionBubble.anchor.style.transform = `translate3d(${(x + 14).toFixed(1)}px, ${(y - 10).toFixed(1)}px, 0) translate(0, -100%)`
-        setBubble(s.message)
-      } else setBubble(null)
+        const cx = Math.min(size.width - 300, Math.max(12, x + 16))
+        // lift clear of an interaction prompt above the player's head
+        const cyy = Math.max(196, y - 8 - (g.nearbyId ? 70 : 0))
+        companionBubble.anchor.style.transform = `translate3d(${cx.toFixed(1)}px, ${cyy.toFixed(1)}px, 0) translate(0, -100%)`
+        setBubble(msg)
+      } else setBubble(msg, true)
     } else setBubble(null)
   })
 
   return (
-    <group ref={group}>
-      <mesh ref={body} geometry={res.body} material={res.shell} castShadow />
-      <mesh geometry={res.body} material={res.visor} position={[0, 0.015, 0.105]} scale={[0.72, 0.42, 0.5]} />
-      <mesh geometry={res.eye} material={res.eyeMat} position={[0.055, 0.025, 0.2]} />
-      <mesh geometry={res.eye} material={res.eyeMat} position={[-0.055, 0.025, 0.2]} />
-      <mesh ref={halo} geometry={res.halo} material={res.haloMat} />
-    </group>
+    <>
+      <group ref={root}>
+        <group ref={body}>
+          <mesh geometry={res.body} material={res.shell} scale={[1, 1.1, 0.94]} castShadow />
+          {/* lighter crown so the shape reads as soft and warm, not a flat ball */}
+          <mesh geometry={res.body} material={res.shellLight} scale={[0.86, 0.5, 0.8]} position={[0, 0.1, -0.005]} />
+          {/* a rounded face screen (not a mask band) */}
+          <mesh geometry={res.visor} material={res.visorMat} scale={[0.56, 0.56, 0.52]} position={[0, 0.01, 0.098]} />
+          <mesh ref={eyeL} geometry={res.eye} material={res.eyeMat} position={[-0.046, 0.02, 0.206]} />
+          <mesh ref={eyeR} geometry={res.eye} material={res.eyeMat} position={[0.046, 0.02, 0.206]} />
+          <mesh geometry={res.stem} material={res.shell} position={[0, 0.235, -0.01]} />
+          <mesh ref={tip} geometry={res.tip} material={res.tipMat} position={[0, 0.278, -0.01]} />
+          {/* floating hands on invisible shoulders */}
+          <group ref={armL} position={[-0.215, -0.02, 0]}>
+            <mesh geometry={res.hand} material={res.shell} position={[0, -0.075, 0]} scale={[0.9, 1.15, 0.9]} />
+          </group>
+          <group ref={armR} position={[0.215, -0.02, 0]}>
+            <mesh geometry={res.hand} material={res.shell} position={[0, -0.075, 0]} scale={[0.9, 1.15, 0.9]} />
+          </group>
+        </group>
+      </group>
+      <mesh ref={shadow} geometry={res.shadow} material={res.shadowMat} rotation-x={-Math.PI / 2} renderOrder={2} />
+    </>
   )
 }
 
-function say(s: { message: string; showUntil: number }, msg: string, ms: number) {
-  s.message = msg
-  s.showUntil = performance.now() + ms
-}
-
 let lastHtml = ''
-function setBubble(html: string | null) {
+function setBubble(html: string | null, offscreen = false) {
   const el = companionBubble.bubble
   if (!el) return
-  if (html === null) {
+  if (html === null || offscreen) {
     el.classList.remove('is-visible')
     return
   }

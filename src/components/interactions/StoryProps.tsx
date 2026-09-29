@@ -6,8 +6,10 @@ import {
 } from 'three'
 import { playerRuntime } from '@/core/runtime'
 import { AI_AREA, ACTIVITY_SPOTS, PROCESS_STATIONS } from '@/data/locations'
-import { AI_WORKFLOW, DESIGN_PROCESS, EDUCATION_TIMELINE, PROFILE } from '@/data/portfolioContent'
-import { INTERIORS, roomToWorld, type InteriorId } from '@/data/interiors'
+import { AI_HUMAN_STEPS, AI_WORKFLOW, DESIGN_PROCESS, EDUCATION_TIMELINE, PROFILE } from '@/data/portfolioContent'
+import { INTERIORS, roomToWorld, studioBay, type InteriorId } from '@/data/interiors'
+import { isPlaceholder, PROJECTS, type ProjectDef } from '@/data/projects'
+import { soundManager } from '@/core/sound/SoundManager'
 import { useGameStore } from '@/stores/gameStore'
 import { damp } from '@/utils/movement'
 import { UI_FONT } from '@/utils/textures'
@@ -149,13 +151,13 @@ function AIRing() {
   const st = useRef({ inside: 0, t: 0 })
   const texes = useMemo(
     () => AI_WORKFLOW.map((label, i) => {
-      const human = i === 0 || i === 3
+      const human = AI_HUMAN_STEPS.has(label)
       return textTexture({
-        w: 256, h: 150, bg: human ? '#fdf3e9' : '#fff7ef', border: human ? '#3b3e44' : '#e8792e', align: 'center', pad: 20,
+        w: 256, h: 150, bg: human ? '#f7f4ef' : '#fff5ec', border: human ? '#2b2e34' : '#ec7a2c', align: 'center', pad: 18,
         lines: [
-          { text: `0${i + 1}`, size: 26, weight: 800, color: '#e8792e', gap: 2 },
-          { text: label.toUpperCase(), size: 26, weight: 800, color: '#3a2a1c', gap: 4 },
-          { text: human ? 'HUMAN LED' : 'AI ASSISTED', size: 16, weight: 700, color: human ? '#3b3e44' : '#b85a1c' },
+          { text: String(i + 1).padStart(2, '0'), size: 24, weight: 700, color: '#ec7a2c', gap: 2 },
+          { text: label.toUpperCase(), size: label.length > 13 ? 21 : 25, weight: 700, color: '#1f2328', gap: 4 },
+          { text: human ? 'HUMAN DECIDES' : 'AI ASSISTS', size: 15, weight: 650, color: human ? '#2b2e34' : '#b85a1c' },
         ],
       })
     }),
@@ -179,18 +181,18 @@ function AIRing() {
     <group position={[AI_AREA[0], 0.4, AI_AREA[1]]}>
       {AI_WORKFLOW.map((_, i) => {
         // panels sit between the gazebo posts, facing the centre
-        const a = (i / 8) * Math.PI * 2 + Math.PI / 8 + Math.PI / 8
-        const r = 2.55
+        const a = (i / AI_WORKFLOW.length) * Math.PI * 2 + Math.PI / 4
+        const r = 2.25
         return (
           <group key={i} position={[Math.cos(a) * r, 0, Math.sin(a) * r]} rotation-y={Math.atan2(-Math.cos(a), -Math.sin(a))}>
-            <mesh ref={(m) => { panels.current[i] = m }} geometry={G.plane} material={textMat(texes[i])} position={[0, 1.55, 0]} scale={[0.95, 0.56, 1]} />
-            <mesh geometry={G.box} material={mat('#e8792e', 0.5)} position={[0, 1.55, -0.03]} scale={[1.0, 0.61, 0.03]} />
+            <mesh ref={(m) => { panels.current[i] = m }} geometry={G.plane} material={textMat(texes[i])} position={[0, 1.55, 0]} scale={[0.82, 0.48, 1]} />
+            <mesh geometry={G.box} material={mat('#2b2e34', 0.5)} position={[0, 1.55, -0.03]} scale={[0.86, 0.52, 0.03]} />
             <mesh geometry={G.plane} material={glowMats[i]} position={[0, 1.55, -0.05]} scale={[1.2, 0.8, 1]} />
           </group>
         )
       })}
       <mesh geometry={G.cyl} material={mat('#f6ecdc', 0.6)} position={[0, 0.5, 0]} scale={[0.6, 1.0, 0.6]} castShadow />
-      <mesh geometry={G.plane} material={textMat(textTexture({ w: 300, h: 120, bg: '#2a1c14', align: 'center', pad: 18, lines: [{ text: 'AI IS MY', size: 22, weight: 700, color: '#ffd9b3', gap: 0 }, { text: 'DESIGN PARTNER', size: 30, weight: 800, color: '#ffffff' }] }))} position={[0, 1.05, 0.305]} scale={[0.56, 0.22, 1]} />
+      <mesh geometry={G.plane} material={textMat(textTexture({ w: 300, h: 120, bg: '#2a1c14', align: 'center', pad: 18, lines: [{ text: 'AI HELPS ME EXPLORE', size: 20, weight: 700, color: '#ffd9b3', gap: 2 }, { text: 'I MAKE THE DECISIONS', size: 24, weight: 800, color: '#ffffff' }] }))} position={[0, 1.05, 0.305]} scale={[0.56, 0.22, 1]} />
     </group>
   )
 }
@@ -470,6 +472,95 @@ function OfficeProps() {
   )
 }
 
+/** Canvas for a studio screen: title card + an abstract interface sketch (no invented content). */
+function screenTexture(p: ProjectDef) {
+  const c = document.createElement('canvas')
+  c.width = 1024
+  c.height = 592
+  const g = c.getContext('2d')!
+  const grad = g.createLinearGradient(0, 0, 1024, 592)
+  grad.addColorStop(0, '#111317')
+  grad.addColorStop(1, p.accent + '55')
+  g.fillStyle = '#111317'
+  g.fillRect(0, 0, 1024, 592)
+  g.fillStyle = grad
+  g.fillRect(0, 0, 1024, 592)
+  // left: the title card
+  g.fillStyle = p.accent
+  g.fillRect(64, 72, 44, 4)
+  g.fillStyle = 'rgba(247,244,239,0.6)'
+  g.font = `600 22px ${UI_FONT}`
+  g.fillText(`PROJECT ${p.number}`, 64, 122)
+  g.fillStyle = '#f7f4ef'
+  let size = 84
+  g.font = `640 ${size}px ${UI_FONT}`
+  while (g.measureText(p.title).width > 470 && size > 40) g.font = `640 ${(size -= 4)}px ${UI_FONT}`
+  g.fillText(p.title, 60, 214)
+  g.fillStyle = 'rgba(247,244,239,0.7)'
+  g.font = `500 24px ${UI_FONT}`
+  g.fillText(isPlaceholder(p.category) ? 'Case study' : p.category, 64, 262)
+  g.fillStyle = 'rgba(247,244,239,0.45)'
+  g.font = `600 18px ${UI_FONT}`
+  g.fillText('OVERVIEW · CHALLENGE · PROCESS · UI · PROTOTYPE · OUTCOME', 64, 520)
+  // right: an abstract product frame in the project accent
+  const rr = (x: number, y: number, w: number, h: number, r: number) => {
+    g.beginPath()
+    g.roundRect(x, y, w, h, r)
+    g.fill()
+  }
+  g.fillStyle = 'rgba(247,244,239,0.94)'
+  rr(600, 70, 360, 440, 22)
+  g.fillStyle = p.accent
+  rr(624, 96, 312, 64, 12)
+  g.fillStyle = 'rgba(17,19,23,0.1)'
+  for (let i = 0; i < 3; i++) rr(624, 180 + i * 72, 312, 56, 10)
+  g.fillStyle = p.accent + '88'
+  rr(624, 400, 148, 84, 10)
+  g.fillStyle = 'rgba(17,19,23,0.16)'
+  rr(788, 400, 148, 84, 10)
+  const t = new CanvasTexture(c)
+  t.colorSpace = SRGBColorSpace
+  t.anisotropy = 4
+  return t
+}
+
+/**
+ * Project Studio screens: dark until you walk up, then they wake with a soft
+ * fade (and a faint hum); the open project's screen glows a touch brighter.
+ */
+function StudioScreens() {
+  const mats = useMemo(() => PROJECTS.map((p) => new MeshBasicMaterial({ map: screenTexture(p), color: new Color(0.06, 0.06, 0.07) })), [])
+  const st = useRef(PROJECTS.map(() => ({ on: 0, woke: false })))
+  const bays = useMemo(() => PROJECTS.map((_, i) => {
+    const b = studioBay(i)
+    return { ...b, world: roomToWorld('office', b.screen[0], b.screen[1], 1.62), stand: roomToWorld('office', b.stand[0], b.stand[1]) }
+  }), [])
+  useFrame((_, dt) => {
+    const active = useGameStore.getState().activeProjectId
+    PROJECTS.forEach((p, i) => {
+      const s = st.current[i]
+      const d = distTo(bays[i].stand[0], bays[i].stand[2])
+      const want = active === p.id ? 1.12 : d < 4.4 ? 1 : 0.06
+      if (want >= 1 && !s.woke) {
+        s.woke = true
+        soundManager.play('screen', { volume: 0.7 })
+      }
+      if (want < 1 && d > 6) s.woke = false
+      s.on = easeTo(s.on, want, dt, want > s.on ? 2.6 : 1.6)
+      mats[i].color.setScalar(Math.max(0.06, s.on))
+    })
+  })
+  return (
+    <>
+      {bays.map((b, i) => (
+        <group key={PROJECTS[i].id} position={b.world} rotation-y={b.yaw}>
+          <mesh geometry={G.plane} material={mats[i]} position={[0, 0, 0.018]} scale={[2.6, 1.5, 1]} />
+        </group>
+      ))}
+    </>
+  )
+}
+
 /**
  * All story objects. Interior props only mount while the player is inside
  * that room (they're far away otherwise), keeping per-frame work minimal.
@@ -495,7 +586,12 @@ export function StoryProps() {
         </>
       )}
       {interior === 'home' && <HomeProps />}
-      {interior === 'office' && <OfficeProps />}
+      {interior === 'office' && (
+        <>
+          <OfficeProps />
+          <StudioScreens />
+        </>
+      )}
     </>
   )
 }

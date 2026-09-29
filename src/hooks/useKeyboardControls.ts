@@ -1,3 +1,4 @@
+import { skipIntro } from '@/core/intro'
 import { useEffect } from 'react'
 import { clearMovement, input, pressJump } from '@/core/input'
 import { triggerNearby } from '@/components/interactions/InteractionManager'
@@ -31,7 +32,8 @@ export function useKeyboardControls() {
       const ui = useUIStore.getState()
       const game = useGameStore.getState()
       if (e.code === 'Escape') {
-        if (ui.menuOpen) ui.setMenuOpen(false)
+        if (game.phase === 'intro') skipIntro()
+        else if (ui.menuOpen) ui.setMenuOpen(false)
         else if (game.activeLocationId || game.activeProjectId) {
           game.closePanels()
           soundManager.play('close')

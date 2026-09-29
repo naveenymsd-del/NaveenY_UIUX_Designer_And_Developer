@@ -1,84 +1,117 @@
-export interface ProjectDef {
+/**
+ * Projects — the single source of truth for every place a project appears:
+ * the Project Studio screens inside NFC Solutions, the case-study
+ * presentation, the menu and the /projects overview (street pavilions).
+ *
+ * Only facts you provide belong here. Anything unknown stays a
+ * [BRACKETED PLACEHOLDER]; the UI highlights placeholders so they are easy to
+ * find. To add a project, append an entry to PROJECT_CONTENT — a studio bay,
+ * a screen, an interaction and a case study are created automatically.
+ * Screenshots: put files in /public/projects/<id>/ and list them in `screens`.
+ */
+export interface CaseStudy {
+  overview: string
+  challenge: string
+  /** UX process, one line per step */
+  process: string[]
+  ui: string
+  designSystem: string
+  prototype: string
+  outcome: string
+}
+
+export interface ProjectContent {
   id: string
-  number: string
   title: string
+  /** e.g. "Product design · Web app" */
   category: string
   description: string
   role: string
+  /** leave empty when unknown (hidden in the UI) */
   year: string
   tools: string[]
-  color: number
+  /** image URLs, e.g. '/projects/intellistaff/dashboard.png' */
+  screens: string[]
+  caseStudy: CaseStudy
+  links: { label: string; url: string }[]
+  /** colour used on the studio screen and in the presentation */
   accent: string
-  /** pavilion ground position */
-  position: [number, number, number]
-  /** yaw of the pavilion front */
-  yaw: number
-  camera: { position: [number, number, number]; target: [number, number, number] }
-  caseStudyUrl: string
 }
 
-export const PLAZA_CENTER: [number, number] = [19, -25]
+export interface ProjectDef extends ProjectContent {
+  number: string
+  color: number
+  /** pavilion ground position (street / projects overview) */
+  position: [number, number, number]
+  yaw: number
+  camera: { position: [number, number, number]; target: [number, number, number] }
+}
 
-const raw: Omit<ProjectDef, 'yaw' | 'camera'>[] = [
+const todo = (what: string): CaseStudy => ({
+  overview: `[ADD ${what} OVERVIEW]`,
+  challenge: '[ADD PROBLEM / CHALLENGE]',
+  process: ['[ADD UX PROCESS STEPS]'],
+  ui: '[ADD UI DESIGN NOTES]',
+  designSystem: '[ADD DESIGN SYSTEM NOTES]',
+  prototype: '[ADD PROTOTYPE DETAILS]',
+  outcome: '[ADD OUTCOME]',
+})
+
+export const PROJECT_CONTENT: ProjectContent[] = [
   {
-    id: 'p01', number: '01', title: 'Lumen Identity',
-    category: 'Brand System · Web',
-    description:
-      'A living brand system for a neighbourhood café group: adaptive logo, warm type pairing and a web presence that shifts palette with the time of day.',
-    role: 'Lead Designer', year: '2025', tools: ['Figma', 'After Effects', 'React'],
-    color: 0xef8a78, accent: '#ef8a78', position: [12.5, 0.15, -37.5], caseStudyUrl: '#case-p01',
+    id: 'intellistaff', title: 'IntelliStaff', category: '[ADD PROJECT TYPE]',
+    description: '[ADD PROJECT DESCRIPTION]', role: '[ADD ROLE]', year: '', tools: [], screens: [],
+    caseStudy: todo('INTELLISTAFF'), links: [], accent: '#3f6fb5',
   },
   {
-    id: 'p02', number: '02', title: 'Tidal Mobile',
-    category: 'Product Design · iOS / Android',
-    description:
-      'A calm banking companion that turns spending into readable tides. Research-led flows, a motion language for money, and an accessible component kit.',
-    role: 'Product Designer', year: '2025', tools: ['Figma', 'Principle', 'SwiftUI'],
-    color: 0x4fb3a9, accent: '#4fb3a9', position: [19, 0.15, -39.5], caseStudyUrl: '#case-p02',
+    id: 'calmscient', title: 'Calmscient', category: '[ADD PROJECT TYPE]',
+    description: '[ADD PROJECT DESCRIPTION]', role: '[ADD ROLE]', year: '', tools: [], screens: [],
+    caseStudy: todo('CALMSCIENT'), links: [], accent: '#4f9587',
   },
   {
-    id: 'p03', number: '03', title: 'Kiln Commerce',
-    category: 'E-commerce · Art Direction',
-    description:
-      'Storefront for a ceramics studio. Tactile product photography, a slow-shopping checkout and a CMS the makers actually enjoy using.',
-    role: 'Art Director', year: '2024', tools: ['Shopify', 'Blender', 'Lightroom'],
-    color: 0xf5dd92, accent: '#e9b949', position: [25.5, 0.15, -37.5], caseStudyUrl: '#case-p03',
+    id: 'ebounti', title: 'Ebounti', category: '[ADD PROJECT TYPE]',
+    description: '[ADD PROJECT DESCRIPTION]', role: '[ADD ROLE]', year: '', tools: [], screens: [],
+    caseStudy: todo('EBOUNTI'), links: [], accent: '#c47f3a',
   },
   {
-    id: 'p04', number: '04', title: 'Orbit Workflow',
-    category: 'AI Tooling · Dashboard',
-    description:
-      'An AI-assisted design operations dashboard: prompt libraries, review queues and generated asset lineage, designed for trust and legibility.',
-    role: 'UX Lead', year: '2026', tools: ['Figma', 'TypeScript', 'Claude'],
-    color: 0x9fb2e6, accent: '#7d93dc', position: [13, 0.15, -12.5], caseStudyUrl: '#case-p04',
+    id: 'task', title: 'TASK', category: '[ADD PROJECT TYPE]',
+    description: '[ADD PROJECT DESCRIPTION]', role: '[ADD ROLE]', year: '', tools: [], screens: [],
+    caseStudy: todo('TASK'), links: [], accent: '#7466ad',
   },
   {
-    id: 'p05', number: '05', title: 'Echo Street',
-    category: 'Interactive 3D · Web Experience',
-    description:
-      'This very neighbourhood: a playable 3D portfolio built with React Three Fiber, Rapier physics and a data-driven interaction system.',
-    role: 'Creative Developer', year: '2026', tools: ['Three.js', 'R3F', 'Rapier', 'Blender'],
-    color: 0xa996d4, accent: '#a996d4', position: [25, 0.15, -12.5], caseStudyUrl: '#case-p05',
+    id: 'wastebeminerals', title: 'WasteBeMinerals', category: '[ADD PROJECT TYPE]',
+    description: '[ADD PROJECT DESCRIPTION]', role: '[ADD ROLE]', year: '', tools: [], screens: [],
+    caseStudy: todo('WASTEBEMINERALS'), links: [], accent: '#6b8c46',
   },
 ]
 
-export const PROJECTS: ProjectDef[] = raw.map((p) => {
-  const dx = PLAZA_CENTER[0] - p.position[0]
-  const dz = PLAZA_CENTER[1] - p.position[2]
+export const PLAZA_CENTER: [number, number] = [19, -25]
+
+/** pavilion lots around the plaza (the /projects overview); extra projects reuse lots */
+const PAVILIONS: [number, number, number][] = [
+  [12.5, 0.15, -37.5], [19, 0.15, -39.5], [25.5, 0.15, -37.5], [13, 0.15, -12.5], [25, 0.15, -12.5],
+]
+
+export const PROJECTS: ProjectDef[] = PROJECT_CONTENT.map((c, i) => {
+  const position = PAVILIONS[i % PAVILIONS.length]
+  const dx = PLAZA_CENTER[0] - position[0]
+  const dz = PLAZA_CENTER[1] - position[2]
   const yaw = Math.atan2(dx, dz)
   const len = Math.hypot(dx, dz)
   const nx = dx / len
   const nz = dz / len
-  // Camera sits on the fountain side looking back at the pavilion. The look
-  // target is shifted to screen-right so the pavilion frames to the left of
-  // the project panel. Screen-right for a camera looking along -n is (n.z, -n.x).
+  // Camera sits on the fountain side looking back at the pavilion, target
+  // shifted to screen-right so the pavilion frames left of the panel.
   const right = { x: nz, z: -nx }
   return {
-    ...p,
+    ...c,
+    number: String(i + 1).padStart(2, '0'),
+    color: parseInt(c.accent.slice(1), 16),
+    position,
     yaw,
     camera: {
-      position: [p.position[0] + nx * 9.2 + right.x * 1.2, 3.9, p.position[2] + nz * 9.2 + right.z * 1.2],
-      target: [p.position[0] + right.x * 2.1, 1.8, p.position[2] + right.z * 2.1],
+      position: [position[0] + nx * 9.2 + right.x * 1.2, 3.9, position[2] + nz * 9.2 + right.z * 1.2],
+      target: [position[0] + right.x * 2.1, 1.8, position[2] + right.z * 2.1],
     },
   }
 })
@@ -91,3 +124,5 @@ export const PROJECTS_OVERVIEW_CAMERA = {
 export function getProject(id: string | null) {
   return PROJECTS.find((p) => p.id === id) ?? null
 }
+
+export const isPlaceholder = (t: string) => /\[[^\]]+\]/.test(t)

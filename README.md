@@ -1,6 +1,6 @@
-# Mindscape Avenue
+# Naveen — interactive 3D portfolio (Mindscape Avenue)
 
-A playable 3D portfolio neighbourhood for the browser. You walk a naturally lit street in third person. You can visit the **Education** campus, the **NFC Solutions** office, **My Home** (profile) and the **Design Park** (design process, AI workflow and activities), then browse five project pavilions in the **Project District**. The campus, office and home can be entered: each is a furnished room with story objects to explore. Everything is original, procedural geometry: there are no downloaded models, textures or sounds. Any piece can be swapped for your own GLB or audio files without touching gameplay code.
+A playable portfolio neighbourhood for the browser. It opens with a cinematic flight: the city emerges from a morning haze, the orange AI companion wakes, and the camera glides under the welcome arch to the avatar. From there you walk the street in third person. The places are the **Education** campus, **My Home** (profile), the **Design Park** (design process, AI workflow and activities), and the **NFC Solutions** office, where colleagues work and the **Project Studio** holds the projects. The journey ends at **The Lookout**, with thanks, contact links and feedback. Everything is original, procedural geometry. You can swap any piece for your own GLB or audio without touching gameplay code.
 
 ```bash
 npm install
@@ -23,10 +23,18 @@ npm run preview    # serve the production build
 | Close / back | `Esc` | Back / ✕ |
 | Toggle tips | `H` | — |
 
+## Visitor flow
+
+1. **Loading** shows a dark skyline whose windows switch on as the world builds, with staged messages ("Preparing the people…") and "Ready.".
+2. **Intro** is a cinematic flight (about 16 s, with **Skip intro** or Esc) that ends on the hero: name, one line, **Start exploring** / **View my work**.
+3. **Start exploring** puts you on the street. The companion greets you in two or three short lines and suggests where to begin.
+4. **View my work** takes you straight to the Project Studio inside NFC Solutions.
+5. As you explore, the companion speaks only at meaningful moments: arriving somewhere, opening a project, and one rare nudge after a long quiet spell.
+
 ## Routes and modes
 
-- `/street` is exploration mode.
-- `/projects` is the project discovery overview. Hover a card to preview a pavilion, click it to open the project. **Walk here** drops you next to that pavilion on foot.
+- `/street` is the experience.
+- `/projects` is kept as a fallback overview of every project (pavilions around the plaza). It links back to the Project Studio.
 
 Routing is client-side (`history.pushState`), so there are no page reloads, and back/forward works.
 
@@ -70,11 +78,38 @@ src/
 - **Animations.** A landing squash scales with fall height. Legs, knees and feet are driven by a gait phase advanced by *distance travelled*, and swing amplitude comes from stride length, so feet don't skate. The walk has a heel-to-toe roll, and the pelvis bobs, sways and turns against the chest. Blends cover idle, walk, run, jump, fall, land, turn-in-place and strafe cross-steps. Overlays add talk, wave, work, read, coffee and phone poses, plus seated variants, head gaze and blinking. An office colleague turns and waves when you arrive.
 - **Camera.** Third person, with lag, clamped pitch and collision (it pulls in fast and eases out slowly). It auto-aligns gently when you walk forward. Foliage near the camera dissolves with a dither instead of filling the screen. Landmarks get a short cinematic reveal the first time you enter their zone.
 
+## Projects (Project Studio)
+
+Projects live in **`src/data/projects.ts`** (`PROJECT_CONTENT`). Each entry automatically gets:
+
+- a screen bay in the Project Studio (it switches on as you approach);
+- an interaction ("Explore IntelliStaff");
+- a close-up camera;
+- a case-study presentation (Overview · Challenge · Process · UI · Prototype · Outcome);
+- a pavilion in the `/projects` overview.
+
+Only real facts belong in this file. Unknown fields stay `[ADD …]` and are highlighted in the UI. Put screenshots in `public/projects/<id>/` and list them in `screens`. Add links (case study, prototype, live) to `links`. The studio fits five bays on its east wall and continues onto the back wall. Extend `STUDIO.BAY_Z` / `BACK_BAYS` in `src/data/interiors.ts` for more.
+
+## Colleagues
+
+Names are in **`src/data/colleagues.ts`**. A name appears only when you walk up to that person, and fades out as you leave. `role` is shown under the name only when filled in; it is empty for everyone by default. `look` picks an avatar build and outfit only, so change it freely. Who sits, walks or waves is set in `INTERIOR_PEOPLE` / `INTERIOR_ROUTES` (`src/data/interiors.ts`).
+
+## Visitors, time and feedback
+
+- **Time:** the HUD shows the visitor's local time and updates on the minute.
+- **Visitor count** (`src/services/visitors.ts`): no number is ever invented. Without a backend the HUD says **THIS SESSION · 01**. Set `VITE_VISITOR_ENDPOINT` (e.g. in `.env.local`) to a URL that records a visit on `POST` and returns `{ current?, today?, total? }` on `GET`. A Supabase edge function or Firebase function works, and the HUD then shows the real figures.
+- **Feedback** (`src/services/feedback.ts`): one question, four answers, an optional note, and no account needed. Set `VITE_FEEDBACK_ENDPOINT` to a URL that accepts a JSON `POST`. Until then, feedback is kept in this browser (`localStorage` → `mindscape:feedback`), and the UI says so.
+
+## Typography
+
+**Bricolage Grotesque** is the display face (optical sizes): the hero, headings and key labels. **Instrument Sans** is the body face: copy, instructions, metadata and navigation. The tokens (`--font-*`, `--text-*`, `--track-*`, `--weight-*`) live in `src/styles/global.css`. The refined interface layer is `src/styles/refine.css`.
+
 ## Portfolio content and placeholders
 
 All personal text lives in **`src/data/portfolioContent.ts`**. Nothing in it is invented. Anything that needs a real fact is a `[BRACKETED PLACEHOLDER]`. These placeholders render highlighted in the panels until you replace them. Search the file for `[` to find them:
 
-- `PROFILE`: name, role, location, contact links
+- `PROFILE`: name, role, tagline
+- `CONTACT`: email, LinkedIn, resume, portfolio links (any placeholder shows as "coming soon", never as a broken link)
 - `EDUCATION_TIMELINE` / `EDUCATION_STORIES`: degree, institution, years, certificates
 - `OFFICE_STORIES`: role, responsibilities and team at NFC Solutions
 - `HOME_STORIES`: about me, personal journey, interests
@@ -149,6 +184,10 @@ npm run dev
 npm run qa                       # all scenarios (CHROME_PATH=... to use another Chromium)
 npm run qa:collision             # facade / fountain / ramp / boundary / traffic checks
 node scripts/qa-rooms.mjs        # enter and exit every interior
+node scripts/qa-intro.mjs        # loading → each beat of the cinematic → hero → street
+node scripts/qa-studio.mjs       # View my work → Project Studio → case study → colleague name → back outside
+node scripts/qa-journey.mjs      # menu sections, the Lookout thank-you + feedback, mobile hero
+node scripts/qa-closeup.mjs      # avatar + companion close-ups (debug camera: window.__shot)
 ```
 
 Known third-party notice: Rapier's WASM loader logs `using deprecated parameters for the initialization function` once at startup. It comes from the library, not from this code, and is harmless.

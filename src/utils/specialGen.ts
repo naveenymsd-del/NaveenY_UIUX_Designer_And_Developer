@@ -7,7 +7,7 @@ import {
 } from './buildingGen'
 import { bench, flowerBed, hedge, planter, streetLamp, stringLights, tree, crateStack } from './propGen'
 import { createRng } from './rng'
-import { artPainter, interiorPainter, mapBoardPainter, GREEK_FONT } from './textures'
+import { artPainter, interiorPainter, mapBoardPainter, UI_FONT } from './textures'
 
 const LIT = [PALETTE.windowLit, PALETTE.windowLit2, PALETTE.windowLit3]
 
@@ -118,7 +118,7 @@ export function genStudio(ctx: GenContext, def: BuildingDef) {
   }
   b.box(frame, [0, H, d / 2 - 0.12], [w + 0.1, 0.35, 0.45])
   // coloured fins
-  const finColors = [PALETTE.lilac, PALETTE.periwinkle, PALETTE.coral, PALETTE.butter, PALETTE.teal, PALETTE.lilac, PALETTE.periwinkle]
+  const finColors = [PALETTE.slate, PALETTE.sage, PALETTE.terracotta, PALETTE.stone, PALETTE.teal, PALETTE.slate, PALETTE.sage]
   for (let c = 0; c <= cols; c++) {
     const x = -w / 2 + pw * c
     b.box(finColors[c % finColors.length], [x, H / 2 + 0.2, d / 2 + 0.2], [0.2, H - 0.2, 0.9], { mat: 'gloss' })
@@ -127,8 +127,8 @@ export function genStudio(ctx: GenContext, def: BuildingDef) {
   b.box(0x9fa9dd, [0, 1.35, d / 2 - 0.25], [pw * 2 - 0.3, 2.7, 0.06], { mat: 'glass', cast: false })
   b.box(rng.pick(LIT), [0, 1.3, d / 2 - 0.3], [pw * 2 - 0.5, 2.5, 0.02], { mat: 'glow', cast: false })
   b.box(frame, [0, 1.35, d / 2 - 0.2], [0.08, 2.7, 0.08], { cast: false })
-  b.box(PALETTE.lilac, [0, 3.2, d / 2 + 0.7], [pw * 2 + 0.6, 0.16, 1.6])
-  b.box(PALETTE.lilac, [0, gH - 0.15, d / 2 + 0.32], [w + 0.1, 0.8, 0.22])
+  b.box(PALETTE.charcoal, [0, 3.2, d / 2 + 0.7], [pw * 2 + 0.6, 0.16, 1.6])
+  b.box(PALETTE.charcoal, [0, gH - 0.15, d / 2 + 0.32], [w + 0.1, 0.8, 0.22])
   addSign(ctx, 'PROJECT DISTRICT', { bg: '#a996d4', fg: '#ffffff', shape: 'rect', weight: 800 }, [0, gH - 0.15, d / 2 + 0.44], 6.4, 0.66)
   // side ribbon windows
   for (const sx of [-1, 1]) {
@@ -151,7 +151,7 @@ export function genStudio(ctx: GenContext, def: BuildingDef) {
   planter(b, rng, 3, 0.8)
   b.pop()
   const [lx, , lz] = b.toWorld(0, 0, d / 2 + 2)
-  lightPoolAt(ctx, lx, lz, 4, 0xe8d8ff)
+  lightPoolAt(ctx, lx, lz, 4, 0xffe2c0)
   b.collider([0, H / 2, 0], [w, H, d])
   b.pop()
 }
@@ -164,17 +164,17 @@ export function genEntry(ctx: GenContext) {
   const rng = createRng(77)
   // kiosk
   b.push(KIOSK_POS[0], SIDEWALK_Y, KIOSK_POS[1])
-  b.add('cyl', PALETTE.cobalt, [0, 0.55, 0], [2.4, 1.1, 2.4])
-  b.add('cyl', 0x9fb2e6, [0, 1.6, 0], [2.3, 1.0, 2.3], { mat: 'glass' })
+  b.add('cyl', 0x2b2e34, [0, 0.55, 0], [2.4, 1.1, 2.4])
+  b.add('cyl', 0xa9b6c2, [0, 1.6, 0], [2.3, 1.0, 2.3], { mat: 'glass' })
   b.add('cyl', PALETTE.windowLit, [0, 1.6, 0], [2.0, 0.9, 2.0], { mat: 'glow', cast: false })
   b.add('cyl', PALETTE.ivory, [0, 2.2, 0], [3.2, 0.22, 3.2])
-  b.add('sphere', PALETTE.cobalt, [0, 2.35, 0], [2.6, 1.0, 2.6], { mat: 'gloss' })
+  b.add('sphere', 0x6e5a48, [0, 2.35, 0], [2.6, 1.0, 2.6], { mat: 'gloss' })
   b.add('cyl8', PALETTE.ivory, [0, 3.0, 0], [0.12, 1.2, 0.12], { cast: false })
   b.push(0, 3.8, 0, -Math.PI / 2)
-  addSign(ctx, 'INFO', { bg: '#ffffff', fg: '#2f3fb8', shape: 'pill', icon: 'star' }, [0, 0, 0.02], 1.4, 0.5, PALETTE.cobalt)
+  addSign(ctx, 'INFO', { bg: '#f7f4ef', fg: '#1f2328', shape: 'pill', icon: 'star' }, [0, 0, 0.02], 1.4, 0.5, 0x2b2e34)
   b.pop()
   b.push(0, 3.8, 0, Math.PI / 2)
-  addSign(ctx, 'INFO', { bg: '#ffffff', fg: '#2f3fb8', shape: 'pill', icon: 'star' }, [0, 0, 0.02], 1.4, 0.5, null)
+  addSign(ctx, 'INFO', { bg: '#f7f4ef', fg: '#1f2328', shape: 'pill', icon: 'star' }, [0, 0, 0.02], 1.4, 0.5, null)
   b.pop()
   b.cylCollider([0, 0, 0], 1.25, 2.4)
   // map board facing the promenade
@@ -190,18 +190,18 @@ export function genEntry(ctx: GenContext) {
   // welcome arch
   b.push(0, SIDEWALK_Y, ARCH_Z)
   for (const sx of [-7.4, 7.4]) {
-    b.add('rbox', PALETTE.cream, [sx, 3.1, 0], [1.1, 6.2, 1.1])
-    for (let i = 0; i < 3; i++) b.box(PALETTE.cobalt, [sx, 1 + i * 1.8, 0], [1.16, 0.16, 1.16], { cast: false })
-    b.add('sphere', PALETTE.coral, [sx, 6.65, 0], [0.9, 0.9, 0.9], { mat: 'gloss' })
+    b.add('rbox', 0xd8d1c4, [sx, 3.1, 0], [1.1, 6.2, 1.1])
+    for (let i = 0; i < 3; i++) b.box(0x2b2e34, [sx, 1 + i * 1.8, 0], [1.16, 0.16, 1.16], { cast: false })
+    b.add('sphere', 0xb08a55, [sx, 6.65, 0], [0.9, 0.9, 0.9], { mat: 'gloss' })
     b.collider([sx, 3.1, 0], [1.1, 6.2, 1.1])
     b.push(sx, 0, 0)
     planter(b, rng, 1.2, 1.2)
     b.pop()
   }
-  b.box(PALETTE.cobalt, [0, 5.6, 0], [15.4, 1.3, 0.6])
+  b.box(0x1f2328, [0, 5.6, 0], [15.4, 1.3, 0.6])
   b.collider([0, 5.6, 0], [15.4, 1.3, 0.6])
   b.box(PALETTE.ivory, [0, 6.32, 0], [15.6, 0.14, 0.7], { cast: false })
-  const sign = { bg: '#2f3fb8', fg: '#ffffff', shape: 'rect' as const, font: GREEK_FONT, weight: 800 }
+  const sign = { bg: '#1f2328', fg: '#f7f4ef', shape: 'rect' as const, font: UI_FONT, weight: 600 }
   addSign(ctx, 'MINDSCAPE AVENUE', sign, [0, 5.6, 0.31], 9.5, 1.05)
   b.push(0, 5.6, -0.31, Math.PI)
   addSign(ctx, 'SEE YOU SOON', { ...sign, font: undefined }, [0, 0, 0], 7, 0.9)
@@ -220,7 +220,7 @@ export function genEntry(ctx: GenContext) {
   const promenade: [number, number][] = [[-6.2, 61], [6.2, 61], [-6.2, 68], [-6.2, 84], [6.2, 84]]
   for (const [x, z] of promenade) {
     b.push(x, SIDEWALK_Y, z)
-    b.add('cyl', 0xe8e0ee, [0, 0.3, 0], [1.8, 0.6, 1.8])
+    b.add('cyl', 0xdcd6cb, [0, 0.3, 0], [1.8, 0.6, 1.8])
     b.box(PALETTE.soil, [0, 0.58, 0], [1.4, 0.04, 1.4], { cast: false })
     b.push(0, 0.6, 0)
     tree(ctx, rng, rng.pick(['blossom', 'round', 'gold'] as const), 0.9, false)
@@ -254,14 +254,14 @@ export function genPlaza(ctx: GenContext, projects: ProjectDef[]) {
   const segs = 22
   for (let i = 0; i < segs; i++) {
     const a = (i / segs) * Math.PI * 2
-    b.add('rbox', 0xe9e2f0, [Math.cos(a) * 4, 0.3, Math.sin(a) * 4], [1.25, 0.6, 0.55], { rot: [0, -a + Math.PI / 2, 0] })
+    b.add('rbox', 0xe2ddd3, [Math.cos(a) * 4, 0.3, Math.sin(a) * 4], [1.25, 0.6, 0.55], { rot: [0, -a + Math.PI / 2, 0] })
   }
   b.add('cyl', 0x6f98d6, [0, 0.1, 0], [7.8, 0.12, 7.8], { cast: false })
-  b.add('cyl', 0xe9e2f0, [0, 0.9, 0], [0.9, 1.6, 0.9])
-  b.add('sphere', 0xe9e2f0, [0, 1.75, 0], [3.2, 0.7, 3.2])
+  b.add('cyl', 0xe2ddd3, [0, 0.9, 0], [0.9, 1.6, 0.9])
+  b.add('sphere', 0xe2ddd3, [0, 1.75, 0], [3.2, 0.7, 3.2])
   b.add('cyl', 0x6f98d6, [0, 1.95, 0], [2.6, 0.05, 2.6], { cast: false })
-  b.add('cyl', 0xe9e2f0, [0, 2.4, 0], [0.36, 1.0, 0.36])
-  b.add('sphere', PALETTE.coral, [0, 3.0, 0], [0.7, 0.7, 0.7], { mat: 'gloss' })
+  b.add('cyl', 0xe2ddd3, [0, 2.4, 0], [0.36, 1.0, 0.36])
+  b.add('sphere', 0xa27c52, [0, 3.0, 0], [0.7, 0.7, 0.7], { mat: 'gloss' })
   b.cylCollider([0, 0, 0], 4.3, 0.6)
   b.cylCollider([0, 0, 0], 1.6, 3)
   b.pop()
@@ -281,7 +281,7 @@ export function genPlaza(ctx: GenContext, projects: ProjectDef[]) {
   // trees in round planters
   for (const [x, z, k] of [[10.5, -31, 'round'], [10.5, -19, 'blossom'], [28.6, -33.5, 'gold'], [28.6, -16.5, 'round']] as const) {
     b.push(x, SIDEWALK_Y, z)
-    b.add('cyl', 0xe8e0ee, [0, 0.35, 0], [2.2, 0.7, 2.2])
+    b.add('cyl', 0xdcd6cb, [0, 0.35, 0], [2.2, 0.7, 2.2])
     b.box(PALETTE.soil, [0, 0.68, 0], [1.7, 0.04, 1.7], { cast: false })
     b.push(0, 0.7, 0)
     tree(ctx, rng, k, 1.05, false)
@@ -289,7 +289,7 @@ export function genPlaza(ctx: GenContext, projects: ProjectDef[]) {
     b.cylCollider([0, 0, 0], 1.1, 0.8)
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2
-      b.add('sphere', rng.pick([0xff8fb1, 0xfff1a8, 0xffffff]), [Math.cos(a) * 0.75, 0.8, Math.sin(a) * 0.75], [0.2, 0.18, 0.2], { cast: false })
+      b.add('sphere', rng.pick([0xd98f8f, 0xf1e2a8, 0xf4f1ea]), [Math.cos(a) * 0.75, 0.8, Math.sin(a) * 0.75], [0.2, 0.18, 0.2], { cast: false })
     }
     b.pop()
   }
@@ -318,13 +318,13 @@ export function genPlaza(ctx: GenContext, projects: ProjectDef[]) {
     // display totem
     b.box(PALETTE.ivory, [0, 1.4, -0.35], [1.6, 2.4, 0.36])
     b.box(accent, [0, 2.66, -0.35], [1.66, 0.12, 0.4], { cast: false })
-    const pal = ['#' + accent.toString(16).padStart(6, '0'), '#fbf5ea', '#2b2350', '#f5dd92', '#2f3fb8']
+    const pal = ['#' + accent.toString(16).padStart(6, '0'), '#f6f2ea', '#1f2328', '#d8c9a8', '#5b6b82']
     const art = ctx.decor.add(256, 256, artPainter(300 + i * 13, [pal[1], pal[0], pal[2], pal[3], pal[4]]), `proj-art-${p.id}`)
     b.add('plane', 0xffffff, [0, 1.75, -0.16], [1.3, 1.3, 1], { mat: 'decorAtlas', uv: art, cast: false })
-    addSign(ctx, p.number, { bg: '#2b2350', fg: pal[0], shape: 'round', weight: 800 }, [0, 0.72, -0.16], 0.8, 0.5)
+    addSign(ctx, p.number, { bg: '#1f2328', fg: pal[0], shape: 'round', weight: 800 }, [0, 0.72, -0.16], 0.8, 0.5)
     b.collider([0, 1.3, -0.35], [1.7, 2.6, 0.5])
     b.push(0, 3.35, 2.16)
-    addSign(ctx, `PROJECT ${p.number}`, { bg: pal[0], fg: '#ffffff', shape: 'pill', weight: 800 }, [0, 0, 0], 2.2, 0.26, null)
+    addSign(ctx, p.title.toUpperCase(), { bg: pal[0], fg: '#ffffff', shape: 'pill', weight: 800 }, [0, 0, 0], 2.4, 0.28, null)
     b.pop()
     const [lx, , lz] = b.toWorld(0, 0, 0.8)
     lightPoolAt(ctx, lx, lz, 2.6, lighten(accent, 40))
@@ -364,7 +364,7 @@ export function genPark(ctx: GenContext) {
     if (k % 2 === 0) b.box(PALETTE.walnut, [Math.cos(a + Math.PI / 8) * 2.6, 0.75, Math.sin(a + Math.PI / 8) * 2.6], [1.6, 0.08, 0.45], { rot: [0, -a - Math.PI / 8 + Math.PI / 2, 0] })
   }
   b.add('cyl', PALETTE.ivory, [0, 3.5, 0], [6.8, 0.2, 6.8])
-  b.add('cone6', PALETTE.lilac, [0, 4.5, 0], [7.6, 1.9, 7.6], { rot: [0, Math.PI / 6, 0] })
+  b.add('cone6', 0x5a5f66, [0, 4.5, 0], [7.6, 1.9, 7.6], { rot: [0, Math.PI / 6, 0] })
   b.add('sphere', PALETTE.butter, [0, 5.6, 0], [0.4, 0.4, 0.4], { mat: 'gloss' })
   stringLights(b, [-2.8, 3.3, 0], [2.8, 3.3, 0], 12, 0.2)
   b.pop()

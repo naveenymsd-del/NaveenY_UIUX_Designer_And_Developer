@@ -1,3 +1,5 @@
+import { useGameStore } from '@/stores/gameStore'
+import { introRuntime } from '@/core/intro'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useRef } from 'react'
 import { Vector3 } from 'three'
@@ -34,6 +36,9 @@ export function DebugProbe() {
     ;(window as unknown as { __mindscape: typeof debugStats; __scene: unknown }).__mindscape = debugStats
     ;(window as unknown as { __scene: unknown }).__scene = scene
     ;(window as unknown as { __teleport: unknown }).__teleport = (x: number, z: number, yaw: number) => requestTeleport(new Vector3(x, 0.8, z), yaw)
+    ;(window as unknown as { __intro: unknown }).__intro = introRuntime
+    ;(window as unknown as { __shot: unknown }).__shot = (position: [number, number, number] | null, target?: [number, number, number]) =>
+      useGameStore.getState().setState({ shotOverride: position && target ? { position, target } : null })
   })
   return null
 }

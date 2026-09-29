@@ -1,61 +1,65 @@
-import { navigate } from '@/app/routes'
-import { soundManager } from '@/core/sound/SoundManager'
+import { useEffect, useState } from 'react'
+import { INTRO, introRuntime, skipIntro } from '@/core/intro'
+import { beginJourney } from '@/core/journey'
 import { useGameStore } from '@/stores/gameStore'
-import { useUIStore } from '@/stores/uiStore'
-import { KeyCap } from './KeyCap'
+import { SoundButton } from './SoundButton'
+import { WorldStatus } from './WorldStatus'
 
 /**
- * The establishing moment: the city slowly orbits below while the title and
- * controls are introduced. Starting flies the camera down behind the player.
+ * Landing, layered over the opening flight. While the camera travels only a
+ * quiet credit and "Skip intro" are on screen, so the world is the first thing
+ * you see. When the flight lands on the avatar, the hero copy and the two
+ * actions appear; the companion does the talking in its own bubble.
  */
 export function IntroOverlay() {
   const phase = useGameStore((s) => s.phase)
-  const setPhase = useGameStore((s) => s.setPhase)
-  const isTouch = useUIStore((s) => s.isTouch)
+  const [t, setT] = useState(0)
+
+  useEffect(() => {
+    if (phase !== 'intro') return
+    const id = setInterval(() => setT(introRuntime.t), 120)
+    return () => clearInterval(id)
+  }, [phase])
+
   if (phase !== 'intro' && phase !== 'transition') return null
-  const start = (mode: 'street' | 'projects') => {
-    soundManager.unlock()
-    soundManager.play('open')
-    navigate(mode === 'projects' ? '/projects' : '/street', true)
-    setPhase('transition')
-  }
+  const hero = t >= INTRO.heroAt - 0.4
+  const credit = t > 1.4 && !hero
+  const leaving = phase === 'transition'
+
   return (
-    <div className={`ui-intro ${phase === 'transition' ? 'is-leaving' : ''}`}>
-      <div className="ui-intro__center">
-        <p className="ui-intro__eyebrow">Naveen · UI/UX Designer · Interactive portfolio</p>
-        <h1 className="ui-intro__title">
-          <span>Mindscape</span>
-          <span className="ui-intro__title-street">AVENUE</span>
-        </h1>
-        <p className="ui-intro__subtitle">Where ideas take a walk…</p>
+    <div className={`ui-intro ${leaving ? 'is-leaving' : ''} ${hero ? 'is-hero' : ''}`}>
+      <div className={`ui-intro__credit ${credit ? 'is-visible' : ''}`} aria-hidden={!credit}>
+        <span className="ui-intro__credit-name">Naveen</span>
+        <span className="ui-intro__credit-role">UI/UX Designer</span>
+      </div>
+
+      <section className="ui-intro__hero" aria-hidden={!hero} aria-labelledby="intro-title">
+        <p className="ui-intro__eyebrow">UI/UX Designer · Interactive portfolio</p>
+        <h1 id="intro-title" className="ui-intro__title">Naveen</h1>
+        <p className="ui-intro__subtitle">Designing human experiences with technology, interaction and&nbsp;AI.</p>
+        <p className="ui-intro__welcome">Welcome. Take your time exploring my world.</p>
         <div className="ui-intro__actions">
-          <button className="ui-btn ui-btn--primary ui-btn--lg" onClick={() => start('street')} autoFocus>
+          <button className="ui-btn ui-btn--primary ui-btn--lg" onClick={() => beginJourney('street')} tabIndex={hero ? 0 : -1} autoFocus={hero}>
             Start exploring
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
           </button>
-          <button className="ui-btn ui-btn--glass ui-btn--lg" onClick={() => start('projects')}>
-            View projects
+          <button className="ui-btn ui-btn--quiet ui-btn--lg" onClick={() => beginJourney('work')} tabIndex={hero ? 0 : -1}>
+            View my work
           </button>
         </div>
+      </section>
+
+      <div className={`ui-intro__status ${hero && !leaving ? 'is-visible' : ''}`}>
+        <WorldStatus />
+        <SoundButton />
       </div>
-      <div className="ui-intro__hints" aria-label="Controls">
-        {isTouch ? (
-          <>
-            <div className="ui-intro__hint"><span className="ui-stick-icon" aria-hidden="true" /> Drag the joystick to walk</div>
-            <div className="ui-intro__hint"><span className="ui-jump-icon" aria-hidden="true">↑</span> Tap to jump · drag the view to look</div>
-          </>
-        ) : (
-          <>
-            <div className="ui-intro__hint">
-              <span className="ui-wasd" aria-hidden="true">
-                <KeyCap k="W" /><span><KeyCap k="A" /><KeyCap k="S" /><KeyCap k="D" /></span>
-              </span>
-              Control the character with the WASD keys
-            </div>
-            <div className="ui-intro__hint"><KeyCap k="SPACE" wide /> Press the space bar to jump</div>
-          </>
-        )}
-      </div>
+
+      {!hero && !leaving && (
+        <button className="ui-intro__skip" onClick={skipIntro} aria-label="Skip intro">
+          Skip intro
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l7 6-7 6M15 6v12" /></svg>
+        </button>
+      )}
     </div>
   )
 }

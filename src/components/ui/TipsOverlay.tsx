@@ -15,10 +15,10 @@ export function TipsOverlay() {
     const t = setTimeout(() => setOpen(false), 14000)
     return () => clearTimeout(t)
   }, [open, setOpen])
-  const visible = open && mode === 'street'
+  // desktop has the compact controls bar; the card is only for touch devices
+  const visible = open && mode === 'street' && isTouch
   return (
     <div className={`ui-tips ${visible ? 'is-visible' : ''}`} role="dialog" aria-label="How to play" aria-hidden={!visible}>
-      <span className="ui-tips__badge" aria-hidden="true">TIP!</span>
       <button className="ui-tips__close" aria-label="Close tips" onClick={() => { soundManager.play('close', { volume: 0.5 }); setOpen(false) }} tabIndex={visible ? 0 : -1}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>

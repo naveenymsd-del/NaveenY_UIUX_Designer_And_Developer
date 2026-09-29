@@ -32,10 +32,18 @@ function attach(page, label) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const stats = (page) => page.evaluate(() => window.__mindscape ?? null)
 
+/** load, then skip the cinematic straight to the hero (Start exploring / View my work) */
+async function toHero(page) {
+  await page.waitForSelector('.ui-intro__skip', { timeout: 90000 })
+  await sleep(600)
+  await page.getByRole('button', { name: 'Skip intro' }).click()
+  await page.waitForSelector('.ui-intro.is-hero', { timeout: 20000 })
+  await sleep(1400)
+}
+
 async function boot(page, url) {
   await page.goto(url, { waitUntil: 'domcontentloaded' })
-  await page.waitForSelector('.ui-intro__actions button', { timeout: 90000 })
-  await sleep(800)
+  await toHero(page)
 }
 
 async function start(page, which = 'Start exploring') {
@@ -67,9 +75,11 @@ async function runSmoke(browser) {
   await page.goto(`${base}/street?debug&desktop`, { waitUntil: 'domcontentloaded' })
   await sleep(700)
   await shot(page, '01-loading')
-  await page.waitForSelector('.ui-intro__actions button', { timeout: 90000 })
-  await sleep(1500)
-  await shot(page, '02-intro')
+  await page.waitForSelector('.ui-intro__skip', { timeout: 90000 })
+  await sleep(2500)
+  await shot(page, '02-intro-flight')
+  await toHero(page)
+  await shot(page, '02-intro-hero')
   await start(page)
   await shot(page, '03-playing-tips')
   console.log('stats after start', await stats(page))
@@ -170,19 +180,20 @@ async function runProjects(browser) {
   await boot(page, `${base}/street?debug&desktop`)
   await start(page)
   await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: 'View Projects' }).click()
+  // /projects still works as an overview (fallback route)
+  await page.evaluate(() => { history.pushState({}, '', '/projects' + location.search); dispatchEvent(new PopStateEvent('popstate')) })
   await sleep(2400)
   await shot(page, '30-projects-mode')
   console.log('url', page.url())
   await page.locator('.ui-rail__card').nth(1).click()
   await sleep(2200)
   await shot(page, '31-project-open')
-  await page.getByRole('button', { name: 'Next project' }).click()
+  await page.getByRole('button', { name: /Next project/ }).click()
   await sleep(2000)
   await shot(page, '32-project-next')
   await page.getByRole('button', { name: 'Close project' }).click()
   await sleep(1200)
-  await page.getByRole('button', { name: 'Street', exact: true }).click()
+  await page.getByRole('button', { name: 'Back to street' }).click()
   await sleep(1800)
   await shot(page, '33-back-to-street')
   console.log('url', page.url())
@@ -194,7 +205,7 @@ async function runProjects(browser) {
   await sleep(600)
   await shot(page, '35-menu-workflow')
   // quick travel to the café, then open it with E
-  await page.locator('.ui-place', { hasText: 'NFC Solutions' }).click()
+  await page.locator('.ui-menu__item', { hasText: 'NFC Solutions' }).first().click()
   await sleep(2500)
   await shot(page, '36-travel-cafe')
   const near = await page.evaluate(() => document.querySelector('.ui-prompt.is-visible')?.textContent ?? null)

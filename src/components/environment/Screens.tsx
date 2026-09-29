@@ -18,10 +18,10 @@ export function Screens({ screens }: { screens: ScreenDef[] }) {
             uniforms: {
               uTime: worldUniforms.uTime,
               uVariant: { value: variant },
-              uA: { value: new Color('#2f3fb8') },
-              uB: { value: new Color('#ef8a78') },
-              uC: { value: new Color('#f5dd92') },
-              uD: { value: new Color('#a996d4') },
+              uA: { value: new Color('#1f2a3a') },
+              uB: { value: new Color('#c9793f') },
+              uC: { value: new Color('#e9dcc2') },
+              uD: { value: new Color('#5b6b82') },
             },
             vertexShader: /* glsl */ `
               varying vec2 vUv;

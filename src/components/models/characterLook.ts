@@ -8,9 +8,9 @@ import { createRng } from '@/utils/rng'
  * builder turns it into a single skinned mesh.
  */
 export type HairStyle = 'short' | 'side' | 'long' | 'bun' | 'curly' | 'buzz' | 'ponytail'
-export type TopStyle = 'tee' | 'shirt' | 'jacket' | 'hoodie' | 'blouse' | 'sweater'
+export type TopStyle = 'tee' | 'shirt' | 'jacket' | 'hoodie' | 'blouse' | 'sweater' | 'overshirt'
 export type BottomStyle = 'trousers' | 'jeans' | 'skirt' | 'shorts'
-export type Accessory = 'none' | 'backpack' | 'totebag' | 'glasses' | 'scarf' | 'crossbody' | 'lanyard'
+export type Accessory = 'none' | 'backpack' | 'totebag' | 'glasses' | 'scarf' | 'crossbody' | 'lanyard' | 'watch'
 export type HandProp = 'none' | 'cup' | 'phone' | 'book' | 'tablet'
 
 export interface CharacterLook {
@@ -36,21 +36,25 @@ export interface CharacterLook {
   seed: number
 }
 
-/** The player: navy overshirt over a white tee, dark jeans, white sneakers, crossbody bag. */
+/**
+ * The player — a modern creative professional: an open navy overshirt over an
+ * off-white tee, charcoal chinos with a leather belt, minimal white sneakers,
+ * a steel watch and a neat side-parted cut.
+ */
 export const PLAYER_LOOK: CharacterLook = {
-  skin: 0xc68d68,
-  hair: 0x1f1a1c,
-  top: 0x2f3f66,
-  topAccent: 0xf3f0ea,
-  topStyle: 'jacket',
+  skin: 0xc28a66,
+  hair: 0x1b1617,
+  top: 0x25365a,
+  topAccent: 0xf2efe8,
+  topStyle: 'overshirt',
   longSleeves: true,
-  bottom: 0x2e3445,
-  bottomStyle: 'jeans',
-  shoes: 0xf3f1ec,
-  sole: 0xd9d4cc,
+  bottom: 0x3a3d44,
+  bottomStyle: 'trousers',
+  shoes: 0xf4f2ee,
+  sole: 0xe4dfd6,
   hairStyle: 'side',
-  accessory: 'crossbody',
-  accessoryColor: 0x5a4636,
+  accessory: 'watch',
+  accessoryColor: 0xb9bdc3,
   prop: 'none',
   height: 1.0,
   build: 1.0,
@@ -110,14 +114,42 @@ function makeGeometries(k: number) {
     capsule: new CapsuleGeometry(0.5, 0.6, n(4, 2), n(12, 8)), // height 1.6, diameter 1
     ellipsoid: new SphereGeometry(0.5, n(14, 8), n(10, 6)),
     ellipsoidLo: new SphereGeometry(0.5, n(8, 6), n(6, 4)),
-    head: new SphereGeometry(0.5, n(18, 12), n(14, 9)),
-    hairCap: new SphereGeometry(0.5, n(16, 10), n(10, 6), 0, Math.PI * 2, 0, Math.PI * 0.58),
+    head: new SphereGeometry(0.5, n(28, 12), n(20, 9)),
+    face: headShape(n(28, 12), n(22, 10)),
+    hairCap: new SphereGeometry(0.5, n(26, 10), n(12, 6), 0, Math.PI * 2, 0, Math.PI * 0.58),
     box: new RoundedBoxGeometry(1, 1, 1, n(2, 1), 0.18),
     boxSharp: new RoundedBoxGeometry(1, 1, 1, 1, 0.06),
     cone: new ConeGeometry(0.5, 1, n(14, 8), 1, true),
     cyl: new CylinderGeometry(0.5, 0.5, 1, n(12, 8)),
     torus: new TorusGeometry(0.5, 0.1, n(6, 4), n(16, 10)),
   }
+}
+
+/**
+ * One continuous head: a sphere whose lower half tapers into a jaw and chin
+ * (narrower sides, chin carried slightly forward) — no seams between parts.
+ */
+function headShape(ws: number, hs: number) {
+  const g = new SphereGeometry(0.5, ws, hs)
+  const p = g.attributes.position
+  for (let i = 0; i < p.count; i++) {
+    let x = p.getX(i)
+    const y = p.getY(i)
+    let z = p.getZ(i)
+    const yn = y / 0.5
+    if (yn < 0.1) {
+      const t = Math.min(1, (0.1 - yn) / 1.1)
+      x *= 1 - 0.3 * t ** 1.5
+      z *= 1 - 0.1 * t ** 1.4
+      // chin and jawline carried forward a touch
+      if (z > 0) z += 0.05 * t ** 2 * (z / 0.5)
+    }
+    // slightly flatter temples and cheeks
+    x *= 0.97
+    p.setXYZ(i, x, y, z)
+  }
+  g.computeVertexNormals()
+  return g
 }
 
 const matCache = new Map<string, MeshStandardMaterial>()

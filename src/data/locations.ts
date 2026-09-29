@@ -2,12 +2,12 @@ import { PROJECTS } from './projects'
 import {
   ACTIVITY_STORIES, AI_STORY, DESIGN_PROCESS, EDUCATION_STORIES, HOME_STORIES, OFFICE_STORIES, type StoryContent,
 } from './portfolioContent'
-import { INTERIORS, INTERIOR_STORIES, roomToWorld, type InteriorId } from './interiors'
+import { INTERIORS, INTERIOR_STORIES, roomToWorld, studioBay, type InteriorId } from './interiors'
 
 export type InteractionAction =
-  | 'OPEN_LOCATION' | 'OPEN_PROJECT' | 'ENTER_INTERIOR' | 'EXIT_INTERIOR' | 'OPEN_PROJECTS' | 'RING_BELL'
+  | 'OPEN_LOCATION' | 'OPEN_PROJECT' | 'ENTER_INTERIOR' | 'EXIT_INTERIOR' | 'OPEN_PROJECTS' | 'GO_PROJECTS' | 'RING_BELL'
 
-export type LocationType = 'education' | 'office' | 'home' | 'park' | 'projects' | 'info' | 'story' | 'project' | 'exit'
+export type LocationType = 'education' | 'office' | 'home' | 'park' | 'projects' | 'info' | 'story' | 'project' | 'exit' | 'final'
 
 export interface CameraShot {
   position: [number, number, number]
@@ -36,7 +36,7 @@ export interface InteractiveDef {
   accent: string
   content?: StoryContent
   /** minimap marker (major destinations only) */
-  marker?: { label: string; icon: 'education' | 'office' | 'home' | 'park' | 'projects' | 'info' }
+  marker?: { label: string; icon: 'education' | 'office' | 'home' | 'park' | 'projects' | 'info'; sub?: string; mapAt?: [number, number] }
   /** hide the floating beacon (story objects animate themselves instead) */
   quiet?: boolean
   highlights?: string[]
@@ -53,8 +53,10 @@ export const ACTIVITY_SPOTS: Record<'learning' | 'visual' | 'uiux' | 'interactiv
   learning: { pos: [-35, 0.25, 23.1], yaw: Math.PI },
   visual: { pos: [-29.6, 0.25, 31.4], yaw: -2.4 },
   uiux: { pos: [-20.6, 0.25, 30.6], yaw: 0 },
-  interactive: { pos: [-14.6, 1.5, 36.2], yaw: Math.PI },
+  interactive: { pos: [-17.2, 1.5, 34.7], yaw: Math.PI },
 }
+/** the lookout at the park deck's telescope: the journey's quiet ending */
+export const FINAL_SPOT: [number, number, number] = [-13.4, 1.5, 37.4]
 
 const street: InteractiveDef[] = [
   {
@@ -80,7 +82,7 @@ const street: InteractiveDef[] = [
     position: [14.2, 0.15, 17], interactionRadius: 3.4,
     label: 'Press E to explore my workplace', mobileLabel: 'Enter', action: 'ENTER_INTERIOR', destination: 'office',
     cameraTarget: { position: [3.5, 3.6, 24], target: [22, 5.5, 17] }, accent: '#2f4a8a',
-    marker: { label: 'NFC SOLUTIONS', icon: 'office' },
+    marker: { label: 'NFC SOLUTIONS', icon: 'office', sub: 'PROJECTS INSIDE', mapAt: [20, 12] },
   },
   {
     id: 'home', name: 'My Home', kicker: 'Visit my profile', type: 'home',
@@ -91,12 +93,18 @@ const street: InteractiveDef[] = [
     marker: { label: 'HOME', icon: 'home' },
   },
   {
-    id: 'district', name: 'Project District', kicker: 'Selected work', type: 'projects',
-    description: 'Five pavilions, five stories. Enter the district to browse every project.',
+    id: 'district', name: 'Project Pavilions', kicker: 'Selected work', type: 'projects',
+    description: 'A preview of the work. The full projects live in the Project Studio inside NFC Solutions.',
     position: [28.2, 0.15, -25], interactionRadius: 3.6,
-    label: 'Press E to enter the Project District', mobileLabel: 'Projects', action: 'OPEN_PROJECTS', destination: 'projects',
-    cameraTarget: { position: [14, 6, -12], target: [24, 1.5, -26] }, accent: '#a996d4',
-    marker: { label: 'PROJECTS', icon: 'projects' },
+    label: 'Press E to see the projects at NFC Solutions', mobileLabel: 'Projects', action: 'GO_PROJECTS', destination: 'studio',
+    cameraTarget: { position: [14, 6, -12], target: [24, 1.5, -26] }, accent: '#5b6b82',
+  },
+  {
+    id: 'final', name: 'The Lookout', kicker: 'Thank you', type: 'final',
+    description: 'Thanks for exploring Naveen’s world.',
+    position: FINAL_SPOT, interactionRadius: 1.9,
+    label: 'Press E to look out over the neighbourhood', mobileLabel: 'Look out', action: 'OPEN_LOCATION', destination: 'final',
+    cameraTarget: { position: [-9.6, 3.4, 42.2], target: [-17, 2.2, 30] }, accent: '#ec7a2c',
   },
   {
     id: 'park-ai', name: 'AI Design Area', kicker: 'Design Park', type: 'park',
@@ -104,7 +112,7 @@ const street: InteractiveDef[] = [
     position: [AI_AREA[0], 0.4, AI_AREA[1]], interactionRadius: 4.3,
     label: 'Press E to explore how I use AI', mobileLabel: 'Explore', action: 'OPEN_LOCATION', destination: 'ai',
     cameraTarget: { position: [-18.5, 4.2, 31.5], target: [-25.5, 1.8, 25] }, accent: '#e8792e',
-    marker: { label: 'DESIGN PARK', icon: 'park' },
+    marker: { label: 'DESIGN PARK', icon: 'park', mapAt: [-26, 34] },
   },
   ...PROCESS_STATIONS.map<InteractiveDef>(([x, z], i) => {
     const s = DESIGN_PROCESS[i]
@@ -128,13 +136,36 @@ const street: InteractiveDef[] = [
     }
   }),
   ...PROJECTS.map<InteractiveDef>((p) => ({
-    id: `project-${p.id}`, name: `Project ${p.number}`, kicker: p.category, type: 'project',
+    id: `project-${p.id}`, name: p.title, kicker: `Project ${p.number}`, type: 'project',
     description: p.description,
     position: [p.position[0] + Math.sin(p.yaw) * 2.4, 0.15, p.position[2] + Math.cos(p.yaw) * 2.4],
     interactionRadius: 2.2, label: 'Press E to view project', mobileLabel: 'View project',
     action: 'OPEN_PROJECT', destination: p.id, cameraTarget: p.camera, accent: p.accent,
   })),
 ]
+
+/** one screen bay per project in the Project Studio (NFC Solutions office) */
+const studio: InteractiveDef[] = PROJECTS.map((p, i) => {
+  const bay = studioBay(i)
+  const [sx, sz] = bay.screen
+  const [px, pz] = bay.stand
+  // close-up: step back from the screen and offset so it frames left of the presentation
+  const east = bay.yaw !== 0
+  const cam = east
+    ? { position: [sx - 3.6, 1.72, sz + 1.25] as [number, number, number], target: [sx, 1.5, sz + 1.35] as [number, number, number] }
+    : { position: [sx + 1.25, 1.72, sz + 3.6] as [number, number, number], target: [sx + 1.35, 1.5, sz] as [number, number, number] }
+  return {
+    id: `studio-${p.id}`, name: p.title, kicker: 'Project Studio', type: 'project' as const,
+    description: p.description,
+    position: roomToWorld('office', px, pz, 0.02), interactionRadius: 1.9,
+    label: `Explore ${p.title}`, mobileLabel: 'Explore', action: 'OPEN_PROJECT' as const, destination: p.id,
+    cameraTarget: {
+      position: roomToWorld('office', cam.position[0], cam.position[2], cam.position[1]),
+      target: roomToWorld('office', cam.target[0], cam.target[2], cam.target[1]),
+    },
+    accent: p.accent, quiet: true,
+  }
+})
 
 const STORY_CONTENT: Record<string, StoryContent> = {
   ...Object.fromEntries(Object.entries(EDUCATION_STORIES).map(([k, v]) => [`education:${k}`, v])),
@@ -173,7 +204,7 @@ const interior: InteractiveDef[] = [
   }),
 ]
 
-export const LOCATIONS: InteractiveDef[] = [...street, ...interior]
+export const LOCATIONS: InteractiveDef[] = [...street, ...interior, ...studio]
 
 export function getLocation(id: string | null) {
   return LOCATIONS.find((l) => l.id === id) ?? null
@@ -195,5 +226,5 @@ export const ZONES: ZoneDef[] = [
   { id: 'nfc', name: 'NFC Solutions', subtitle: 'My workplace', center: [8, 17], radius: 6.5, reveal: [23, 7, 17] },
   { id: 'home', name: 'My Home', subtitle: 'About me', center: [-7, -25], radius: 5, reveal: [-16, 3.5, -25] },
   { id: 'park', name: 'Design Park', subtitle: 'Process · AI · activities', center: [-16, 16], radius: 8, reveal: [-16, 1.5, 15.5] },
-  { id: 'plaza', name: 'Project District', subtitle: 'Five pavilions, five stories', center: [19, -25], radius: 11, reveal: [19, 3, -25] },
+  { id: 'plaza', name: 'Project Pavilions', subtitle: 'A preview · full projects inside NFC Solutions', center: [19, -25], radius: 11, reveal: [19, 3, -25] },
 ]

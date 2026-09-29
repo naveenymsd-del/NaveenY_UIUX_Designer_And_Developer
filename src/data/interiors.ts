@@ -20,6 +20,28 @@ export interface InteriorDef {
   outside: { pos: [number, number]; yaw: number }
   establish: { position: [number, number, number]; target: [number, number, number] }
   palette: { floor: number; wall: number; wainscot: number; trim: number; ceiling: number }
+  /** extra floor beyond the east wall (the office's Project Studio wing), metres */
+  eastWing?: number
+  /** named arrival points inside the room, each with its own establishing shot */
+  spots?: Record<string, { pos: [number, number]; yaw: number; establish: { position: [number, number, number]; target: [number, number, number] } }>
+}
+
+/**
+ * The Project Studio: a glass-walled wing on the east side of the NFC
+ * Solutions office (room-local x 14 → 24). Projects are shown on screens along
+ * its east wall, one bay per project, in PROJECTS order — adding a project
+ * adds a bay (up to BAY_Z.length; extend the list for more).
+ */
+export const STUDIO = {
+  x0: 14,
+  width: 10,
+  /** opening in the glass partition, near the office entrance (z range) */
+  door: [4.4, 8.4] as [number, number],
+  screenX: 23.9,
+  standX: 21.6,
+  BAY_Z: [-7.6, -3.9, -0.2, 3.5, 7.2] as number[],
+  /** a fifth+ bay continues on the back (north) wall */
+  BACK_BAYS: [[17.2, -9.9], [20.4, -9.9]] as [number, number][],
 }
 
 export const INTERIORS: Record<InteriorId, InteriorDef> = {
@@ -36,6 +58,10 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     outside: { pos: [13.6, 17], yaw: -Math.PI / 2 },
     establish: { position: [11.5, 3.3, 8.6], target: [-2, 1.2, -3.5] },
     palette: { floor: 0xc9c4bb, wall: 0xf2f1ee, wainscot: 0xe3e1dc, trim: 0x3b3e44, ceiling: 0xf6f6f4 },
+    eastWing: STUDIO.width,
+    spots: {
+      studio: { pos: [16.4, 6.6], yaw: 2.35, establish: { position: [15.0, 2.75, 9.3], target: [22.6, 1.45, -1.2] } },
+    },
   },
   home: {
     id: 'home', name: 'My Home', subtitle: 'Profile & story',
@@ -52,16 +78,43 @@ export function roomToWorld(id: InteriorId, x: number, z: number, y = 0): [numbe
 }
 
 /** entry spot just inside the door, facing into the room */
-export function interiorEntry(id: InteriorId): { pos: [number, number, number]; yaw: number } {
+export function interiorEntry(id: InteriorId, spot?: string): { pos: [number, number, number]; yaw: number } {
   const r = INTERIORS[id]
+  const sp = spot ? r.spots?.[spot] : undefined
+  if (sp) return { pos: roomToWorld(id, sp.pos[0], sp.pos[1], 0.6), yaw: sp.yaw }
   return { pos: roomToWorld(id, 0, r.depth / 2 - 2.2, 0.6), yaw: Math.PI }
+}
+
+/** room-local extents including any wing */
+export function interiorBounds(r: InteriorDef) {
+  return { x0: -r.width / 2, x1: r.width / 2 + (r.eastWing ?? 0), z0: -r.depth / 2, z1: r.depth / 2 }
 }
 
 export function insideInterior(x: number, z: number): InteriorId | null {
   for (const r of Object.values(INTERIORS)) {
-    if (Math.abs(x - r.origin[0]) < r.width / 2 + 1 && Math.abs(z - r.origin[2]) < r.depth / 2 + 1) return r.id
+    const b = interiorBounds(r)
+    const lx = x - r.origin[0]
+    const lz = z - r.origin[2]
+    if (lx > b.x0 - 1 && lx < b.x1 + 1 && lz > b.z0 - 1 && lz < b.z1 + 1) return r.id
   }
   return null
+}
+
+/** true when a world point is inside the office's Project Studio wing */
+export function inStudio(x: number, z: number) {
+  const o = INTERIORS.office.origin
+  const lx = x - o[0]
+  return lx > STUDIO.x0 + 0.3 && lx < STUDIO.x0 + STUDIO.width && Math.abs(z - o[2]) < INTERIORS.office.depth / 2
+}
+
+/** screen pose + standing spot for the n-th project bay (room-local) */
+export function studioBay(i: number) {
+  if (i < STUDIO.BAY_Z.length) {
+    const z = STUDIO.BAY_Z[i]
+    return { screen: [STUDIO.screenX, z] as [number, number], yaw: -Math.PI / 2, stand: [STUDIO.standX, z] as [number, number] }
+  }
+  const [x, z] = STUDIO.BACK_BAYS[(i - STUDIO.BAY_Z.length) % STUDIO.BACK_BAYS.length]
+  return { screen: [x, z] as [number, number], yaw: 0, stand: [x, z + 2.3] as [number, number] }
 }
 
 // ── furniture layouts (room-local) ─────────────────────────────────────────
@@ -89,6 +142,10 @@ export interface InteriorPerson {
   greeter?: boolean
   outfit?: 'office' | 'student' | 'teacher'
   prop?: 'cup' | 'phone' | 'book' | 'tablet'
+  /** colleague name (data/colleagues.ts) — revealed only when the visitor is close */
+  name?: string
+  /** occasional alternate poses so nobody stands like a mannequin */
+  fidget?: SpecialPose[]
 }
 
 const chairY = 0.47
@@ -97,21 +154,29 @@ const deskSeat = (d: { x: number; z: number; facing: 1 | -1 }) => ({ x: d.x, z: 
 
 export const INTERIOR_PEOPLE: InteriorPerson[] = [
   // ── NFC Solutions office
-  ...[0, 2, 3, 4, 7, 8].map((i) => {
+  // desks: heads-down work, with the odd glance at a phone or a stretch back
+  ...([[0, 'Murali'], [2, 'Subbu'], [3, 'SaiB'], [4, 'Sai'], [7, 'Viswa Pani'], [8, undefined]] as const).map(([i, name], k) => {
     const s = deskSeat(OFFICE_DESKS[i])
-    return { room: 'office' as const, ...s, pose: 'work' as const, seatY: chairY, outfit: 'office' as const }
+    return {
+      room: 'office' as const, ...s, pose: 'work' as const, seatY: chairY, outfit: 'office' as const, name,
+      fidget: (k % 2 === 0 ? ['sit', 'phone'] : ['sit']) as SpecialPose[],
+    }
   }),
-  { room: 'office', x: 5.4, z: 6.4, yaw: Math.PI * 0.85, pose: 'read', greeter: true, outfit: 'office', prop: 'tablet' },
-  { room: 'office', x: -6.2, z: 5.2, yaw: 0, pose: 'work', seatY: chairY, outfit: 'office' },
+  // by the entrance: notices you, turns and waves, then back to the tablet
+  { room: 'office', x: 5.4, z: 6.4, yaw: Math.PI * 0.85, pose: 'read', greeter: true, outfit: 'office', prop: 'tablet', name: 'Om Sai' },
+  { room: 'office', x: -6.2, z: 5.2, yaw: 0, pose: 'work', seatY: chairY, outfit: 'office', fidget: ['sit'] },
   // meeting room: three people in discussion
   { room: 'office', x: -10.6, z: -7.4, yaw: Math.PI / 2, pose: 'sitTalk', seatY: chairY, outfit: 'office' },
-  { room: 'office', x: -8.4, z: -7.4, yaw: -Math.PI / 2, pose: 'sit', seatY: chairY, outfit: 'office' },
-  { room: 'office', x: -9.5, z: -5.2, yaw: Math.PI, pose: 'sitTalk', seatY: chairY, outfit: 'office' },
-  // design wall: two colleagues collaborating
-  { room: 'office', x: 10.6, z: -6.6, yaw: -2.3, pose: 'talk', outfit: 'office' },
-  { room: 'office', x: 9.6, z: -7.4, yaw: 0.8, pose: 'talk', outfit: 'office', prop: 'tablet' },
+  { room: 'office', x: -8.4, z: -7.4, yaw: -Math.PI / 2, pose: 'sit', seatY: chairY, outfit: 'office', fidget: ['sitTalk'] },
+  { room: 'office', x: -9.5, z: -5.2, yaw: Math.PI, pose: 'sitTalk', seatY: chairY, outfit: 'office', fidget: ['sit'] },
+  // design wall: two colleagues collaborating over sketches
+  { room: 'office', x: 10.6, z: -6.6, yaw: -2.3, pose: 'talk', outfit: 'office', name: 'Kajal', fidget: ['look'] },
+  { room: 'office', x: 9.6, z: -7.4, yaw: 0.8, pose: 'talk', outfit: 'office', prop: 'tablet', name: 'Geetha', fidget: ['read'] },
   // coffee point
-  { room: 'office', x: -11.6, z: -0.6, yaw: 1.2, pose: 'coffee', outfit: 'office', prop: 'cup' },
+  { room: 'office', x: -11.6, z: -0.6, yaw: 1.2, pose: 'coffee', outfit: 'office', prop: 'cup', fidget: ['phone'] },
+  // Project Studio: a quiet review at the collaboration table
+  { room: 'office', x: 16.65, z: -2.0, yaw: Math.PI / 2, pose: 'sitTalk', seatY: chairY, outfit: 'office', fidget: ['work'] },
+  { room: 'office', x: 18.55, z: -1.4, yaw: -Math.PI / 2, pose: 'work', seatY: chairY, outfit: 'office', fidget: ['sitTalk', 'sit'] },
   // ── Education
   ...[0, 2, 4].map((i) => ({ room: 'education' as const, x: EDU_DESKS[i][0], z: EDU_DESKS[i][1] + 0.62, yaw: Math.PI, pose: 'work' as const, seatY: chairY, outfit: 'student' as const })),
   { room: 'education', x: 9.2, z: -7.6, yaw: -0.3, pose: 'talk', outfit: 'teacher' },
@@ -120,8 +185,9 @@ export const INTERIOR_PEOPLE: InteriorPerson[] = [
 ]
 
 /** Walkers inside rooms (room-local waypoint loops). */
-export const INTERIOR_ROUTES: { room: InteriorId; points: [number, number][]; speed: number }[] = [
-  { room: 'office', points: [[-2.6, 5.2], [1.6, 5.2], [1.6, -3.8], [-2.6, -3.8]], speed: 1.15 },
+export const INTERIOR_ROUTES: { room: InteriorId; points: [number, number][]; speed: number; name?: string; prop?: InteriorPerson['prop'] }[] = [
+  // moving between desks and into the Project Studio, tablet in hand
+  { room: 'office', name: 'Kiran', prop: 'tablet', speed: 1.1, points: [[-2.6, 4.6], [9.5, 4.6], [12.8, 5.8], [15.6, 6.4], [15.6, -6.6], [15.6, 6.4], [12.8, 5.8], [9.5, 4.6], [1.6, 4.6], [1.6, -3.8], [-2.6, -3.8]] },
   { room: 'education', points: [[-3, 4.6], [5.5, 4.6], [5.5, 1.2], [-3, 1.2]], speed: 1.05 },
 ]
 
@@ -129,7 +195,7 @@ export const INTERIOR_ROUTES: { room: InteriorId; points: [number, number][]; sp
 export type StoryKind =
   | 'timeline' | 'classroom' | 'book' | 'certificates' | 'growth' | 'bell'
   | 'reception' | 'workspace' | 'meeting' | 'designWall'
-  | 'hello' | 'desk' | 'laptop' | 'bookshelf' | 'journey' | 'portfolio' | 'window' | 'contact'
+  | 'hello' | 'desk' | 'laptop' | 'bookshelf' | 'journey' | 'portfolio' | 'window' | 'contact' | 'skills' | 'approach'
 
 export interface InteriorStory {
   room: InteriorId
@@ -164,5 +230,7 @@ export const INTERIOR_STORIES: InteriorStory[] = [
   { room: 'home', kind: 'journey', name: 'Career Journey', x: 7.2, z: -2.2, radius: 2.0, label: 'Press E to see my journey', cam: { position: [4.2, 2.0, -1.0], target: [9, 1.6, -2.2] } },
   { room: 'home', kind: 'portfolio', name: 'Selected Work', x: 7.2, z: 2.8, radius: 2.0, label: 'Press E to see selected work', cam: { position: [4.2, 2.0, 3.8], target: [9, 1.6, 2.8] } },
   { room: 'home', kind: 'window', name: 'Looking Ahead', x: -4.8, z: -5.1, radius: 1.7, label: 'Press E to look outside', cam: { position: [-3.4, 1.9, -2.6], target: [-5, 1.8, -7] } },
+  { room: 'home', kind: 'skills', name: 'Skills', x: -7.3, z: 3.9, radius: 1.8, label: 'Press E to see my skills', cam: { position: [-4.4, 2.0, 4.6], target: [-9, 1.6, 3.9] } },
+  { room: 'home', kind: 'approach', name: 'Design Approach', x: 6.7, z: -5.2, radius: 1.8, label: 'Press E to see how I approach design', cam: { position: [5.6, 2.0, -2.4], target: [6.8, 1.7, -7] } },
   { room: 'home', kind: 'contact', name: 'Contact', x: -4.6, z: 5.6, radius: 1.6, label: 'Press E to get in touch', cam: { position: [-2.4, 2.0, 3.4], target: [-4.6, 1.5, 7] } },
 ]

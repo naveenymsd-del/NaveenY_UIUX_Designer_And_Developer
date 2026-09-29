@@ -5,14 +5,17 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { createRng } from '@/utils/rng'
 import { charGeometries, type CharacterDetail, type CharacterLook } from './characterLook'
+import { buildLofts } from './characterLoft'
 
 /**
  * Stylised-realistic human, built as ONE skinned mesh (one draw call per
  * person). Proportions follow a ≈7.3-head canon for a 1.74 m adult: hip
  * joint at 0.93 m, knee 0.50 m, ankle 0.08 m, shoulders 1.42 m, crown 1.75 m.
- * Primitive parts (ellipsoids, capsules, rounded boxes) are merged with vertex
- * colours and bound rigidly to 23 procedural bones, including toes (heel-to-
- * toe roll), hands, neck and a two-segment spine for natural upper-body motion.
+ * The body (torso, legs, arms, neck) is lofted as continuous surfaces with
+ * skin weights blended across joints (characterLoft); details such as shoes,
+ * hands, face, hair, collars and props are primitives bound to one bone.
+ * 23 procedural bones, including toes (heel-to-toe roll), hands, neck and a
+ * two-segment spine for natural upper-body motion.
  */
 export type BoneName =
   | 'root' | 'body' | 'hips'
@@ -66,8 +69,8 @@ function boneLayout(look: CharacterLook): { name: BoneName; parent: BoneName | n
     { name: 'chest', parent: 'spine', pos: [0, 0.2, 0] },
     { name: 'neck', parent: 'chest', pos: [0, 0.23, 0.005] },
     { name: 'head', parent: 'neck', pos: [0, 0.075, 0.005] },
-    { name: 'eyeL', parent: 'head', pos: [0.036, 0.113, 0.093] },
-    { name: 'eyeR', parent: 'head', pos: [-0.036, 0.113, 0.093] },
+    { name: 'eyeL', parent: 'head', pos: [0.035, 0.113, 0.096] },
+    { name: 'eyeR', parent: 'head', pos: [-0.035, 0.113, 0.096] },
     { name: 'armL', parent: 'chest', pos: [0.19 * b, 0.175, -0.005] },
     { name: 'elbowL', parent: 'armL', pos: [0, -0.29, 0] },
     { name: 'handL', parent: 'elbowL', pos: [0, -0.255, 0] },
@@ -83,116 +86,117 @@ const cap = (d: number, len: number): V3 => [d, len / 1.6, d]
 function partList(look: CharacterLook): PartSpec[] {
   const b = look.build
   const P: PartSpec[] = []
-  const add = (bone: BoneName, geo: PartSpec['geo'], color: number, scale: V3, pos?: V3, rot?: V3, noise = 0.03) =>
+  const add = (bone: BoneName, geo: PartSpec['geo'], color: number, scale: V3, pos?: V3, rot?: V3, noise = 0.012) =>
     P.push({ bone, geo, color, scale, pos, rot, noise })
 
   const skin = look.skin
-  const lip = shade(skin, -28)
+  const lip = shade(skin, -24)
   const top = look.top
   const bottom = look.bottom
   const skirt = look.bottomStyle === 'skirt'
-  const shorts = look.bottomStyle === 'shorts'
-  const legColor = skirt ? skin : bottom
-  const shinColor = skirt || shorts ? skin : bottom
 
-  // ── pelvis & legs ───────────────────────────────────────────────────
-  add('hips', 'ellipsoid', skirt ? top : bottom, [0.33 * b, 0.21, 0.22], [0, -0.01, 0])
-  if (!skirt) add('hips', 'boxSharp', shade(bottom, -18), [0.325 * b, 0.04, 0.215], [0, 0.075, 0])
-  if (skirt) add('hips', 'cone', bottom, [0.44 * b, 0.46, 0.34], [0, -0.17, 0.005])
-  for (const [leg, knee, foot, toe] of [['legL', 'kneeL', 'footL', 'toeL'], ['legR', 'kneeR', 'footR', 'toeR']] as const) {
-    add(leg, 'ellipsoid', legColor, [0.155, 0.24, 0.165], [0, -0.08, 0.005])
-    add(leg, 'capsule', legColor, cap(0.135, 0.45), [0, -0.215, 0])
-    if (shorts) add(leg, 'capsule', bottom, cap(0.16, 0.26), [0, -0.1, 0])
-    add(knee, 'ellipsoid', shinColor, [0.118, 0.22, 0.13], [0, -0.12, -0.012])
-    add(knee, 'capsule', shinColor, cap(0.108, 0.44), [0, -0.205, 0])
-    if (!skirt && !shorts) add(knee, 'capsule', shade(bottom, -10), cap(0.118, 0.1), [0, -0.37, 0])
-    // shoe: heel block + sole on the foot bone, toe cap + toe sole on the toe bone
-    add(foot, 'box', look.shoes, [0.098, 0.085, 0.17], [0, -0.035, -0.002])
-    add(foot, 'boxSharp', look.sole, [0.104, 0.024, 0.18], [0, -0.075, 0.005])
-    add(toe, 'box', look.shoes, [0.096, 0.068, 0.115], [0, 0.012, 0.03])
-    add(toe, 'boxSharp', look.sole, [0.1, 0.024, 0.115], [0, -0.017, 0.032])
+  // ── lower body details (legs themselves are lofted) ──────────────────
+  if (skirt) add('hips', 'cone', bottom, [0.42 * b, 0.46, 0.32], [0, -0.17, 0.005])
+  for (const [foot, toe] of [['footL', 'toeL'], ['footR', 'toeR']] as const) {
+    // shoe: heel counter + sole on the foot bone, tapered toe box + toe sole on the toe bone
+    add(foot, 'box', look.shoes, [0.09, 0.078, 0.15], [0, -0.034, -0.012])
+    add(foot, 'boxSharp', look.sole, [0.094, 0.02, 0.17], [0, -0.074, 0.0])
+    // rounded toe box rather than a block
+    add(toe, 'ellipsoid', look.shoes, [0.09, 0.066, 0.16], [0, 0.006, 0.03], [0.06, 0, 0])
+    add(toe, 'boxSharp', look.sole, [0.09, 0.02, 0.13], [0, -0.017, 0.03])
+    add(foot, 'boxSharp', shade(look.shoes, -18), [0.06, 0.01, 0.05], [0, 0.006, 0.044], [-0.35, 0, 0], 0)
   }
 
-  // ── torso ───────────────────────────────────────────────────────────
-  add('spine', 'ellipsoid', top, [0.3 * b, 0.28, 0.195], [0, 0.1, 0])
-  add('chest', 'ellipsoid', top, [0.34 * b, 0.3, 0.205], [0, 0.08, 0.005])
-  add('chest', 'ellipsoid', top, [0.385 * b, 0.11, 0.175], [0, 0.18, -0.008])
+  // ── garment details on the lofted torso ──────────────────────────────
   switch (look.topStyle) {
-    case 'jacket':
-      add('chest', 'boxSharp', look.topAccent, [0.1, 0.3, 0.02], [0, 0.07, 0.105])
-      add('chest', 'boxSharp', shade(top, -14), [0.035, 0.2, 0.02], [0.06, 0.15, 0.1], [0, 0, 0.35])
-      add('chest', 'boxSharp', shade(top, -14), [0.035, 0.2, 0.02], [-0.06, 0.15, 0.1], [0, 0, -0.35])
-      add('spine', 'ellipsoid', top, [0.305 * b, 0.1, 0.2], [0, -0.03, 0])
+    case 'overshirt':
+    case 'jacket': {
+      const edge = shade(top, -16)
+      // open front edges and a soft collar standing around the neck
+      for (const sx of [-1, 1]) add('chest', 'boxSharp', edge, [0.014, 0.3, 0.01], [sx * 0.056, 0.03, 0.136], [0.08, 0, sx * -0.1])
+      // soft collar band lying around the base of the neck
+      add('chest', 'torus', top, [0.132, 0.118, 0.3], [0, 0.226, 0.0], [Math.PI / 2 - 0.34, 0, 0], 0)
+      // chest pockets with flaps
+      for (const sx of [-1, 1]) {
+        add('chest', 'boxSharp', shade(top, -6), [0.064, 0.066, 0.005], [sx * 0.1, 0.1, 0.128], [0.06, sx * 0.42, 0], 0)
+        add('chest', 'boxSharp', edge, [0.068, 0.018, 0.008], [sx * 0.1, 0.136, 0.129], [0.06, sx * 0.42, 0], 0)
+      }
+      // tee neckline peeking out
+      add('chest', 'torus', shade(look.topAccent, -8), [0.105, 0.08, 0.3], [0, 0.232, 0.018], [Math.PI / 2 - 0.25, 0, 0], 0)
       break
+    }
     case 'hoodie':
       add('chest', 'ellipsoid', shade(top, -8), [0.2, 0.1, 0.13], [0, 0.23, -0.08])
-      add('chest', 'boxSharp', look.topAccent, [0.008, 0.1, 0.008], [0.03, 0.11, 0.11])
-      add('chest', 'boxSharp', look.topAccent, [0.008, 0.1, 0.008], [-0.03, 0.11, 0.11])
-      add('spine', 'boxSharp', shade(top, -10), [0.3 * b, 0.05, 0.2], [0, -0.03, 0])
+      add('chest', 'boxSharp', look.topAccent, [0.008, 0.1, 0.008], [0.03, 0.11, 0.113])
+      add('chest', 'boxSharp', look.topAccent, [0.008, 0.1, 0.008], [-0.03, 0.11, 0.113])
       break
     case 'shirt':
-      add('chest', 'boxSharp', shade(top, -10), [0.075, 0.035, 0.02], [0.035, 0.225, 0.07], [0.4, 0, 0.5])
-      add('chest', 'boxSharp', shade(top, -10), [0.075, 0.035, 0.02], [-0.035, 0.225, 0.07], [0.4, 0, -0.5])
-      for (let i = 0; i < 3; i++) add('chest', 'ellipsoidLo', shade(top, -30), [0.01, 0.01, 0.006], [0, 0.16 - i * 0.07, 0.108], undefined, 0)
+      for (const sx of [-1, 1]) add('chest', 'boxSharp', shade(top, -6), [0.07, 0.03, 0.05], [sx * 0.042, 0.238, 0.05], [0.55, sx * -0.35, sx * 0.55])
+      for (let i = 0; i < 4; i++) add('chest', 'ellipsoidLo', shade(top, -36), [0.009, 0.009, 0.005], [0, 0.2 - i * 0.075, 0.116], undefined, 0)
       break
     case 'sweater':
-      add('spine', 'boxSharp', shade(top, -12), [0.3 * b, 0.05, 0.2], [0, -0.02, 0])
-      add('chest', 'ellipsoid', shade(top, -12), [0.13, 0.04, 0.12], [0, 0.235, 0.01])
+      add('chest', 'torus', shade(top, -12), [0.11, 0.09, 0.35], [0, 0.232, 0.012], [Math.PI / 2 - 0.25, 0, 0], 0)
       break
     case 'blouse':
-      add('chest', 'ellipsoid', skin, [0.1, 0.05, 0.05], [0, 0.215, 0.075])
+      add('chest', 'ellipsoid', skin, [0.09, 0.045, 0.04], [0, 0.222, 0.08])
+      add('chest', 'torus', shade(top, -10), [0.1, 0.085, 0.3], [0, 0.228, 0.02], [Math.PI / 2 - 0.3, 0, 0], 0)
       break
     default: // tee
-      add('chest', 'ellipsoid', shade(top, -10), [0.12, 0.035, 0.11], [0, 0.235, 0.01])
+      add('chest', 'torus', shade(top, -12), [0.105, 0.085, 0.32], [0, 0.232, 0.016], [Math.PI / 2 - 0.25, 0, 0], 0)
   }
 
-  // ── neck & head ─────────────────────────────────────────────────────
-  add('neck', 'capsule', skin, cap(0.095, 0.14), [0, 0.03, 0])
-  add('head', 'head', skin, [0.19, 0.235, 0.212], [0, 0.105, 0.004], undefined, 0.02)
-  add('head', 'ellipsoid', skin, [0.148, 0.13, 0.15], [0, 0.04, 0.03], undefined, 0.02)
-  add('head', 'ellipsoidLo', shade(skin, -10), [0.028, 0.058, 0.04], [0.094, 0.1, -0.005])
-  add('head', 'ellipsoidLo', shade(skin, -10), [0.028, 0.058, 0.04], [-0.094, 0.1, -0.005])
-  add('head', 'ellipsoidLo', shade(skin, -6), [0.03, 0.05, 0.042], [0, 0.083, 0.103], [-0.2, 0, 0])
-  add('head', 'boxSharp', lip, [0.042, 0.009, 0.012], [0, 0.043, 0.098])
-  add('head', 'boxSharp', shade(look.hair, 10), [0.042, 0.009, 0.012], [0.037, 0.137, 0.099], [0, 0, -0.1])
-  add('head', 'boxSharp', shade(look.hair, 10), [0.042, 0.009, 0.012], [-0.037, 0.137, 0.099], [0, 0, 0.1])
+  // ── head & face ─────────────────────────────────────────────────────
+  // one continuous skull-to-jaw shape (see headShape) — no seams, no toy head
+  add('head', 'face', skin, [0.18, 0.232, 0.208], [0, 0.102, 0.006], undefined, 0)
+  // ears
+  for (const sx of [-1, 1]) add('head', 'ellipsoidLo', shade(skin, -8), [0.024, 0.054, 0.036], [sx * 0.086, 0.1, -0.005], [0, sx * 0.3, 0], 0.006)
+  // nose: bridge + tip
+  add('head', 'ellipsoid', shade(skin, -2), [0.018, 0.052, 0.03], [0, 0.09, 0.103], [-0.25, 0, 0], 0)
+  add('head', 'ellipsoid', shade(skin, -4), [0.028, 0.02, 0.024], [0, 0.068, 0.109], undefined, 0)
+  // mouth + lower lip
+  add('head', 'boxSharp', lip, [0.036, 0.006, 0.01], [0, 0.043, 0.106], undefined, 0)
+  add('head', 'ellipsoidLo', shade(skin, -14), [0.03, 0.01, 0.012], [0, 0.034, 0.104], undefined, 0)
+  // brows
+  for (const sx of [-1, 1]) add('head', 'boxSharp', shade(look.hair, 22), [0.034, 0.006, 0.01], [sx * 0.034, 0.134, 0.099], [0, 0, sx * -0.07], 0)
+  // eyes: small, set in (no cartoon whites)
   for (const eye of ['eyeL', 'eyeR'] as const) {
-    add(eye, 'ellipsoidLo', 0xf2eee8, [0.027, 0.014, 0.01], [0, 0, 0], undefined, 0)
-    add(eye, 'ellipsoidLo', 0x2a1f1a, [0.013, 0.013, 0.008], [0, 0, 0.0045], undefined, 0)
+    add(eye, 'ellipsoidLo', 0xe9e3da, [0.022, 0.011, 0.008], [0, 0, -0.002], undefined, 0)
+    add(eye, 'ellipsoidLo', 0x241a16, [0.011, 0.011, 0.007], [0, 0, 0.002], undefined, 0)
+    add(eye, 'boxSharp', shade(skin, -20), [0.026, 0.004, 0.008], [0, 0.009, 0.001], undefined, 0)
   }
   if (look.accessory === 'glasses') {
-    add('head', 'torus', 0x2a2626, [0.034, 0.028, 0.02], [0.036, 0.113, 0.103], undefined, 0)
-    add('head', 'torus', 0x2a2626, [0.034, 0.028, 0.02], [-0.036, 0.113, 0.103], undefined, 0)
-    add('head', 'boxSharp', 0x2a2626, [0.02, 0.005, 0.005], [0, 0.117, 0.104], undefined, 0)
+    add('head', 'torus', 0x2a2626, [0.034, 0.028, 0.02], [0.036, 0.113, 0.104], undefined, 0)
+    add('head', 'torus', 0x2a2626, [0.034, 0.028, 0.02], [-0.036, 0.113, 0.104], undefined, 0)
+    add('head', 'boxSharp', 0x2a2626, [0.02, 0.005, 0.005], [0, 0.117, 0.105], undefined, 0)
   }
   hair(look, add)
 
-  // ── arms & hands ────────────────────────────────────────────────────
+  // ── shoulders & hands (arms are lofted) ─────────────────────────────
   for (const [arm, elbow, hand, side] of [['armL', 'elbowL', 'handL', 1], ['armR', 'elbowR', 'handR', -1]] as const) {
-    add(arm, 'ellipsoid', top, [0.094, 0.1, 0.098], [0, -0.035, 0])
-    if (look.longSleeves) add(arm, 'capsule', top, cap(0.086, 0.31), [0, -0.145, 0])
-    else {
-      add(arm, 'capsule', skin, cap(0.084, 0.3), [0, -0.15, 0])
-      add(arm, 'capsule', top, cap(0.106, 0.15), [0, -0.055, 0])
-    }
-    add(elbow, 'capsule', look.longSleeves ? top : skin, cap(look.longSleeves ? 0.076 : 0.068, 0.27), [0, -0.12, 0])
-    if (look.longSleeves) add(elbow, 'capsule', shade(top, -12), cap(0.078, 0.05), [0, -0.235, 0])
-    add(hand, 'box', skin, [0.072, 0.092, 0.032], [0, -0.05, 0.004], undefined, 0.02)
-    add(hand, 'box', skin, [0.066, 0.055, 0.026], [0, -0.108, 0.012], [0.25, 0, 0], 0.02)
-    add(hand, 'capsule', skin, cap(0.024, 0.06), [side * 0.034, -0.045, 0.022], [0.3, 0, side * 0.5], 0.02)
+    // deltoid: rounds the shoulder where the sleeve meets the torso
+    add(arm, 'ellipsoid', top, [0.104, 0.11, 0.11], [side * -0.008, -0.03, 0], undefined, 0.01)
+    if (look.longSleeves) add(elbow, 'torus', shade(top, -14), [0.064, 0.058, 0.5], [0, -0.228, 0], [Math.PI / 2, 0, 0], 0)
+    // hand: palm, fingers (slightly curled) and thumb
+    add(hand, 'box', skin, [0.07, 0.085, 0.03], [0, -0.048, 0.004], undefined, 0.006)
+    add(hand, 'box', skin, [0.064, 0.07, 0.024], [0, -0.108, 0.012], [0.3, 0, 0], 0.006)
+    add(hand, 'capsule', skin, cap(0.022, 0.06), [side * 0.034, -0.045, 0.02], [0.3, 0, side * 0.5], 0.006)
   }
 
   // ── accessories & props ─────────────────────────────────────────────
   const ac = look.accessoryColor
   switch (look.accessory) {
+    case 'watch':
+      add('elbowL', 'torus', 0x2a2626, [0.058, 0.05, 0.9], [0, -0.238, 0], [Math.PI / 2, 0, 0], 0)
+      add('elbowL', 'boxSharp', ac, [0.012, 0.03, 0.034], [0.03, -0.238, 0.004], undefined, 0)
+      break
     case 'backpack':
       add('chest', 'box', ac, [0.28, 0.38, 0.13], [0, 0.04, -0.17])
       add('chest', 'box', shade(ac, -15), [0.2, 0.13, 0.05], [0, -0.06, -0.24])
-      for (const sx of [-1, 1]) add('chest', 'boxSharp', shade(ac, -25), [0.04, 0.36, 0.02], [sx * 0.09, 0.07, 0.108])
+      for (const sx of [-1, 1]) add('chest', 'boxSharp', shade(ac, -25), [0.04, 0.36, 0.02], [sx * 0.09, 0.07, 0.115])
       break
     case 'crossbody':
-      add('chest', 'boxSharp', shade(ac, -20), [0.03, 0.56, 0.018], [0, 0.03, 0.113], [0, 0, 0.62])
-      add('hips', 'box', ac, [0.19, 0.14, 0.055], [-0.15 * b, 0.03, 0.08], [0, 0.35, 0])
+      add('chest', 'boxSharp', shade(ac, -20), [0.03, 0.56, 0.018], [0, 0.03, 0.12], [0, 0, 0.62])
+      add('hips', 'box', ac, [0.19, 0.14, 0.055], [-0.15 * b, 0.03, 0.085], [0, 0.35, 0])
       break
     case 'totebag':
       add('chest', 'box', ac, [0.05, 0.32, 0.29], [-0.24 * b, -0.23, 0.02])
@@ -200,12 +204,12 @@ function partList(look: CharacterLook): PartSpec[] {
       break
     case 'scarf':
       add('chest', 'torus', ac, [0.2, 0.2, 0.55], [0, 0.23, 0.005], [Math.PI / 2, 0, 0])
-      add('chest', 'boxSharp', ac, [0.06, 0.24, 0.025], [0.045, 0.1, 0.11], [0.05, 0, 0.1])
+      add('chest', 'boxSharp', ac, [0.06, 0.24, 0.025], [0.045, 0.1, 0.118], [0.05, 0, 0.1])
       break
     case 'lanyard':
-      add('chest', 'boxSharp', 0x2f3f66, [0.01, 0.2, 0.008], [0.03, 0.14, 0.11], [0, 0, -0.25])
-      add('chest', 'boxSharp', 0x2f3f66, [0.01, 0.2, 0.008], [-0.03, 0.14, 0.11], [0, 0, 0.25])
-      add('chest', 'boxSharp', 0xf5f3ee, [0.055, 0.075, 0.008], [0, 0.02, 0.113], undefined, 0)
+      add('chest', 'boxSharp', 0x2f3f66, [0.01, 0.2, 0.008], [0.03, 0.14, 0.118], [0, 0, -0.25])
+      add('chest', 'boxSharp', 0x2f3f66, [0.01, 0.2, 0.008], [-0.03, 0.14, 0.118], [0, 0, 0.25])
+      add('chest', 'boxSharp', 0xf5f3ee, [0.055, 0.075, 0.008], [0, 0.02, 0.12], undefined, 0)
       break
   }
   switch (look.prop) {
@@ -229,31 +233,39 @@ function partList(look: CharacterLook): PartSpec[] {
 function hair(look: CharacterLook, add: (bone: BoneName, geo: PartSpec['geo'], color: number, scale: V3, pos?: V3, rot?: V3, noise?: number) => void) {
   const h = look.hair
   const s = look.hairStyle
-  const capScale: V3 = s === 'buzz' ? [0.196, 0.236, 0.216] : s === 'curly' ? [0.22, 0.27, 0.235] : [0.203, 0.25, 0.225]
-  add('head', 'hairCap', h, capScale, [0, 0.107, -0.004], [-0.22, 0, 0], 0.06)
+  const hi = shade(h, 14)
+  const capScale: V3 = s === 'buzz' ? [0.178, 0.232, 0.21] : s === 'curly' ? [0.2, 0.262, 0.228] : [0.186, 0.246, 0.218]
+  add('head', 'hairCap', h, capScale, [0, 0.108, -0.006], [-0.22, 0, 0], 0.02)
   if (s === 'buzz') return
-  add('head', 'ellipsoid', h, [0.19, 0.15, 0.13], [0, 0.085, -0.065], undefined, 0.06)
+  // back of the head, tapered to the nape
+  add('head', 'ellipsoid', h, [0.158, 0.14, 0.12], [0, 0.092, -0.074], undefined, 0.02)
+  add('head', 'ellipsoid', h, [0.12, 0.07, 0.07], [0, 0.034, -0.08], undefined, 0.02)
   switch (s) {
     case 'side':
-      add('head', 'ellipsoid', h, [0.17, 0.055, 0.1], [0.025, 0.2, 0.06], [0.2, 0, -0.28], 0.06)
+      // neat side part: volume swept from the part line across the top, short sides
+      add('head', 'ellipsoid', h, [0.15, 0.042, 0.125], [-0.008, 0.2, 0.026], [0.14, 0, 0.12], 0.01)
+      add('head', 'ellipsoid', hi, [0.1, 0.034, 0.066], [-0.022, 0.2, 0.072], [0.36, 0, 0.18], 0.01)
       break
     case 'short':
-      add('head', 'ellipsoid', h, [0.17, 0.05, 0.09], [0, 0.205, 0.06], [0.3, 0, 0], 0.06)
+      add('head', 'ellipsoid', h, [0.155, 0.05, 0.1], [0, 0.208, 0.05], [0.3, 0, 0], 0.02)
       break
     case 'long':
-      add('head', 'ellipsoid', h, [0.2, 0.34, 0.1], [0, -0.02, -0.075], undefined, 0.06)
-      for (const sx of [-1, 1]) add('head', 'ellipsoid', h, [0.05, 0.24, 0.1], [sx * 0.088, 0.03, -0.01], undefined, 0.06)
+      add('head', 'ellipsoid', h, [0.19, 0.34, 0.1], [0, -0.02, -0.075], undefined, 0.02)
+      for (const sx of [-1, 1]) add('head', 'ellipsoid', h, [0.05, 0.24, 0.1], [sx * 0.082, 0.03, -0.01], undefined, 0.02)
+      add('head', 'ellipsoid', hi, [0.15, 0.05, 0.09], [0.02, 0.205, 0.055], [0.3, 0, -0.2], 0.02)
       break
     case 'bun':
-      add('head', 'ellipsoid', h, [0.095, 0.09, 0.095], [0, 0.215, -0.085], undefined, 0.06)
+      add('head', 'ellipsoid', h, [0.09, 0.085, 0.09], [0, 0.212, -0.085], undefined, 0.02)
+      add('head', 'ellipsoid', hi, [0.15, 0.045, 0.09], [0, 0.205, 0.05], [0.3, 0, 0], 0.02)
       break
     case 'ponytail':
-      add('head', 'capsule', h, cap(0.07, 0.26), [0, 0.02, -0.13], [0.35, 0, 0], 0.06)
+      add('head', 'capsule', h, cap(0.065, 0.26), [0, 0.02, -0.13], [0.35, 0, 0], 0.02)
+      add('head', 'ellipsoid', hi, [0.15, 0.045, 0.09], [0, 0.205, 0.05], [0.3, 0, 0], 0.02)
       break
     case 'curly':
       for (let i = 0; i < 8; i++) {
         const a = (i / 8) * Math.PI * 2
-        add('head', 'ellipsoidLo', h, [0.08, 0.075, 0.08], [Math.cos(a) * 0.085, 0.18 + Math.sin(a * 3) * 0.015, Math.sin(a) * 0.08 - 0.02], undefined, 0.06)
+        add('head', 'ellipsoidLo', h, [0.076, 0.07, 0.076], [Math.cos(a) * 0.08, 0.18 + Math.sin(a * 3) * 0.015, Math.sin(a) * 0.075 - 0.02], undefined, 0.03)
       }
       break
   }
@@ -321,6 +333,8 @@ export function buildCharacterRig(look: CharacterLook, detail: CharacterDetail =
     g.setAttribute('skinWeight', new BufferAttribute(sw, 4))
     pieces.push(g)
   }
+  // continuous, smoothly skinned body surfaces (torso, legs, arms, neck)
+  pieces.push(...buildLofts(look, bones, index, detail))
   const geometry = mergeGeometries(pieces, false)!
   pieces.forEach((p) => p.dispose())
   const mesh = new SkinnedMesh(geometry, characterMaterial())

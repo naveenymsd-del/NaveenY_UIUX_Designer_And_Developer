@@ -3,7 +3,7 @@ import { CapsuleCollider, RigidBody, useRapier, type RapierCollider, type Rapier
 import { useEffect, useRef } from 'react'
 import { type Group, Vector3 } from 'three'
 import { input, moveVector } from '@/core/input'
-import { cameraRuntime, playerRuntime, SPAWN, SPAWN_YAW } from '@/core/runtime'
+import { cameraRuntime, INTRO_FACING, playerRuntime, SPAWN } from '@/core/runtime'
 import { WORLD_BOUNDS } from '@/data/cityLayout'
 import { insideInterior } from '@/data/interiors'
 import { controlsEnabled, useGameStore } from '@/stores/gameStore'
@@ -179,7 +179,14 @@ export function Player() {
     // ── facing: smooth, speed-limited turning toward the travel direction ──
     const hs = Math.hypot(s.vx, s.vz)
     const prevYaw = rt.yaw
-    if (hs > 0.25 && mv.magnitude > 0) rt.yaw = dampAngle(rt.yaw, Math.atan2(s.vx, s.vz), MOVE.turnLambda, dt, MOVE.maxTurnSpeed)
+    if (hs > 0.25 && mv.magnitude > 0) {
+      rt.yaw = dampAngle(rt.yaw, Math.atan2(s.vx, s.vz), MOVE.turnLambda, dt, MOVE.maxTurnSpeed)
+      rt.faceYaw = null
+    } else if (rt.faceYaw !== null) {
+      // scripted turn on the spot (intro hand-off): unhurried, with shuffle steps
+      rt.yaw = dampAngle(rt.yaw, rt.faceYaw, 3.2, dt, 2.6)
+      if (Math.abs(wrapAngle(rt.faceYaw - rt.yaw)) < 0.02) rt.faceYaw = null
+    }
     const turnRate = wrapAngle(rt.yaw - prevYaw) / Math.max(dt, 1e-4)
 
     // ── animation data (model-agnostic) ────────────────────────────────
@@ -245,7 +252,7 @@ export function Player() {
       <RigidBody ref={body} type="kinematicPosition" colliders={false} position={[SPAWN.x, SPAWN.y, SPAWN.z]} enabledRotations={[false, false, false]} name="player">
         <CapsuleCollider ref={collider} args={[CAPSULE_HALF, CAPSULE_RADIUS]} position={[0, CAPSULE_HALF + CAPSULE_RADIUS + 0.02, 0]} />
       </RigidBody>
-      <group ref={visual} position={[SPAWN.x, SPAWN.y, SPAWN.z]} rotation-y={SPAWN_YAW}>
+      <group ref={visual} position={[SPAWN.x, SPAWN.y, SPAWN.z]} rotation-y={INTRO_FACING}>
         <CharacterModel anim={playerRuntime.anim} look={PLAYER_LOOK} asset="character" />
       </group>
       <group ref={blob}>

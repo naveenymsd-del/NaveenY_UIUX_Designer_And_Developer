@@ -1,51 +1,53 @@
 import { navigate } from '@/app/routes'
+import { exitInterior } from '@/core/interiors'
 import { soundManager } from '@/core/sound/SoundManager'
+import { useCurrentPlace } from '@/hooks/useCurrentPlace'
 import { useGameStore } from '@/stores/gameStore'
 import { MenuButton } from './MenuButton'
 import { SoundButton } from './SoundButton'
+import { WorldStatus } from './WorldStatus'
 
-/** Floating HUD header: brand (left), mode switch (centre), sound + menu (right). */
+/**
+ * Floating HUD header. Left: name + where you are. Right: local time, visitor
+ * info, sound and menu. A single contextual Back button makes sure you can
+ * always get out of whatever you're in (a panel, a room, the overview).
+ */
 export function TopNavigation() {
   const phase = useGameStore((s) => s.phase)
   const mode = useGameStore((s) => s.mode)
+  const interior = useGameStore((s) => s.interior)
+  const busy = useGameStore((s) => s.fade || !!s.establishing)
   const panelOpen = useGameStore((s) => !!s.activeLocationId || !!s.activeProjectId)
   const closePanels = useGameStore((s) => s.closePanels)
+  const place = useCurrentPlace()
   const visible = phase === 'playing' || phase === 'transition'
 
-  const go = (m: 'street' | 'projects') => {
-    if (m === mode) return
-    soundManager.play('click')
-    navigate(m === 'projects' ? '/projects' : '/street')
-  }
   const back = () => {
     soundManager.play('close')
     if (panelOpen) closePanels()
-    else navigate('/street')
+    else if (mode === 'projects') navigate('/street')
+    else if (interior) void exitInterior(interior)
   }
-  const showBack = phase === 'playing' && (panelOpen || mode === 'projects')
+  const showBack = phase === 'playing' && !busy && (panelOpen || mode === 'projects' || !!interior)
+  const backLabel = panelOpen ? 'Back' : mode === 'projects' ? 'Back to street' : 'Back outside'
 
   return (
     <header className={`ui-top ${visible ? 'is-visible' : ''}`}>
       <div className="ui-top__left">
-        <a className="ui-brand" href="/street" onClick={(e) => { e.preventDefault(); navigate('/street'); closePanels() }} aria-label="Mindscape Avenue — home">
-          <span className="ui-brand__word">Mindscape</span>
-          <span className="ui-brand__tag">AVENUE</span>
+        <a className="ui-brand" href="/street" onClick={(e) => { e.preventDefault(); closePanels(); navigate('/street') }} aria-label="Naveen — interactive portfolio">
+          <span className="ui-brand__word">Naveen</span>
         </a>
+        <p className="ui-where" aria-live="polite">
+          <b key={place.name}>{place.name}</b>
+          <span>{place.sub}</span>
+        </p>
         <button className={`ui-btn ui-btn--glass ui-back ${showBack ? 'is-visible' : ''}`} onClick={back} tabIndex={showBack ? 0 : -1} aria-hidden={!showBack}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
-          Back
+          {backLabel}
         </button>
       </div>
-      <nav className="ui-mode" aria-label="Experience mode">
-        <span className={`ui-mode__thumb ${mode === 'projects' ? 'is-right' : ''}`} aria-hidden="true" />
-        <button className={mode === 'street' ? 'is-active' : ''} aria-pressed={mode === 'street'} onClick={() => go('street')}>
-          Street
-        </button>
-        <button className={mode === 'projects' ? 'is-active' : ''} aria-pressed={mode === 'projects'} onClick={() => go('projects')}>
-          View Projects
-        </button>
-      </nav>
       <div className="ui-top__right">
+        <WorldStatus />
         <SoundButton />
         <MenuButton />
       </div>

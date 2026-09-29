@@ -28,6 +28,18 @@ export const PROFILE = {
   role: 'UI/UX Designer',
   experience: '4+ years experience',
   company: 'NFC Solutions',
+  tagline: 'Designing human experiences with technology, interaction and AI.',
+}
+
+/**
+ * Contact links. Replace each placeholder with the real value; any entry that
+ * is still a [PLACEHOLDER] is shown as "coming soon" instead of a broken link.
+ */
+export const CONTACT = {
+  email: '[ADD EMAIL]',
+  linkedin: '[ADD LINKEDIN URL]',
+  resume: '[ADD RESUME URL]',
+  portfolio: '[ADD PORTFOLIO URL]',
 }
 
 // ── Education ───────────────────────────────────────────────────────────────
@@ -143,8 +155,8 @@ export const HOME_STORIES: Record<string, StoryContent> = {
   },
   portfolio: {
     kicker: 'Selected work', heading: 'Work I’m proud of',
-    body: 'The full case studies live in the Project District.',
-    cta: { label: 'Open projects', action: 'projects' },
+    body: 'The full case studies live in the Project Studio, inside the NFC Solutions office.',
+    cta: { label: 'Go to the Project Studio', action: 'projects' },
   },
   window: {
     kicker: 'Looking ahead', heading: 'What’s next',
@@ -154,8 +166,18 @@ export const HOME_STORIES: Record<string, StoryContent> = {
   contact: {
     kicker: 'Contact', heading: 'Let’s talk',
     body: 'Open to conversations about design, products and interactive experiences.',
-    items: [P('Email', '[ADD EMAIL]'), P('LinkedIn', '[ADD LINKEDIN]')],
+    items: [P('Email', CONTACT.email), P('LinkedIn', CONTACT.linkedin)],
     cta: { label: 'Contact', action: 'contact' },
+  },
+  skills: {
+    kicker: 'Skills', heading: 'What I bring',
+    body: '[ADD YOUR KEY SKILLS]',
+    items: [P('Research & UX', '[ADD RESEARCH / UX SKILLS]'), P('UI & visual design', '[ADD UI SKILLS]'), P('Prototyping & handoff', '[ADD PROTOTYPING SKILLS]')],
+  },
+  approach: {
+    kicker: 'Design approach', heading: 'How I approach a problem',
+    body: '[ADD YOUR DESIGN APPROACH IN A SENTENCE OR TWO]',
+    items: [P('My process', 'Nine steps, from Understand to Deliver — walk the trail in the Design Park.'), P('With AI', 'AI helps me explore. I make the design decisions.')],
   },
 }
 
@@ -172,14 +194,17 @@ export const DESIGN_PROCESS: { n: string; title: string; text: string }[] = [
   { n: '09', title: 'Deliver', text: 'Ship with care, then keep improving.' },
 ]
 
-export const AI_WORKFLOW = ['Human problem', 'AI exploration', 'Ideas', 'Human evaluation', 'Design', 'Prototype', 'Test', 'Refine']
+export const AI_WORKFLOW = ['Human problem', 'AI exploration', 'Ideas', 'Human judgment', 'Design', 'Prototype', 'Test', 'Refine', 'Final experience']
+/** steps where the human decides (highlighted on the AI ring) */
+export const AI_HUMAN_STEPS = new Set(['Human problem', 'Human judgment', 'Final experience'])
 
 export const AI_STORY: StoryContent = {
   kicker: 'AI-assisted design', heading: 'AI is my design partner',
-  body: 'AI helps me explore faster. I stay the decision-maker.',
+  body: 'AI helps me explore. I make the design decisions.',
   items: [
     P('AI assists with', 'Research exploration · ideation · variations · content · prototyping · iteration · code collaboration'),
     P('I stay responsible for', 'Empathy · context · judgment · prioritisation · product thinking · UX decisions · validation'),
+    P('The flow', 'Human problem → AI exploration → ideas → human judgment → design → prototype → test → refine → final experience'),
   ],
 }
 
