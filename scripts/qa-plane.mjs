@@ -6,14 +6,14 @@ const b = await chromium.launch({ executablePath: 'C:/Program Files/Google/Chrom
 const p = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage()
 await p.goto(`http://localhost:5173/street?debug&desktop&mode=${mode}`)
 await p.waitForFunction(() => window.__intro && window.__intro.running, null, { timeout: 90000 })
-for (const t of [2.4, 3.6]) {
+for (const t of [0.4, 1.3, 2.4, 3.6, 5.2, 6.6]) {
   await p.waitForFunction((t) => window.__intro.t >= t, t, { timeout: 30000 })
   await p.screenshot({ path: `qa-screens/170-plane-${mode}-${t}.png` })
 }
 // frozen close-up
 await p.evaluate(() => { window.__intro.t = 3.4; window.__intro.freeze = true })
-const x = await p.evaluate(() => 95 - 27 * 3.4)
-await p.evaluate(([x]) => window.__shot([x - 2, 61.5, 50 + 17], [x + 6, 59.6, 50]), [x])
+const x = await p.evaluate(() => 42 - 11.5 * 3.4)
+await p.evaluate(([x]) => window.__shot([x - 2, 54.5, 80 + 15], [x + 6, 53, 80]), [x])
 await sleep(1500)
 await p.screenshot({ path: `qa-screens/171-plane-close-${mode}.png` })
 await b.close()

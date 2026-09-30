@@ -103,6 +103,22 @@ export function Player() {
     const rz = -Math.sin(th)
     let dx = fx * mv.y + rx * mv.x
     let dz = fz * mv.y + rz * mv.x
+    let scripted = 0
+    if (rt.walkTo && !enabled) {
+      // a calm walk-in to a mark (the intro); stops cleanly on arrival
+      const wx = rt.walkTo.x - rt.position.x
+      const wz = rt.walkTo.z - rt.position.z
+      const wd = Math.hypot(wx, wz)
+      if (wd < 0.12) {
+        if (rt.walkTo.face !== undefined) rt.faceYaw = rt.walkTo.face
+        rt.walkTo = null
+      }
+      else {
+        dx = wx
+        dz = wz
+        scripted = Math.min(1, wd / 0.9)
+      }
+    }
     const dl = Math.hypot(dx, dz)
     if (dl > 0) {
       dx /= dl
@@ -110,7 +126,7 @@ export function Player() {
     }
     const usingStick = input.stick.x !== 0 || input.stick.y !== 0
     const sprint = enabled && (input.sprint || (usingStick && mv.magnitude > 0.92))
-    const targetSpeed = mv.magnitude * (sprint ? MOVE.runSpeed : MOVE.walkSpeed)
+    const targetSpeed = scripted ? scripted * MOVE.walkSpeed * 0.62 : mv.magnitude * (sprint ? MOVE.runSpeed : MOVE.walkSpeed)
     const tvx = dx * targetSpeed
     const tvz = dz * targetSpeed
 
@@ -179,7 +195,7 @@ export function Player() {
     // ── facing: smooth, speed-limited turning toward the travel direction ──
     const hs = Math.hypot(s.vx, s.vz)
     const prevYaw = rt.yaw
-    if (hs > 0.25 && mv.magnitude > 0) {
+    if (hs > 0.25 && (mv.magnitude > 0 || scripted > 0)) {
       rt.yaw = dampAngle(rt.yaw, Math.atan2(s.vx, s.vz), MOVE.turnLambda, dt, MOVE.maxTurnSpeed)
       rt.faceYaw = null
     } else if (rt.faceYaw !== null) {

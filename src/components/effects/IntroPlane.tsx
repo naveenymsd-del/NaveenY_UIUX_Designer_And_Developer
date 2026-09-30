@@ -10,7 +10,7 @@ import { INTRO, PLANE, introRuntime, planeX } from '@/core/intro'
 import { useGameStore } from '@/stores/gameStore'
 import { UI_FONT } from '@/utils/textures'
 
-const BANNER = { length: 19, height: 2.5, rope: 9 }
+const BANNER = { length: 13.5, height: 1.9, rope: 5.5 }
 
 /** NACA-like airfoil outline (chord along +z from 0 → 1, thickness in y) */
 function airfoil(chord: number, t: number, n = 14) {
@@ -116,7 +116,7 @@ function bannerTexture() {
  */
 export function IntroPlane() {
   const root = useRef<Group>(null!)
-  const prop = useRef<Mesh>(null!)
+  const props = useRef<(Group | null)[]>([])
   const strobe = useRef<Mesh>(null!)
   const res = useMemo(() => {
     const body = new MeshStandardMaterial({ color: '#f3f0e9', roughness: 0.3, metalness: 0.15, fog: false, envMapIntensity: 1.2 })
@@ -160,15 +160,17 @@ export function IntroPlane() {
     }
     const ropePts = [new Vector3(0, 0, 0), new Vector3(BANNER.rope, -0.9, 0)]
     const rope = new Line(new BufferGeometry().setFromPoints(ropePts), new LineBasicMaterial({ color: '#3a3d44', fog: false }))
+    const nprof = [[0, 0], [0.16, 0.05], [0.26, 0.3], [0.29, 0.8], [0.27, 1.4], [0.18, 1.9], [0.06, 2.1]].map(([r, y]) => new Vector2(r, y))
+    const nacelle = new LatheGeometry(nprof, 20)
+    nacelle.rotateX(Math.PI / 2)
+    nacelle.translate(0, 0, -0.55)
     const wing = surface({ span: 11, root: 1.62, tip: 1.2, t: 0.13, sweep: 0.05, dihedral: 0.028, axis: 'x' })
-    const wingStripe = surface({ span: 11.05, root: 0.22, tip: 0.2, t: 0.02, sweep: 0.9, dihedral: 0.028, axis: 'x', stations: 4 })
-    wingStripe.translate(0, 0.06, 1.1)
     const fin = surface({ span: 1.55, root: 1.35, tip: 0.72, t: 0.1, sweep: 0.72, axis: 'y' })
     const rudder = surface({ span: 1.3, root: 0.34, tip: 0.3, t: 0.06, sweep: 0.62, axis: 'y', stations: 4 })
     rudder.translate(0, 0.05, 0.78)
     const tailplane = surface({ span: 3.4, root: 0.95, tip: 0.6, t: 0.1, sweep: 0.18, axis: 'x' })
     return {
-      wing, wingStripe, fin, rudder, tailplane,
+      wing, fin, rudder, tailplane, nacelle,
       body, navy, accent, glass, dark, fuselage, cloth, clothMat, uTime, rope,
       box: new BoxGeometry(1, 1, 1),
       cyl: new CylinderGeometry(0.5, 0.5, 1, 12),
@@ -192,7 +194,7 @@ export function IntroPlane() {
     root.current.position.set(x, PLANE.y + Math.sin(t * 0.7) * 0.5, PLANE.z)
     // a gentle bank and pitch, like a real pass in light air
     root.current.rotation.set(Math.sin(t * 0.5) * 0.03, 0, Math.sin(t * 0.6) * 0.05)
-    prop.current.rotation.z += dt * 60
+    props.current.forEach((g, i) => { if (g) g.rotation.z += dt * (i ? -58 : 60) })
     // after dark the banner is lit from the plane's belly light so it stays readable
     const night = sky.lights
     res.clothMat.emissive.setRGB(0.55 * night, 0.52 * night, 0.46 * night)
@@ -215,9 +217,8 @@ export function IntroPlane() {
         <mesh geometry={res.box} material={res.navy} position={[-0.6, -0.05, 3.2]} scale={[0.03, 0.12, 4.6]} />
         {/* high wing: airfoil section, tapered outer panels, slight dihedral */}
         <mesh geometry={res.wing} material={res.body} position={[0, 0.74, 1.6]} />
-        <mesh geometry={res.wingStripe} material={res.navy} position={[0, 0.745, 1.6]} />
         {[1, -1].map((sx) => (
-          <mesh key={sx} geometry={res.cyl} material={res.dark} position={[sx * 1.55, 0.12, 2.3]} rotation-z={sx * 1.02} scale={[0.045, 1.95, 0.07]} />
+          <mesh key={sx} geometry={res.cyl} material={res.body} position={[sx * 1.55, 0.12, 2.3]} rotation-z={sx * 1.02} scale={[0.025, 1.95, 0.05]} />
         ))}
         {/* tail: swept fin with an orange rudder, tapered tailplane */}
         <mesh geometry={res.fin} material={res.body} position={[0, 0.35, 6.95]} />
@@ -233,12 +234,29 @@ export function IntroPlane() {
         ))}
         <mesh geometry={res.cyl} material={res.dark} position={[0, -0.66, 0.6]} scale={[0.045, 0.62, 0.045]} />
         <mesh geometry={res.sphere} material={res.body} position={[0, -0.98, 0.6]} scale={[0.18, 0.3, 0.52]} />
-        {/* spinner + propeller (blades + motion disc) */}
-        <mesh geometry={res.sphere} material={res.navy} position={[0, 0, -0.02]} scale={[0.26, 0.26, 0.4]} />
-        <group ref={prop} position={[0, 0, -0.14]}>
-          <mesh geometry={res.box} material={res.dark} scale={[0.12, 1.9, 0.03]} />
-          <mesh geometry={res.cyl} material={res.blur} rotation-x={Math.PI / 2} scale={[1.9, 0.01, 1.9]} />
-        </group>
+        {/* rounded nose cone */}
+        <mesh geometry={res.sphere} material={res.body} position={[0, 0.02, 0.18]} scale={[0.56, 0.58, 0.7]} />
+        {/* cabin windows: a row along each side */}
+        {[1, -1].map((sx) =>
+          [2.85, 3.45, 4.05, 4.65, 5.25].map((z, i) => (
+            <mesh key={sx + '-' + i} geometry={res.sphere} material={res.glass} position={[sx * (0.55 - i * 0.04), 0.14, z]} scale={[0.03, 0.2, 0.26]} />
+          )),
+        )}
+        {/* twin engines under the wing: cowling, spinner, three-blade prop + motion disc */}
+        {[1, -1].map((sx, k) => (
+          <group key={sx} position={[sx * 2.15, 0.52, 1.25]}>
+            <mesh geometry={res.nacelle} material={res.body} />
+            <mesh geometry={res.box} material={res.navy} position={[0, 0, 0.9]} scale={[0.5, 0.06, 0.9]} />
+            <mesh geometry={res.sphere} material={res.navy} position={[0, 0, -0.62]} scale={[0.2, 0.2, 0.3]} />
+            <group ref={(g) => { props.current[k] = g }} position={[0, 0, -0.74]}>
+              {[0, 1, 2].map((b) => (
+                <mesh key={b} geometry={res.box} material={res.dark} rotation-z={(b * Math.PI * 2) / 3} position={[0, 0, 0]} scale={[0.09, 1.55, 0.025]} />
+              ))}
+              <mesh geometry={res.cyl} material={res.blur} rotation-x={Math.PI / 2} scale={[1.55, 0.01, 1.55]} />
+            </group>
+            <mesh geometry={res.cyl} material={res.dark} position={[0, 0.2, 0.2]} scale={[0.06, 0.25, 0.9]} />
+          </group>
+        ))}
         {/* nav lights: red left, green right, white tail strobe */}
         <mesh geometry={res.sphere} material={res.red} position={[-5.7, 0.74, 2.3]} scale={0.12} />
         <mesh geometry={res.sphere} material={res.green} position={[5.7, 0.74, 2.3]} scale={0.12} />

@@ -63,6 +63,8 @@ export const playerRuntime = {
   teleportRequest: null as null | { position: Vector3; yaw?: number },
   /** turn on the spot toward this yaw (intro hand-off, greetings); cleared when reached */
   faceYaw: null as number | null,
+  /** scripted walk (intro walk-in): the player walks to this point, then faces faceYaw */
+  walkTo: null as null | { x: number; z: number; face?: number },
   onFootstep: new Set<(run: boolean) => void>(),
   onJump: new Set<() => void>(),
   onLand: new Set<(impact: number) => void>(),

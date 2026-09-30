@@ -21,6 +21,7 @@ import { CompanionBubble } from '@/components/ui/CompanionBubble'
 import { FinalPanel } from '@/components/ui/FinalPanel'
 import { GuidePanel } from '@/components/ui/GuidePanel'
 import { GreetBubble } from '@/components/ui/GreetBubble'
+import { JourneyChip } from '@/components/ui/JourneyChip'
 import { NameTag } from '@/components/ui/NameTag'
 import { initJourney } from '@/core/journey'
 import { useDayNight } from '@/core/dayNight'
@@ -79,6 +80,7 @@ export function App() {
         <GuidePanel />
         <NameTag />
         <GreetBubble />
+        <JourneyChip />
         <ProjectRail />
         <CompanionBubble />
         <FadeOverlay />

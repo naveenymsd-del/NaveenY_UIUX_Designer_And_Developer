@@ -16,20 +16,27 @@ import { SPAWN } from './runtime'
  */
 export const INTRO = {
   planeEnd: 7.2,
-  heroAt: 15.4,
+  /** camera settles on the street */
+  landAt: 15.2,
+  /** the AI is first, then Naveen walks into frame */
   aiWakeAt: 9.2,
-  aiArriveAt: 14.0,
+  aiArriveAt: 13.4,
+  walkInAt: 14.2,
+  heroAt: 17.2,
   messages: [
-    { at: 15.7, text: 'Hi. I’m your <b>AI companion</b>.', ms: 3400 },
-    { at: 19.3, text: 'Let me show you around <b>Naveen’s world</b>.', ms: 4400 },
+    { at: 13.8, text: 'Hey! Welcome to <b>Naveen’s world</b>.', ms: 3200 },
+    { at: 17.5, text: 'I’m your guide — <b>click me</b> any time to jump somewhere.', ms: 4200 },
   ],
 }
 
 /** the banner plane: altitude, track and speed (world space) */
-export const PLANE = { y: 60, z: 50, x0: 95, speed: 27 }
+export const PLANE = { y: 53, z: 80, x0: 42, speed: 11.5 }
 export function planeX(t: number) {
   return PLANE.x0 - PLANE.speed * t
 }
+
+/** Naveen walks in from the left of frame to his mark */
+export const WALK_IN_FROM = { x: SPAWN.x - 6.5, z: SPAWN.z - 1.6 }
 
 const SEEN_KEY = 'mindscape:intro-seen'
 /** returning in the same browser session: the intro isn't forced again */
@@ -53,6 +60,7 @@ export const introRuntime = {
   t: 0,
   running: false,
   skipped: false,
+  walked: false,
 }
 
 export function skipIntro() {
@@ -84,7 +92,7 @@ planeShot(INTRO.planeEnd, _ps, _pt)
 // city flight (positions and look targets share the same timing), starting exactly
 // where the plane shot ends; inside the backdrop skyline ring and below the clouds,
 // down the avenue axis and under the welcome arch
-const TIMES = [INTRO.planeEnd, 9.4, 11.8, 13.6, INTRO.heroAt]
+const TIMES = [INTRO.planeEnd, 9.4, 11.8, 13.6, INTRO.landAt]
 const posCurve = new CatmullRomCurve3([
   _ps.clone(),
   P(24, 44, 100),
@@ -126,14 +134,14 @@ export function introCamera(t: number, outPos: Vector3, outTarget: Vector3, port
   posCurve.getPoint(u, outPos)
   tgtCurve.getPoint(u, outTarget)
   if (portrait) {
-    const f = Math.min(1, Math.max(0, (t - (INTRO.heroAt - 3)) / 3))
+    const f = Math.min(1, Math.max(0, (t - (INTRO.landAt - 3)) / 3))
     const e = f * f * (3 - 2 * f)
     outPos.addScaledVector(PORTRAIT_POS, e)
     outTarget.addScaledVector(PORTRAIT_TGT, e)
   }
-  if (t >= INTRO.heroAt) {
+  if (t >= INTRO.landAt) {
     // hero: a barely-there handheld drift
-    const d = t - INTRO.heroAt
+    const d = t - INTRO.landAt
     outPos.x += Math.sin(d * 0.21) * 0.14
     outPos.y += Math.sin(d * 0.33) * 0.05
   }

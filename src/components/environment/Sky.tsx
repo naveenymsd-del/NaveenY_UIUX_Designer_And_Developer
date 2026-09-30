@@ -4,6 +4,8 @@ import { BackSide, Color, type Group, MeshBasicMaterial, ShaderMaterial, SphereG
 import { createRng } from '@/utils/rng'
 import { worldUniforms } from '@/utils/materials'
 import { sky } from '@/core/dayNight'
+import { INTRO, introRuntime } from '@/core/intro'
+import { useGameStore } from '@/stores/gameStore'
 
 /**
  * Sky dome driven by the time of day: zenith → horizon gradient, sun glow,
@@ -117,7 +119,10 @@ export function Sky() {
     cloudMat.color.copy(sky.clouds)
     // at night clouds all but vanish into the sky rather than hang as pale discs
     cloudMat.opacity = 0.92 - sky.stars * 0.84
-    cloudGroup.current.visible = sky.stars < 0.9
+    // no clouds during the plane pass (the camera is up among them) and none at full night
+    const g = useGameStore.getState()
+    const planePass = (g.phase === 'loading' || g.phase === 'intro') && introRuntime.t < INTRO.planeEnd + 2.5
+    cloudGroup.current.visible = sky.stars < 0.9 && !planePass
   })
 
   return (

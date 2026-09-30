@@ -2,8 +2,8 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { interactionGroups, useRapier } from '@react-three/rapier'
 import { useEffect, useRef } from 'react'
 import { type PerspectiveCamera, Vector3 } from 'three'
-import { CAMERA_DEFAULTS, cameraRuntime, cinematicRuntime, playerRuntime } from '@/core/runtime'
-import { INTRO, introCamera, introRuntime, introSeen, skipIntro } from '@/core/intro'
+import { CAMERA_DEFAULTS, INTRO_FACING, SPAWN, cameraRuntime, cinematicRuntime, playerRuntime, requestTeleport } from '@/core/runtime'
+import { INTRO, WALK_IN_FROM, introCamera, introRuntime } from '@/core/intro'
 import { getLocation } from '@/data/locations'
 import { TRAVEL } from '@/core/navigation'
 import { INTERIORS, roomToWorld, type InteriorId } from '@/data/interiors'
@@ -86,8 +86,19 @@ export function GameCamera() {
     s.time += dt
     const game = useGameStore.getState()
     if (game.phase === 'intro') {
-      if (!introRuntime.running && introSeen()) skipIntro()
+      if (!introRuntime.running) {
+        // Naveen waits just out of frame; he walks in after the companion arrives
+        requestTeleport(new Vector3(WALK_IN_FROM.x, 0.6, WALK_IN_FROM.z), Math.PI / 2)
+        introRuntime.walked = false
+      }
       introRuntime.running = true
+      if (introRuntime.skipped && !introRuntime.walked) {
+        introRuntime.walked = true
+        requestTeleport(new Vector3(SPAWN.x, 0.6, SPAWN.z), INTRO_FACING)
+      } else if (!introRuntime.walked && introRuntime.t >= INTRO.walkInAt) {
+        introRuntime.walked = true
+        playerRuntime.walkTo = { x: SPAWN.x, z: SPAWN.z, face: INTRO_FACING }
+      }
       if (!(introRuntime as { freeze?: boolean }).freeze) introRuntime.t += dt
     }
 

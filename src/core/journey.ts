@@ -88,10 +88,10 @@ function discover(place: Place) {
 }
 
 const ZONE_LINES: Record<string, { place: Place; text: string }> = {
-  campus: { place: 'education', text: 'This is where the journey <b>started</b> — step inside.' },
-  home: { place: 'home', text: 'Want to know the person behind the <b>designs</b>?' },
+  campus: { place: 'education', text: 'This is where the journey <b>began</b>.' },
+  home: { place: 'home', text: 'Want to know what I do? Step inside my <b>home</b>.' },
   nfc: { place: 'office', text: 'This is where my professional design journey became <b>real</b>.' },
-  park: { place: 'park', text: 'This is how I think <b>before I design</b>. Follow the stones.' },
+  park: { place: 'park', text: 'Want to see how I <b>think</b>? Follow the stones.' },
   growth: { place: 'career', text: 'Walk this path — it’s how I <b>grew</b>, one step at a time.' },
 }
 
@@ -125,18 +125,24 @@ function onStore(s: ReturnType<typeof useGameStore.getState>, prev: ReturnType<t
       discover('office')
       if (!s.establishSpot) {
         window.setTimeout(() => {
-          say('This is where I work on <b>real products</b>.', { ms: 3200, emote: 'greet' })
-          say('Want to explore some of them? The <b>Project Studio</b> is through the glass.', { ms: 4200, emote: 'point' })
+          say('Here is where those skills became <b>real products</b>.', { ms: 3400, emote: 'greet' })
+          say('The <b>Project Studio</b> is through the glass on the right.', { ms: 4000, emote: 'point' })
         }, 900)
       }
     }
-    if (s.interior === 'education') discover('education')
-    if (s.interior === 'home') discover('home')
+    if (s.interior === 'education') {
+      discover('education')
+      window.setTimeout(() => say('This is where the journey <b>began</b>. The timeline is on the left.', { ms: 4200, emote: 'explain' }), 900)
+    }
+    if (s.interior === 'home') {
+      discover('home')
+      window.setTimeout(() => say('This is me. My <b>tools & skills</b> are on the wall to the left.', { ms: 4200, emote: 'explain' }), 900)
+    }
   }
   if (s.establishSpot === 'studio' && prev.establishSpot !== 'studio') {
     state.studioSeen = true
     discover('projects')
-    window.setTimeout(() => say('This is the <b>Project Studio</b>. Each screen is a project — walk up to one.', { ms: 5000, emote: 'explain' }), 700)
+    window.setTimeout(() => say('Let’s explore some of the <b>products</b> I’ve worked on. Walk up to a screen.', { ms: 5000, emote: 'explain' }), 700)
   }
   // opening a project: a short introduction, straight away
   if (s.activeProjectId && s.activeProjectId !== prev.activeProjectId) {
@@ -167,6 +173,11 @@ export function tickJourney(now: number) {
   if (dn.night && !state.saidParkNight && !g.interior && p.x > -43 && p.x < -8 && p.z > 7 && p.z < 43) {
     state.saidParkNight = true
     say('Even the ideas look different at night.', { ms: 3600, emote: 'think' })
+  }
+  // anywhere in the Design Park counts as having found it
+  if (!g.interior && !g.discovered.includes('park') && p.x > -43 && p.x < -8 && p.z > 7 && p.z < 43) {
+    discover('park')
+    say('Want to see how I <b>think</b>? Each stone is a step of my process.', { emote: 'excited' })
   }
   if (g.interior === 'office' && !state.studioSeen && inStudio(p.x, p.z)) {
     state.studioSeen = true
