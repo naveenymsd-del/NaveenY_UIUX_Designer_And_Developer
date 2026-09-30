@@ -8,7 +8,7 @@
  * Without an endpoint, feedback is kept in this browser (localStorage) so
  * nothing is lost while testing, and the UI says so honestly.
  */
-export type FeedbackRating = 'Loved the experience' | 'Interesting' | 'Could be better' | 'Café review'
+export type FeedbackRating = 'Loved it' | 'Interesting' | 'Could be better' | 'I have a suggestion' | 'Café review'
 
 export interface FeedbackEntry {
   rating: FeedbackRating

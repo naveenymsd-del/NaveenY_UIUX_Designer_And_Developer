@@ -137,7 +137,7 @@ const street: InteractiveDef[] = [
     return {
       id: `career-${st.n}`, name: `${st.n} · ${st.title}`, kicker: 'How I grew', type: 'story',
       description: st.line,
-      content: { kicker: `Chapter 04 · How I grew · ${st.n} of 0${CAREER_STAGES.length}`, heading: st.title, body: st.line, items: [{ label: 'Details', text: st.detail }] },
+      content: { kicker: `Chapter 03 · How I grew · ${st.n} of 0${CAREER_STAGES.length}`, heading: st.title, body: st.line, items: [{ label: 'Details', text: st.detail }] },
       position: [x + 1.4, 0.15, z - 0.4], interactionRadius: 1.7,
       label: `Press E · ${st.title}`, mobileLabel: st.title, action: 'OPEN_LOCATION', destination: `career-${st.n}`,
       cameraTarget: { position: [x + 3.4, 1.9, z - 3.2], target: [x, 1.35, z] }, accent: '#ec7a2c', quiet: true,
@@ -177,7 +177,7 @@ const STORY_CONTENT: Record<string, StoryContent> = {
 const interior: InteractiveDef[] = [
   ...INTERIOR_STORIES.map<InteractiveDef>((s) => {
     const content = s.kind === 'bell'
-      ? { kicker: 'Education', heading: 'Ding!', body: 'Class is in session.' }
+      ? { kicker: 'Education', heading: 'Ding!', body: 'Ready for the next chapter? NFC Solutions is where the learning became real work.' }
       : STORY_CONTENT[`${s.room}:${s.kind}`] ?? { kicker: s.name, heading: s.name, body: '' }
     return {
       id: `${s.room}-${s.kind}`, name: s.name, kicker: content.kicker, type: 'story' as const,
@@ -224,11 +224,11 @@ export interface ZoneDef {
 
 export const ZONES: ZoneDef[] = [
   { id: 'start', name: 'Start', subtitle: 'Welcome to my world', center: [0, 68], radius: 7, reveal: [0, 3, 60] },
-  { id: 'campus', name: 'Education Campus', subtitle: 'Chapter 02 · Where did I start?', center: [0, -49], radius: 8, reveal: [0, 7, -66] },
-  { id: 'nfc', name: 'NFC Solutions', subtitle: 'Chapter 03 · Where I became a professional', center: [8, 17], radius: 6.5, reveal: [23, 7, 17] },
-  { id: 'home', name: 'My Home', subtitle: 'Chapter 01 · Who am I?', center: [-7, -25], radius: 5, reveal: [-16, 3.5, -25] },
-  { id: 'park', name: 'Design Journey', subtitle: 'Chapter 05 · How I think and work', center: [-16, 16], radius: 8, reveal: [-16, 1.5, 15.5] },
-  { id: 'growth', name: 'The Growth Walk', subtitle: 'On the way · How I grew', center: [6.6, -41], radius: 3.6, reveal: [6, 1.8, -30] },
-  { id: 'cafe', name: 'Contact Café', subtitle: 'Chapter 06 · Let’s talk', center: [-14, 53], radius: 4.5, reveal: [-14, 3, 60] },
+  { id: 'campus', name: 'Education Campus', subtitle: 'Chapter 02 · Where I started', center: [0, -49], radius: 8, reveal: [0, 7, -66] },
+  { id: 'nfc', name: 'NFC Solutions', subtitle: 'Chapter 04 · Where I work', center: [8, 17], radius: 6.5, reveal: [23, 7, 17] },
+  { id: 'home', name: 'My Home', subtitle: 'Chapter 01 · Who I am', center: [-7, -25], radius: 5, reveal: [-16, 3.5, -25] },
+  { id: 'park', name: 'Design Journey', subtitle: 'Chapter 06 · How I think', center: [-16, 16], radius: 8, reveal: [-16, 1.5, 15.5] },
+  { id: 'growth', name: 'The Growth Walk', subtitle: 'Chapter 03 · How I grew', center: [6.6, -41], radius: 3.6, reveal: [6, 1.8, -30] },
+  { id: 'cafe', name: 'Contact Café', subtitle: 'Chapter 09 · Let’s talk', center: [-14, 53], radius: 4.5, reveal: [-14, 3, 60] },
   { id: 'plaza', name: 'Fountain Plaza', subtitle: 'A place to pause', center: [19, -25], radius: 11, reveal: [19, 3, -25] },
 ]

@@ -156,7 +156,7 @@ function AIRing() {
         w: 256, h: 150, bg: human ? '#f7f4ef' : '#fff5ec', border: human ? '#2b2e34' : '#ec7a2c', align: 'center', pad: 18,
         lines: [
           { text: String(i + 1).padStart(2, '0'), size: 24, weight: 700, color: '#ec7a2c', gap: 2 },
-          { text: label.toUpperCase(), size: label.length > 13 ? 21 : 25, weight: 700, color: '#1f2328', gap: 4 },
+          { text: label.toUpperCase(), size: label.length > 17 ? 16 : label.length > 13 ? 20 : 25, weight: 700, color: '#1f2328', gap: 4 },
           { text: human ? 'HUMAN DECIDES' : 'AI ASSISTS', size: 15, weight: 650, color: human ? '#2b2e34' : '#b85a1c' },
         ],
       })

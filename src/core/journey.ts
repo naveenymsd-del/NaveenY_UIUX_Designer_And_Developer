@@ -9,6 +9,7 @@ import { enterInterior } from './interiors'
 import { playerRuntime, SPAWN_YAW } from './runtime'
 import { soundManager } from './sound/SoundManager'
 import { useDayNight } from './dayNight'
+import { useUIStore } from '@/stores/uiStore'
 
 /**
  * The visitor journey: how the landing hands over to the world, what counts
@@ -120,9 +121,15 @@ function onStore(s: ReturnType<typeof useGameStore.getState>, prev: ReturnType<t
   if (s.phase === 'playing' && prev.phase !== 'playing' && !state.started) {
     state.started = true
     state.lastDiscovery = performance.now()
-    say(getStop('start').hello, { ms: 3400, emote: 'wave' })
-    say('Let’s explore. Click me any time for a shortcut.', { ms: 3800, emote: 'explain' })
-    suggestNext(7600)
+    say('Hey! Welcome to <b>Naveen’s world</b>. I’m your AI guide.', { ms: 3600, emote: 'wave' })
+    say('Take your time — there’s a lot to explore.', { ms: 3000, emote: 'explain' })
+    say('I can take you to his profile, education, workplace, projects, design process or the <b>Contact Café</b>.', { ms: 4600, emote: 'explain' })
+    say('Where would you like to go?', { ms: 3000, emote: 'think' })
+    // …and offer the shortcuts once (it's non-blocking; walking closes nothing)
+    window.setTimeout(() => {
+      const g = useGameStore.getState()
+      if (g.phase === 'playing' && !g.interior && !g.activeLocationId) useUIStore.getState().setGuideOpen(true)
+    }, 15500)
   }
   // approaching somewhere for the first time
   if (s.visitedZones.length > prev.visitedZones.length) {

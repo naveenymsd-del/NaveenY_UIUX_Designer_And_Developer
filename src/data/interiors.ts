@@ -53,7 +53,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     palette: { floor: 0xb58a62, wall: 0xf1e9dc, wainscot: 0x4f6b58, trim: 0xf7f2ea, ceiling: 0xf4efe6 },
   },
   office: {
-    id: 'office', name: 'NFC Solutions', subtitle: 'Chapter 03 · My professional world',
+    id: 'office', name: 'NFC Solutions', subtitle: 'Chapter 04 · Where I work',
     origin: [320, 0, 0], width: 28, depth: 20, height: 3.8,
     outside: { pos: [13.6, 17], yaw: -Math.PI / 2 },
     establish: { position: [11.5, 3.3, 8.6], target: [-2, 1.2, -3.5] },
@@ -64,7 +64,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     },
   },
   cafe: {
-    id: 'cafe', name: 'Contact Café', subtitle: 'Chapter 06 · Let’s talk',
+    id: 'cafe', name: 'Contact Café', subtitle: 'Chapter 09 · Let’s talk',
     origin: [320, 0, 240], width: 14, depth: 11, height: 3.3,
     outside: { pos: [-14, 54.2], yaw: Math.PI },
     establish: { position: [5.2, 2.5, 4.2], target: [-1.5, 1.0, -2.5] },

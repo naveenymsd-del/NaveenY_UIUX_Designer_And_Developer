@@ -5,7 +5,7 @@ import { usePlayerStore } from '@/stores/playerStore'
 
 function placeKey(interior: InteriorId | null, mode: string, x: number, z: number) {
   if (mode === 'projects') return 'Project overview|All projects'
-  if (interior === 'office' && inStudio(x, z)) return 'Project Studio|Chapter 04 · What I’ve designed'
+  if (interior === 'office' && inStudio(x, z)) return 'Project Studio|Chapter 05 · What I build'
   if (interior) return `${INTERIORS[interior].name}|${INTERIORS[interior].subtitle}`
   for (const zn of ZONES) if (Math.hypot(x - zn.center[0], z - zn.center[1]) < zn.radius * 1.5) return `${zn.name}|${zn.subtitle}`
   return 'Mindscape Avenue|The neighbourhood'

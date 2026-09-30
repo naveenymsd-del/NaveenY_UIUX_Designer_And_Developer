@@ -1175,3 +1175,18 @@
 /* hidden overlays never capture clicks (the /projects rail sits over the bottom-right) */
 .ui-rail:not(.is-visible) { visibility: hidden; }
 .ui-rail:not(.is-visible) * { pointer-events: none !important; }
+.ui-cafe { max-height: calc(100% - 120px); overflow: auto; }
+.ui-cafe__chat li { font-size: 15.5px; line-height: 1.4; }
+.ui-cafe__choices { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.ui-cafe__choices button { height: 34px; padding: 0 13px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--hair-strong); font-size: 13px; font-weight: 600; transition: background 0.2s, color 0.2s; }
+.ui-cafe__choices button:hover { background: rgba(22, 24, 29, 0.05); }
+.ui-cafe__choices button.is-picked { background: var(--ink-1); color: var(--paper-1); box-shadow: none; }
+.ui-cafe__asks { margin: 0 0 6px; color: var(--ink-2); line-height: 1.5; font-size: 14px; }
+.ui-cafe__lead { margin: 0 0 12px; font-family: var(--font-display); font-size: 19px; font-weight: 600; }
+.ui-cafe__next { margin-top: 14px; }
+.ui-cafe__story { margin: 0 0 16px; color: var(--ink-2); line-height: 1.55; font-size: 15px; }
+.ui-cafe__story b { color: var(--ink-1); }
+.ui-cafe__signature { display: grid; gap: 2px; margin: 0 0 14px; padding: 14px 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+.ui-cafe__signature b { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.3em; }
+.ui-cafe__signature span { font-size: 11px; font-weight: 650; letter-spacing: 0.18em; text-transform: uppercase; color: #8a6448; }
+.ui-cafe__signature small { font-size: 12.5px; color: var(--ink-3); }

@@ -2,7 +2,7 @@ import { useId, useState } from 'react'
 import { soundManager } from '@/core/sound/SoundManager'
 import { feedbackConnected, submitFeedback, type FeedbackRating } from '@/services/feedback'
 
-const OPTIONS: FeedbackRating[] = ['Loved the experience', 'Interesting', 'Could be better']
+const OPTIONS: FeedbackRating[] = ['Loved it', 'Interesting', 'Could be better', 'I have a suggestion']
 
 /** One question, four answers, an optional note. No account needed. */
 export function FeedbackForm({ tabbable = true, onDone }: { tabbable?: boolean; onDone?: () => void }) {
@@ -35,7 +35,7 @@ export function FeedbackForm({ tabbable = true, onDone }: { tabbable?: boolean; 
   return (
     <form className="ui-feedback" onSubmit={(e) => { e.preventDefault(); void send() }}>
       <fieldset>
-        <legend>What did you think?</legend>
+        <legend>How was the journey?</legend>
         <div className="ui-feedback__options">
           {OPTIONS.map((o) => (
             <label key={o} className={rating === o ? 'is-picked' : ''}>
@@ -47,7 +47,7 @@ export function FeedbackForm({ tabbable = true, onDone }: { tabbable?: boolean; 
       </fieldset>
       {rating && (
         <label className="ui-feedback__more">
-          <span>Any suggestions? <small>(optional)</small></span>
+          <span>Tell me what you think <small>(optional)</small></span>
           <textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={3} maxLength={2000} tabIndex={tab} placeholder="Anything you noticed, liked or would change…" />
         </label>
       )}
