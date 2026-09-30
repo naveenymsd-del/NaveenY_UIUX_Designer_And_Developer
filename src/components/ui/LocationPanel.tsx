@@ -11,8 +11,8 @@ import { Rich } from './Rich'
  * has begun moving to the object's close-up, so the world stays the hero.
  */
 export function LocationPanel() {
-  // the Lookout has its own ending panel (FinalPanel)
-  const id = useGameStore((s) => (s.activeLocationId === 'final' ? null : s.activeLocationId))
+  // the café conversation has its own panel (CafeConversation)
+  const id = useGameStore((s) => (s.activeLocationId === 'cafe-conversation' ? null : s.activeLocationId))
   const close = useGameStore((s) => s.closePanels)
   const [shown, setShown] = useState<InteractiveDef | null>(null)
   const [visible, setVisible] = useState(false)

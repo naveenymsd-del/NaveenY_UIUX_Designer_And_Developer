@@ -49,7 +49,7 @@ export async function enterInterior(id: InteriorId, fromLocationId?: string, opt
   useGameStore.getState().setState({ fade: false })
   const room = INTERIORS[id]
   await wait(350)
-  if (opts.spot === 'studio') useGameStore.getState().showZone('room:studio', 'Project Studio', 'Chapter 09 · What I build today')
+  if (opts.spot === 'studio') useGameStore.getState().showZone('room:studio', 'Project Studio', 'Chapter 04 · What I’ve designed')
   else if (!same) useGameStore.getState().showZone(`room:${id}`, room.name, room.subtitle)
   await wait(opts.spot ? 2600 : 2300)
   useGameStore.getState().setState({ establishing: null, establishSpot: null })

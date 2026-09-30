@@ -1,4 +1,4 @@
-import { EDU_DESKS, INTERIORS, OFFICE_DESKS, STUDIO, interiorBounds, studioBay, type InteriorDef } from '@/data/interiors'
+import { CAFE_TABLE, EDU_DESKS, INTERIORS, OFFICE_DESKS, STUDIO, interiorBounds, studioBay, type InteriorDef } from '@/data/interiors'
 import { PROJECTS } from '@/data/projects'
 import { PALETTE } from '@/data/palette'
 import { addSign, lightPoolAt, type GenContext } from './buildingGen'
@@ -412,6 +412,88 @@ function studio(ctx: GenContext, r: InteriorDef, rng: Rng) {
 }
 
 
+function cafe(ctx: GenContext, r: InteriorDef) {
+  const { b } = ctx
+  const rng = createRng(611)
+  const hw = r.width / 2
+  const hd = r.depth / 2
+  const walnut = 0x5b4032
+  const oak = 0xb48a62
+  const cream = 0xf3ead9
+  const brass = 0xc49a4e
+  // tall windows onto the street (north wall) — the window table sits right here
+  for (const x of [-2.2, 1.4, 5.0]) windowView(ctx, x, 1.75, -hd + 0.02, 0, 2.6, 2.0, 120 + Math.round(x * 3), walnut)
+  // warm plank rug under the tables
+  b.box(0x6e4a34, [1.2, 0.004, -0.4], [8.8, 0.008, 6.2], { mat: 'paint', cast: false })
+  // ── the counter (west): bar, espresso machine, cups, cake stand
+  b.box(walnut, [-4.6, 0.52, -3.0], [4.2, 1.04, 0.7])
+  b.box(0xefe6d6, [-4.6, 1.06, -3.0], [4.3, 0.05, 0.8], { cast: false })
+  for (let i = 0; i < 7; i++) b.box(0x4a3326, [-6.4 + i * 0.6, 0.52, -2.64], [0.04, 0.9, 0.02], { cast: false })
+  b.collider([-4.6, 0.55, -3.0], [4.3, 1.1, 0.8])
+  b.box(0x2b2e34, [-5.3, 1.3, -3.1], [0.7, 0.44, 0.46])
+  b.box(0xbfc3c9, [-5.3, 1.54, -3.1], [0.74, 0.05, 0.5], { mat: 'metal', cast: false })
+  b.add('cyl8', 0xbfc3c9, [-5.45, 1.18, -2.86], [0.06, 0.14, 0.06], { mat: 'metal', cast: false })
+  b.add('cyl8', 0xbfc3c9, [-5.15, 1.18, -2.86], [0.06, 0.14, 0.06], { mat: 'metal', cast: false })
+  for (let i = 0; i < 5; i++) b.add('cyl', rng.pick([0xf5f1ea, 0xe7d6c0, 0x3b3e44]), [-4.3 + i * 0.16, 1.14, -3.18], [0.08, 0.1, 0.08], { cast: false })
+  b.add('cyl', 0xefe6d6, [-3.3, 1.2, -3.0], [0.42, 0.2, 0.42], { cast: false })
+  b.add('sphere', 0xf3d9a8, [-3.3, 1.36, -3.0], [0.34, 0.12, 0.34], { mat: 'glass', cast: false })
+  // back shelves with jars and cups, and the menu board
+  b.box(walnut, [-4.6, 1.5, -hd + 0.2], [4.2, 0.04, 0.3], { cast: false })
+  b.box(walnut, [-4.6, 2.05, -hd + 0.2], [4.2, 0.04, 0.3], { cast: false })
+  for (let i = 0; i < 9; i++) {
+    b.add('cyl', rng.pick([0xf5f1ea, 0xc49a4e, 0x8a6448, 0x5d6b5c]), [-6.3 + i * 0.42, 1.64, -hd + 0.2], [0.14, 0.22, 0.14], { cast: false })
+    b.add('cyl', rng.pick([0xf5f1ea, 0xe7d6c0]), [-6.3 + i * 0.42, 2.14, -hd + 0.2], [0.11, 0.12, 0.11], { cast: false })
+  }
+  b.box(0x1f2328, [-4.6, 2.75, -hd + 0.06], [2.8, 0.8, 0.04], { cast: false })
+  b.push(-4.6, 2.75, -hd + 0.09)
+  addSign(ctx, 'CONTACT CAFÉ', { bg: '#1f2328', fg: '#f3e2c7', shape: 'rect', weight: 700 }, [0, 0, 0], 2.6, 0.5)
+  b.pop()
+  // ── the window table (Naveen sits on the far side, you on the near side)
+  const { x: tx, z: tz } = CAFE_TABLE
+  b.add('cyl', oak, [tx, 0.74, tz], [1.05, 0.05, 1.05])
+  b.add('cyl8', 0x2b2e34, [tx, 0.37, tz], [0.08, 0.72, 0.08], { cast: false })
+  b.add('cyl', 0x2b2e34, [tx, 0.02, tz], [0.5, 0.03, 0.5], { cast: false })
+  b.cylCollider([tx, 0, tz], 0.5, 0.78)
+  chair(b, tx, tz + CAFE_TABLE.naveen, 0, walnut)
+  chair(b, tx, tz + CAFE_TABLE.visitor, Math.PI, walnut)
+  // two coffees and a little plant on the table
+  for (const dz of [-0.2, 0.22]) {
+    b.add('cyl', 0xf5f1ea, [tx + (dz > 0 ? 0.12 : -0.1), 0.815, tz + dz], [0.09, 0.1, 0.09], { cast: false })
+    b.add('cyl', 0xefe6d6, [tx + (dz > 0 ? 0.12 : -0.1), 0.772, tz + dz], [0.17, 0.012, 0.17], { cast: false })
+  }
+  b.add('cyl8', PALETTE.terracotta, [tx + 0.3, 0.83, tz - 0.05], [0.1, 0.12, 0.1], { cast: false })
+  b.add('ico', PALETTE.leafA, [tx + 0.3, 0.95, tz - 0.05], [0.16, 0.16, 0.16], { mat: 'foliage', cast: false })
+  // ── other tables
+  for (const [x, z] of [[-0.85, 1.3], [4.6, 2.6], [0.4, -3.2]] as const) {
+    b.add('cyl', oak, [x, 0.74, z], [0.9, 0.05, 0.9])
+    b.add('cyl8', 0x2b2e34, [x, 0.37, z], [0.08, 0.72, 0.08], { cast: false })
+    b.add('cyl', 0x2b2e34, [x, 0.02, z], [0.45, 0.03, 0.45], { cast: false })
+    b.cylCollider([x, 0, z], 0.45, 0.78)
+    chair(b, x - 0.75, z, Math.PI / 2, walnut)
+    chair(b, x + 0.75, z, -Math.PI / 2, walnut)
+    b.add('cyl', 0xf5f1ea, [x + 0.15, 0.815, z], [0.09, 0.1, 0.09], { cast: false })
+  }
+  // soft bench along the east wall
+  b.box(0x6f5a48, [hw - 0.45, 0.25, 0.4], [0.8, 0.5, 6.4], { mat: 'fabric' })
+  b.box(0x6f5a48, [hw - 0.1, 0.72, 0.4], [0.2, 0.7, 6.4], { mat: 'fabric' })
+  b.collider([hw - 0.45, 0.4, 0.4], [0.8, 0.8, 6.4])
+  // pendant lamps over the tables
+  for (const [x, z] of [[CAFE_TABLE.x, CAFE_TABLE.z], [-0.85, 1.3], [4.6, 2.6], [0.4, -3.2], [-4.6, -3.0]] as const) {
+    b.add('cyl8', 0x2b2e34, [x, 2.85, z], [0.01, 0.9, 0.01], { cast: false })
+    b.add('cone', brass, [x, 2.34, z], [0.34, 0.24, 0.34], { mat: 'metal', cast: false })
+    b.add('disk', 0xfff0d2, [x, 2.22, z], [0.28, 1, 0.28], { rot: [Math.PI, 0, 0], mat: 'emissive', cast: false })
+    const [lx, , lz] = b.toWorld(x, 0, z)
+    lightPoolAt(ctx, lx, lz, 1.5, 0xffd9a6)
+  }
+  // plants and a framed print
+  plant(b, rng, hw - 0.7, -hd + 0.7, 1.2)
+  plant(b, rng, -hw + 0.6, hd - 0.7, 1.1)
+  plant(b, rng, 1.4, hd - 0.6, 0.9)
+  const rect = ctx.decor.add(128, 160, artPainter(931, ['#ffffff', '#3a2a20', '#c49a4e', '#5d6b5c']), 'cafe-print')
+  painting(ctx, rect, hw - 0.05, 1.8, -2.6, -Math.PI / 2, 0.9, 1.1, walnut)
+  b.box(cream, [0, 0, 0], [0.01, 0.01, 0.01], { cast: false })
+}
+
 function home(ctx: GenContext, r: InteriorDef) {
   const { b } = ctx
   const rng = createRng(503)
@@ -499,6 +581,7 @@ export function genInteriors(ctx: GenContext) {
     shell(ctx, r)
     if (r.id === 'education') education(ctx, r)
     else if (r.id === 'office') office(ctx, r)
+    else if (r.id === 'cafe') cafe(ctx, r)
     else home(ctx, r)
     ctx.b.pop()
   }

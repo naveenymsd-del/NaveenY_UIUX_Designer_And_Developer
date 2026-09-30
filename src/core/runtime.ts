@@ -65,6 +65,8 @@ export const playerRuntime = {
   faceYaw: null as number | null,
   /** scripted walk (intro walk-in): the player walks to this point, then faces faceYaw */
   walkTo: null as null | { x: number; z: number; face?: number },
+  /** seated on a chair (café conversation): sit pose, body lifted to seat height */
+  seated: false,
   onFootstep: new Set<(run: boolean) => void>(),
   onJump: new Set<() => void>(),
   onLand: new Set<(impact: number) => void>(),

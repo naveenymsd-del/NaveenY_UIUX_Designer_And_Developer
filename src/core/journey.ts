@@ -2,7 +2,7 @@ import { Vector3 } from 'three'
 import { navigate } from '@/app/routes'
 import { getProject } from '@/data/projects'
 import { inStudio } from '@/data/interiors'
-import { FINAL_SPOT } from '@/data/locations'
+import { STORY_STOPS, getStop, type StopId } from '@/data/world'
 import { type Place, useGameStore } from '@/stores/gameStore'
 import { companion, say } from './companion'
 import { enterInterior } from './interiors'
@@ -17,26 +17,31 @@ import { useDayNight } from './dayNight'
  * plus a rare nudge after a long quiet spell. Nothing here blocks input.
  */
 
-/** street-level points the companion can point toward */
+/** where the companion points for each milestone — from the one location config */
+const pt = (id: StopId) => new Vector3(...getStop(id).point)
 export const PLACE_POINTS: Record<Place, Vector3> = {
-  education: new Vector3(0, 5, -58),
-  home: new Vector3(-13, 3, -25),
-  office: new Vector3(18, 5, 17),
-  park: new Vector3(-16, 2, 16),
-  ai: new Vector3(-25.5, 2, 25),
-  projects: new Vector3(18, 5, 17),
-  final: new Vector3(FINAL_SPOT[0], 2.5, FINAL_SPOT[2]),
+  home: pt('home'),
+  education: pt('education'),
   career: new Vector3(6, 2, -40),
+  office: pt('nfcSolutions'),
+  projects: pt('projects'),
+  park: pt('designJourney'),
+  ai: pt('designJourney'),
+  cafe: pt('contactCafe'),
 }
 
-const ORDER: Place[] = ['home', 'education', 'career', 'office', 'projects', 'park', 'final']
+const ORDER: Place[] = STORY_STOPS.map((st) => st.place!)
+const stopFor = (place: Place) => STORY_STOPS.find((st) => st.place === place)
+/** the next story stop not yet discovered */
+export function nextStop(discovered: Place[]) {
+  return STORY_STOPS.find((st) => !discovered.includes(st.place!)) ?? null
+}
 
 const state = {
   started: false,
   lastDiscovery: 0,
   lastNudge: 0,
   studioSeen: false,
-  finalHinted: false,
   /** time-of-day lines (each said at most once) */
   dayAtStart: null as boolean | null,
   saidChanging: false,
@@ -87,62 +92,60 @@ function discover(place: Place) {
   return true
 }
 
-const ZONE_LINES: Record<string, { place: Place; text: string }> = {
-  campus: { place: 'education', text: 'This is where the journey <b>began</b>.' },
-  home: { place: 'home', text: 'Want to know what I do? Step inside my <b>home</b>.' },
-  nfc: { place: 'office', text: 'This is where my professional design journey became <b>real</b>.' },
-  park: { place: 'park', text: 'Want to see how I <b>think</b>? Follow the stones.' },
-  growth: { place: 'career', text: 'Walk this path — it’s how I <b>grew</b>, one step at a time.' },
+/** first arrival at a story stop: its line, then (after a beat) a nudge toward the next one */
+function arrive(place: Place, delay = 900) {
+  if (!discover(place)) return
+  const st = stopFor(place)
+  if (!st) return
+  window.setTimeout(() => say(st.hello, { ms: 4000, emote: 'excited' }), delay)
+}
+
+function suggestNext(delay = 900) {
+  const n = nextStop(useGameStore.getState().discovered)
+  if (!n) return
+  window.setTimeout(() => say(n.suggest, { ms: 4000, point: new Vector3(...n.point) }), delay)
+}
+
+/** approaching a building from the street (before entering) */
+const ZONE_LINES: Record<string, string> = {
+  home: 'Step inside my <b>home</b> — this is who I am.',
+  campus: 'That’s where the story <b>started</b>.',
+  growth: 'Walk this path — it’s how I <b>grew</b>, one step at a time.',
+  nfc: 'Ready to see where the journey became <b>real</b>?',
+  cafe: 'The <b>Contact Café</b> — the last stop. Come in.',
 }
 
 function onStore(s: ReturnType<typeof useGameStore.getState>, prev: ReturnType<typeof useGameStore.getState>) {
-  // first moments on the street: two or three short, warm lines
+  // the START: two short, warm lines, then the first suggestion
   if (s.phase === 'playing' && prev.phase !== 'playing' && !state.started) {
     state.started = true
     state.lastDiscovery = performance.now()
-    say('Welcome. <b>Naveen’s world</b> is yours to explore.', { ms: 4200, emote: 'wave' })
-    say('Go anywhere — click me whenever you want a shortcut.', { ms: 4200, emote: 'explain' })
+    say(getStop('start').hello, { ms: 3400, emote: 'wave' })
+    say('Let’s explore. Click me any time for a shortcut.', { ms: 3800, emote: 'explain' })
+    suggestNext(7600)
   }
-  // arriving somewhere for the first time
+  // approaching somewhere for the first time
   if (s.visitedZones.length > prev.visitedZones.length) {
     const id = s.visitedZones[s.visitedZones.length - 1]
-    const z = ZONE_LINES[id]
-    if (z && discover(z.place)) say(z.text, { emote: 'excited' })
+    if (id === 'growth') discover('career')
+    const line = ZONE_LINES[id]
+    if (line) say(line, { ms: 3400, emote: 'point' })
   }
   // leaving a room: hand the visitor on to the next chapter
-  if (s.interior !== prev.interior && !s.interior && prev.interior) {
-    if (prev.interior === 'home' && !s.discovered.includes('education'))
-      window.setTimeout(() => say('Curious where the journey <b>started</b>?', { ms: 3600, point: PLACE_POINTS.education }), 900)
-    if (prev.interior === 'education') {
-      window.setTimeout(() => {
-        say('Learning was only the beginning.', { ms: 2800 })
-        say('Ready to see where those skills became <b>real products</b>?', { ms: 3800, point: PLACE_POINTS.career })
-      }, 900)
-    }
-  }
+  if (s.interior !== prev.interior && !s.interior && prev.interior) suggestNext()
+  // entering a room = arriving at its chapter
   if (s.interior !== prev.interior && s.interior) {
     if (s.interior === 'office') {
-      discover('office')
-      if (!s.establishSpot) {
-        window.setTimeout(() => {
-          say('Here is where those skills became <b>real products</b>.', { ms: 3400, emote: 'greet' })
-          say('The <b>Project Studio</b> is through the glass on the right.', { ms: 4000, emote: 'point' })
-        }, 900)
-      }
+      if (s.establishSpot === 'studio') discover('office')
+      else arrive('office')
     }
-    if (s.interior === 'education') {
-      discover('education')
-      window.setTimeout(() => say('This is where the journey <b>began</b>. The timeline is on the left.', { ms: 4200, emote: 'explain' }), 900)
-    }
-    if (s.interior === 'home') {
-      discover('home')
-      window.setTimeout(() => say('This is me. My <b>tools & skills</b> are on the wall to the left.', { ms: 4200, emote: 'explain' }), 900)
-    }
+    if (s.interior === 'education') arrive('education')
+    if (s.interior === 'home') arrive('home')
+    if (s.interior === 'cafe') arrive('cafe')
   }
   if (s.establishSpot === 'studio' && prev.establishSpot !== 'studio') {
     state.studioSeen = true
-    discover('projects')
-    window.setTimeout(() => say('Let’s explore some of the <b>products</b> I’ve worked on. Walk up to a screen.', { ms: 5000, emote: 'explain' }), 700)
+    arrive('projects', 700)
   }
   // opening a project: a short introduction, straight away
   if (s.activeProjectId && s.activeProjectId !== prev.activeProjectId) {
@@ -151,7 +154,6 @@ function onStore(s: ReturnType<typeof useGameStore.getState>, prev: ReturnType<t
     discover('projects')
   }
   if (s.activeLocationId === 'park-ai' && prev.activeLocationId !== 'park-ai') discover('ai')
-  if (s.activeLocationId === 'final' && prev.activeLocationId !== 'final') discover('final')
 }
 
 /** per-frame checks (called by the companion's frame loop) */
@@ -176,20 +178,12 @@ export function tickJourney(now: number) {
   }
   // anywhere in the Design Park counts as having found it
   if (!g.interior && !g.discovered.includes('park') && p.x > -43 && p.x < -8 && p.z > 7 && p.z < 43) {
-    discover('park')
-    say('Want to see how I <b>think</b>? Each stone is a step of my process.', { emote: 'excited' })
+    arrive('park', 0)
+    suggestNext(9000)
   }
   if (g.interior === 'office' && !state.studioSeen && inStudio(p.x, p.z)) {
     state.studioSeen = true
-    discover('projects')
-    say('Want to see what he has been building? Each screen is a project.', { emote: 'excited' })
-  }
-  if (!g.interior && !state.finalHinted) {
-    const seen = ORDER.filter((pl) => pl !== 'final' && g.discovered.includes(pl)).length
-    if (seen >= 4 && now - companion.lastSpokeAt > 8000) {
-      state.finalHinted = true
-      say('One last place — the <b>lookout</b> in the Design Park.', { point: PLACE_POINTS.final })
-    }
+    arrive('projects', 0)
   }
   // a rare nudge after a long quiet spell (never while reading something)
   if (g.activeLocationId || g.activeProjectId || g.interior) return

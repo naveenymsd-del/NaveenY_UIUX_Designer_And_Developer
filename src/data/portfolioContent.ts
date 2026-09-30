@@ -36,6 +36,7 @@ export const PROFILE = {
  * is still a [PLACEHOLDER] is shown as "coming soon" instead of a broken link.
  */
 export const CONTACT = {
+  phone: '[ADD PHONE]',
   email: '[ADD EMAIL]',
   linkedin: '[ADD LINKEDIN URL]',
   resume: '[ADD RESUME URL]',
@@ -183,7 +184,7 @@ export const HOME_STORIES: Record<string, StoryContent> = {
   approach: {
     kicker: 'Design approach', heading: 'How I approach a problem',
     body: '[ADD YOUR DESIGN APPROACH IN A SENTENCE OR TWO]',
-    items: [P('My process', 'Nine steps, from Understand to Deliver — walk the trail in the Design Park.'), P('With AI', 'AI helps me explore. I make the design decisions.')],
+    items: [P('My process', 'Nine steps, from Understand to Deliver — walk the Design Journey trail.'), P('With AI', 'AI helps me explore. I make the design decisions.')],
   },
 }
 
@@ -192,17 +193,17 @@ export const DESIGN_PROCESS: { n: string; title: string; text: string }[] = [
   { n: '01', title: 'Understand', text: 'Start with people, context and the real problem.' },
   { n: '02', title: 'Research', text: 'Listen, observe and gather evidence.' },
   { n: '03', title: 'Explore', text: 'Many ideas before one answer.' },
-  { n: '04', title: 'Define', text: 'Frame the problem and what success means.' },
+  { n: '04', title: 'Ideate', text: 'Sketch widely, then choose with the user in mind.' },
   { n: '05', title: 'Design', text: 'Flows, layouts and systems that fit.' },
   { n: '06', title: 'Prototype', text: 'Make it real enough to learn from.' },
   { n: '07', title: 'Test', text: 'Put it in front of users, early.' },
   { n: '08', title: 'Refine', text: 'Iterate on what we learned.' },
-  { n: '09', title: 'Deliver', text: 'Ship with care, then keep improving.' },
+  { n: '09', title: 'Final experience', text: 'Ship with care, then keep improving.' },
 ]
 
-export const AI_WORKFLOW = ['Human problem', 'AI exploration', 'Ideas', 'Human judgment', 'Design', 'Prototype', 'Test', 'Refine', 'Final experience']
+export const AI_WORKFLOW = ['Understand', 'Explore', 'AI assistance', 'Human evaluation', 'Design', 'Prototype', 'Test', 'Refine']
 /** steps where the human decides (highlighted on the AI ring) */
-export const AI_HUMAN_STEPS = new Set(['Human problem', 'Human judgment', 'Final experience'])
+export const AI_HUMAN_STEPS = new Set(['Understand', 'Human evaluation', 'Design', 'Refine'])
 
 export const AI_STORY: StoryContent = {
   kicker: 'AI-assisted design', heading: 'AI is my design partner',

@@ -91,7 +91,8 @@ export const SHOPS: Record<string, ShopInfo> = {
   fig: { name: 'Fig & Olive', kind: 'grocery', sign: { bg: '#9cc3a0', fg: '#2b2350', icon: 'leaf', shape: 'round' } },
   paper: { name: 'Paper & Ink', kind: 'books', sign: { bg: '#fbf5ea', fg: '#2b2350', shape: 'rect', border: '#2b2350', sub: 'stationery' } },
   nova: { name: 'Nova Optics', kind: 'boutique', sign: { bg: '#a996d4', fg: '#ffffff', icon: 'star', shape: 'pill' } },
-  hana: { name: 'Hana Tea', kind: 'cafe', sign: { bg: '#bfe3cf', fg: '#2b2350', icon: 'cup', shape: 'round' } },
+  hana: { name: 'Contact Café', kind: 'cafe', sign: { bg: '#3a2a20', fg: '#f3e2c7', icon: 'cup', shape: 'rect', sub: 'let’s talk' } },
+  tea: { name: 'Hana Tea', kind: 'cafe', sign: { bg: '#bfe3cf', fg: '#2b2350', icon: 'cup', shape: 'round' } },
   juniper: { name: 'Juniper Deli', kind: 'grocery', sign: { bg: '#f5dd92', fg: '#6e4a3b', shape: 'rect', sub: 'sandwiches' } },
   echo: { name: 'Echo Barber', kind: 'boutique', sign: { bg: '#fbf5ea', fg: '#e0506a', shape: 'pill', border: '#2f3fb8' } },
   orbit: { name: 'Orbit Cycles', kind: 'boutique', sign: { bg: '#f39a4a', fg: '#ffffff', icon: 'bolt', shape: 'rect' } },
@@ -174,7 +175,7 @@ const handPlaced: BuildingDef[] = [
   B(62, -65, 14, 14, 'S', 'apartment', 4, { palette: 4 }),
 
   // ── South block: entry promenade (front at z = 58)
-  B(-14, 64, 10, 12, 'N', 'shop', 2, { shop: 'hana', palette: 5 }),
+  B(-14, 64, 10, 12, 'N', 'shop', 2, { shop: 'hana', palette: 6, id: 'contact-cafe' }),
   B(-25, 64, 11, 12, 'N', 'apartment', 4, { shop: 'juniper', palette: 0 }),
   B(-37, 64, 12, 12, 'N', 'townhouse', 3, { palette: 3 }),
   B(-50, 64, 13, 12, 'N', 'apartment', 5, { palette: 6 }),
@@ -222,7 +223,7 @@ function row(
 
 // ── Edge frontages that enclose the city on west and east
 const westRow = row(501, 'z', -52, 52, -58, 'E', 12, ['sol', 'bloom', 'bao', 'crumb', 'maple', 'fig', 'echo'])
-const eastRow = row(733, 'z', -52, 52, 58, 'W', 12, ['kiln', 'tidal', 'hana', 'paper', 'orbit', 'plum', 'pixel'])
+const eastRow = row(733, 'z', -52, 52, 58, 'W', 12, ['kiln', 'tidal', 'tea', 'paper', 'orbit', 'plum', 'pixel'])
 
 // ── Backdrop skyline beyond the walls (visual depth only, no collision)
 function backdrop(): BuildingDef[] {

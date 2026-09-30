@@ -1,10 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { Vector3 } from 'three'
-import { navigate } from '@/app/routes'
-import { travelTo } from '@/core/interiors'
-import { goToProjects } from '@/core/journey'
+import { navigateToLocation } from '@/core/navigation'
+import { STORY_STOPS, type StopId } from '@/data/world'
 import { soundManager } from '@/core/sound/SoundManager'
-import { getLocation } from '@/data/locations'
 import { AI_HUMAN_STEPS, AI_WORKFLOW, PROFILE } from '@/data/portfolioContent'
 import { type Place, useGameStore } from '@/stores/gameStore'
 import { type MenuSection, useUIStore } from '@/stores/uiStore'
@@ -13,30 +10,18 @@ import { FeedbackForm } from './FeedbackForm'
 
 type Item =
   | { kind: 'section'; id: MenuSection; label: string; hint: string }
-  | { kind: 'travel'; location: string; label: string; hint: string; place: Place }
-  | { kind: 'projects'; label: string; hint: string }
+  | { kind: 'stop'; stop: StopId; label: string; hint: string; place: Place }
 
+// the journey stops come straight from the one location config
 const ITEMS: Item[] = [
   { kind: 'section', id: 'about', label: 'About', hint: 'Who Naveen is' },
-  { kind: 'travel', location: 'education', label: 'Education', hint: 'Where it began', place: 'education' },
-  { kind: 'travel', location: 'home', label: 'Home', hint: 'The person behind the work', place: 'home' },
-  { kind: 'travel', location: 'nfc', label: 'NFC Solutions', hint: 'The workplace', place: 'office' },
-  { kind: 'travel', location: 'process-01', label: 'Design Process', hint: 'Nine steps in the park', place: 'park' },
-  { kind: 'section', id: 'workflow', label: 'AI Workflow', hint: 'AI helps me explore', },
-  { kind: 'projects', label: 'Projects', hint: 'Inside the office' },
+  ...STORY_STOPS.map<Item>((st) => ({ kind: 'stop', stop: st.id, label: st.name, hint: st.line, place: st.place! })),
+  { kind: 'section', id: 'workflow', label: 'AI Workflow', hint: 'AI helps me explore' },
   { kind: 'section', id: 'contact', label: 'Contact', hint: 'Say hello' },
   { kind: 'section', id: 'feedback', label: 'Feedback', hint: 'Tell me what you think' },
 ]
 
-const JOURNEY: { place: Place; label: string }[] = [
-  { place: 'home', label: 'Home' },
-  { place: 'education', label: 'Education' },
-  { place: 'career', label: 'The Growth Walk' },
-  { place: 'office', label: 'NFC Solutions' },
-  { place: 'park', label: 'Design Park' },
-  { place: 'projects', label: 'Projects' },
-  { place: 'final', label: 'The Lookout' },
-]
+const JOURNEY = STORY_STOPS.map((st) => ({ place: st.place!, label: st.name }))
 
 /** Full-screen menu: large navigation on the left, the selected section on the right. */
 export function MenuOverlay() {
@@ -65,25 +50,7 @@ export function MenuOverlay() {
     useGameStore.getState().firePulse('select')
     if (it.kind === 'section') return setSection(it.id)
     setOpen(false)
-    if (it.kind === 'projects') {
-      navigate('/street')
-      goToProjects()
-      return
-    }
-    travel(it.location)
-  }
-
-  const travel = (id: string) => {
-    const l = getLocation(id)
-    if (!l) return
-    navigate('/street')
-    // stand a few metres in front of the place, facing it
-    const [x, , z] = l.position
-    const [cx, , cz] = l.cameraTarget.position
-    const dx = cx - x
-    const dz = cz - z
-    const len = Math.hypot(dx, dz) || 1
-    void travelTo(new Vector3(x + (dx / len) * 1.8, 0.6, z + (dz / len) * 1.8), Math.atan2(-dx, -dz))
+    navigateToLocation(it.stop)
   }
 
   const tab = open ? 0 : -1
@@ -97,7 +64,7 @@ export function MenuOverlay() {
           <ol>
             {ITEMS.map((it, i) => {
               const active = it.kind === 'section' && section === it.id
-              const done = it.kind === 'travel' && discovered.includes(it.place)
+              const done = it.kind === 'stop' && discovered.includes(it.place)
               return (
                 <li key={it.label} style={{ transitionDelay: open ? `${70 + i * 40}ms` : '0ms' }}>
                   <button className={`ui-menu__item ${active ? 'is-active' : ''} ${done ? 'is-done' : ''}`} onClick={() => choose(it)} tabIndex={tab} onMouseEnter={() => soundManager.play('hover')}>
@@ -132,8 +99,8 @@ export function MenuOverlay() {
               <p className="ui-kicker">About</p>
               <h2>{PROFILE.name}, {PROFILE.role}.</h2>
               <p className="ui-menu__lead">{PROFILE.tagline}</p>
-              <p>{PROFILE.experience}, currently at {PROFILE.company}. This neighbourhood is my portfolio as a place: my education on the campus, my story at home, my process and AI workflow in the Design Park — and my projects inside the NFC Solutions office.</p>
-              <button className="ui-btn ui-btn--quiet" onClick={() => { setOpen(false); travel('home') }} tabIndex={tab}>Visit my home ↗</button>
+              <p>{PROFILE.experience}, currently at {PROFILE.company}. This neighbourhood is my portfolio as a place: my education on the campus, my story at home, my projects inside the NFC Solutions office, my process on the Design Journey — and a coffee at the Contact Café.</p>
+              <button className="ui-btn ui-btn--quiet" onClick={() => { setOpen(false); navigateToLocation('home') }} tabIndex={tab}>Visit my home ↗</button>
             </div>
           )}
           {section === 'workflow' && (
@@ -144,7 +111,7 @@ export function MenuOverlay() {
                 {AI_WORKFLOW.map((s) => <li key={s} className={AI_HUMAN_STEPS.has(s) ? 'is-human' : ''}>{s}</li>)}
               </ol>
               <p className="ui-menu__note">AI is a design partner, not a replacement for human thinking.</p>
-              <button className="ui-btn ui-btn--quiet" onClick={() => { setOpen(false); travel('park-ai') }} tabIndex={tab}>Visit the AI area ↗</button>
+              <button className="ui-btn ui-btn--quiet" onClick={() => { setOpen(false); navigateToLocation('designJourney') }} tabIndex={tab}>Visit the AI area ↗</button>
             </div>
           )}
           {section === 'contact' && (

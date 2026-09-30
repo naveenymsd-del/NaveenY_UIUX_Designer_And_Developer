@@ -129,7 +129,7 @@ export function genStudio(ctx: GenContext, def: BuildingDef) {
   b.box(frame, [0, 1.35, d / 2 - 0.2], [0.08, 2.7, 0.08], { cast: false })
   b.box(PALETTE.charcoal, [0, 3.2, d / 2 + 0.7], [pw * 2 + 0.6, 0.16, 1.6])
   b.box(PALETTE.charcoal, [0, gH - 0.15, d / 2 + 0.32], [w + 0.1, 0.8, 0.22])
-  addSign(ctx, 'PROJECT DISTRICT', { bg: '#a996d4', fg: '#ffffff', shape: 'rect', weight: 800 }, [0, gH - 0.15, d / 2 + 0.44], 6.4, 0.66)
+  addSign(ctx, 'GALLERY', { bg: '#1f2328', fg: '#f7f4ef', shape: 'rect', weight: 800 }, [0, gH - 0.15, d / 2 + 0.44], 6.4, 0.66)
   // side ribbon windows
   for (const sx of [-1, 1]) {
     b.push(sx * (w / 2 - 0.2), 0, -0.3, sx * Math.PI / 2)
@@ -497,7 +497,7 @@ export function genPark(ctx: GenContext) {
   b.pop()
   b.push(-9.8, lawnY, 8.9, Math.PI * 0.75)
   b.add('cyl8', 0x6e5140, [0, 1.1, 0], [0.1, 2.2, 0.1])
-  addSign(ctx, 'PROJECT DISTRICT →', { bg: '#a996d4', fg: '#ffffff', shape: 'rect', weight: 800 }, [0, 1.95, 0.06], 1.7, 0.34, 0x6e5140)
+  addSign(ctx, 'CONTACT CAFÉ →', { bg: '#3a2a20', fg: '#f3e2c7', shape: 'rect', weight: 800 }, [0, 1.95, 0.06], 1.7, 0.34, 0x6e5140)
   b.cylCollider([0, 0, 0], 0.12, 2.2)
   b.pop()
   // picnic table for the laptop activity

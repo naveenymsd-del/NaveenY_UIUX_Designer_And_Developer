@@ -10,7 +10,7 @@ import { probeAsset } from '@/utils/assetProbe'
  */
 type SfxKey = 'footstep' | 'jump' | 'land' | 'click' | 'interact' | 'open' | 'close' | 'hover' | 'bell' | 'companion' | 'discover' | 'screen'
 
-export type Soundscape = 'street' | 'park' | 'office' | 'education' | 'home'
+export type Soundscape = 'street' | 'park' | 'office' | 'education' | 'home' | 'cafe'
 type Layer = 'street' | 'outdoor' | 'park' | 'office' | 'room'
 const SCAPES: Record<Soundscape, Record<Layer, number>> = {
   street: { street: 1, outdoor: 1, park: 0.15, office: 0, room: 0 },
@@ -18,6 +18,7 @@ const SCAPES: Record<Soundscape, Record<Layer, number>> = {
   office: { street: 0.05, outdoor: 0.04, park: 0, office: 1, room: 0.5 },
   education: { street: 0.05, outdoor: 0.08, park: 0, office: 0.22, room: 1 },
   home: { street: 0.04, outdoor: 0.1, park: 0, office: 0, room: 0.8 },
+  cafe: { street: 0.08, outdoor: 0.06, park: 0, office: 0.45, room: 0.9 },
 }
 
 interface PlayOpts {

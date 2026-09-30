@@ -1,7 +1,8 @@
 import { Vector3 } from 'three'
 import { navigate } from '@/app/routes'
 import { INTERIORS, type InteriorId } from '@/data/interiors'
-import { FINAL_SPOT, getLocation } from '@/data/locations'
+import { getLocation } from '@/data/locations'
+import { WORLD_STOPS, matchStop, type StopId } from '@/data/world'
 import { useGameStore } from '@/stores/gameStore'
 import { say } from './companion'
 import { enterInterior } from './interiors'
@@ -15,7 +16,7 @@ import { soundManager } from './sound/SoundManager'
  * back behind them, and rooms are entered with the usual fade. A soft marker
  * highlights the arrival point for a few seconds.
  */
-export type Destination = 'home' | 'education' | 'office' | 'projects' | 'design' | 'ai' | 'career' | 'contact'
+export type Destination = StopId
 
 interface DestDef {
   /** street arrival point + facing */
@@ -28,16 +29,20 @@ interface DestDef {
   line: string
 }
 
-export const DESTINATIONS: Record<Destination, DestDef> = {
-  home: { at: [-8.2, -25], yaw: -Math.PI / 2, room: { id: 'home', location: 'home' }, line: 'Let’s go <b>home</b> — meet Naveen.' },
-  education: { at: [0, -51.5], yaw: Math.PI, room: { id: 'education', location: 'education' }, line: 'Let’s go back to where the journey <b>started</b>.' },
-  office: { at: [10.8, 17], yaw: Math.PI / 2, room: { id: 'office', location: 'nfc' }, line: 'Let’s head to <b>NFC Solutions</b>.' },
-  projects: { at: [10.8, 17], yaw: Math.PI / 2, room: { id: 'office', location: 'nfc', spot: 'studio' }, line: 'Sure. Let’s head to the <b>projects</b>.' },
-  design: { at: [-21.6, 25.6], yaw: Math.PI, line: 'This is how I think <b>before I design</b>.' },
-  ai: { at: [-25.5, 30.2], yaw: Math.PI, line: 'Here’s how <b>AI and I</b> work together.' },
-  career: { at: [7.4, -47], yaw: 0, line: 'Walk this path — it’s how I <b>grew</b>.' },
-  contact: { at: [FINAL_SPOT[0] - 0.6, FINAL_SPOT[2] + 1.4], yaw: Math.PI * 0.8, open: 'final', line: 'Let’s <b>connect</b>.' },
+const GO_LINES: Record<StopId, string> = {
+  start: 'Back to the <b>start</b>.',
+  home: 'Let’s go <b>home</b>.',
+  education: 'Let’s go back to where the journey <b>started</b>.',
+  nfcSolutions: 'Let’s head to <b>NFC Solutions</b>.',
+  projects: 'Sure. Let’s head to the <b>projects</b>.',
+  designJourney: 'Let’s walk the <b>Design Journey</b>.',
+  contactCafe: 'Let’s grab a <b>coffee</b> and talk.',
 }
+
+/** every destination comes from the one location config (data/world.ts) */
+export const DESTINATIONS: Record<Destination, DestDef> = Object.fromEntries(
+  WORLD_STOPS.map((st) => [st.id, { at: st.arrive, yaw: st.yaw, room: st.room, line: GO_LINES[st.id] }]),
+) as Record<Destination, DestDef>
 
 let busy = false
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -111,21 +116,5 @@ function getPlayerXZ(): [number, number] {
   return [playerRuntime.position.x, playerRuntime.position.z]
 }
 
-// ── local command matching for the AI navigator (no external API) ──────────
-const COMMANDS: [Destination, RegExp][] = [
-  ['projects', /\b(projects?|work|case ?stud(y|ies)|portfolio|intellistaff|calmscient|ebounti|task|wastebeminerals|show)\b/],
-  ['education', /\b(education|college|study|studies|school|universit(y|ies)|learn(ing)?|degree|class(room)?)\b/],
-  ['ai', /\b(ai|a\.i\.|workflow|claude|chatgpt|gpt)\b/],
-  ['design', /\b(design|process|park|ux|ui|research|prototyp\w*|method)\b/],
-  ['career', /\b(career|journey|growth|grow|timeline|story)\b/],
-  ['office', /\b(office|nfc|company|colleagues?|team|job)\b/],
-  ['home', /\b(home|about|me|profile|who|naveen|skills?|tools?)\b/],
-  ['contact', /\b(contact|email|mail|resume|cv|linkedin|hire|reach|feedback|connect|thanks?)\b/],
-]
-
-export function matchCommand(text: string): Destination | null {
-  const t = text.toLowerCase().trim()
-  if (!t) return null
-  for (const [dest, re] of COMMANDS) if (re.test(t)) return dest
-  return null
-}
+/** local command matching for the AI navigator (no external API) — words live in data/world.ts */
+export const matchCommand = (text: string): Destination | null => matchStop(text)

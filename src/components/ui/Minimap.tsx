@@ -1,62 +1,62 @@
 import { memo, useMemo } from 'react'
 import { BLOCKS, BUILDINGS, ROADS, footprint } from '@/data/cityLayout'
-import { LOCATIONS, type InteractiveDef } from '@/data/locations'
+import { WORLD_STOPS, type StopId } from '@/data/world'
+import { inStudio } from '@/data/interiors'
 import { controlsEnabled, useGameStore } from '@/stores/gameStore'
 import { usePlayerStore } from '@/stores/playerStore'
-import { useCurrentPlace } from '@/hooks/useCurrentPlace'
+import { STOP_ICONS } from './stopIcons'
 
 const VIEW = { x0: -60, x1: 60, z0: -80, z1: 94 }
+const ROUTE = WORLD_STOPS.map((st) => st.mapAt)
 
-type Icon = NonNullable<InteractiveDef['marker']>['icon']
-/** 10×10 glyphs drawn around the origin */
-const ICONS: Record<Icon, string> = {
-  education: 'M-5 -1 L0 -4 L5 -1 L0 2 Z M-3 0 V3 Q0 5 3 3 V0',
-  office: 'M-3.5 4 V-4 H3.5 V4 Z M-1.8 -2.4 H-0.6 M0.6 -2.4 H1.8 M-1.8 -0.4 H-0.6 M0.6 -0.4 H1.8 M-1.8 1.6 H-0.6 M0.6 1.6 H1.8',
-  home: 'M-4 0 L0 -4 L4 0 M-3 -1 V4 H3 V-1 M-1 4 V1.5 H1 V4',
-  park: 'M0 4 V0 M0 -4 C3.5 -4 4 1 0 1 C-4 1 -3.5 -4 0 -4 Z',
-  projects: 'M-4 -4 H-0.8 V-0.8 H-4 Z M0.8 -4 H4 V-0.8 H0.8 Z M-4 0.8 H-0.8 V4 H-4 Z M0.8 0.8 H4 V4 H0.8 Z',
-  info: 'M0 -3 V-2.6 M0 -1 V3.5',
+/** which stop the player is at right now (null = between places) */
+function currentStop(interior: string | null, x: number, z: number): StopId | null {
+  if (interior === 'home') return 'home'
+  if (interior === 'education') return 'education'
+  if (interior === 'office') return inStudio(x, z) ? 'projects' : 'nfcSolutions'
+  if (interior === 'cafe') return 'contactCafe'
+  if (x > -43 && x < -8 && z > 7 && z < 43) return 'designJourney'
+  for (const st of WORLD_STOPS) if (Math.hypot(x - st.arrive[0], z - st.arrive[1]) < 7) return st.id
+  return null
 }
-const MARKERS = LOCATIONS.filter((l) => l.marker)
-/** which marker the "where am I" label corresponds to */
-const HERE: Record<string, string> = { 'Education Campus': 'education', 'NFC Solutions': 'nfc', 'My Home': 'home', 'Design Park': 'park-ai' }
 
-/** North-up neighbourhood map with the five story destinations and a live player marker. */
+/**
+ * North-up map of the journey, drawn from the one location config: numbered
+ * stops in story order, a quiet route line joining them, the place you're at
+ * highlighted and the next stop gently pulsing.
+ */
 export function Minimap() {
   const phase = useGameStore((s) => s.phase)
   const enabled = useGameStore((s) => controlsEnabled(s))
-  const nearby = useGameStore((s) => s.nearbyId)
   const mode = useGameStore((s) => s.mode)
   const interior = useGameStore((s) => s.interior)
+  const discovered = useGameStore((s) => s.discovered)
+  const here = usePlayerStore((s) => currentStop(interior, s.x, s.z))
+  const next = WORLD_STOPS.find((st) => st.place && !discovered.includes(st.place))?.id
   const visible = phase === 'playing' && mode === 'street' && !interior
-  const here = HERE[useCurrentPlace().name]
   return (
     <div className={`ui-minimap ${visible ? 'is-visible' : ''} ${enabled ? '' : 'is-dim'}`} aria-hidden="true">
       <svg viewBox={`${VIEW.x0} ${VIEW.z0} ${VIEW.x1 - VIEW.x0} ${VIEW.z1 - VIEW.z0}`} preserveAspectRatio="xMidYMid slice">
         <StaticMap />
-        {MARKERS.map((l) => {
-          const m = l.marker!
-          const near = nearby === l.id
-          const w = m.label.length * 3.7 + 14
+        <polyline points={ROUTE.map(([x, z]) => `${x},${z}`).join(' ')} className="ui-minimap__route" />
+        {WORLD_STOPS.map((st, i) => {
+          const w = st.label.length * 3.15 + 17
+          const done = !!st.place && discovered.includes(st.place)
           return (
-            <g key={l.id} transform={`translate(${m.mapAt?.[0] ?? l.position[0]} ${m.mapAt?.[1] ?? l.position[2]})`} className={`ui-minimap__marker ${near ? 'is-near' : ''} ${here === l.id ? 'is-here' : ''}`} style={{ ['--accent' as string]: l.accent }}>
+            <g
+              key={st.id}
+              transform={`translate(${st.mapAt[0]} ${st.mapAt[1]})`}
+              className={`ui-minimap__marker is-${st.icon} ${here === st.id ? 'is-here' : ''} ${next === st.id ? 'is-next' : ''} ${done ? 'is-done' : ''}`}
+            >
               <rect x={-w / 2} y={-5.5} width={w} height={11} rx={5.5} className="ui-minimap__label-bg" />
-              <g transform={`translate(${-w / 2 + 6.5} 0) scale(0.62)`}>
-                <circle r={6.2} className="ui-minimap__icon-bg" />
-                <path d={ICONS[m.icon]} className="ui-minimap__icon" />
+              <g transform={`translate(${-w / 2 + 6.2} 0)`}>
+                <circle r={4.4} className="ui-minimap__icon-bg" />
+                <g transform="scale(0.26) translate(-12 -12)"><path d={STOP_ICONS[st.icon]} className="ui-minimap__icon" /></g>
               </g>
-              <text x={3.5} textAnchor="middle" y={1.9} className="ui-minimap__label">{m.label}</text>
-              {m.sub && (
-                // projects live inside this building: a small tethered chip
-                <g transform="translate(0 10.5)">
-                  <path d="M0 -5 V-2.6" stroke="currentColor" strokeWidth={0.6} className="ui-minimap__tether" />
-                  <rect x={-(m.sub.length * 1.25 + 8) / 2} y={-2.6} width={m.sub.length * 1.25 + 8} height={6.2} rx={3.1} className="ui-minimap__sub-bg" />
-                  <g transform={`translate(${-(m.sub.length * 1.25 + 8) / 2 + 3.4} 0.5) scale(0.32)`}>
-                    <path d={ICONS.projects} className="ui-minimap__icon" style={{ stroke: '#fff' }} />
-                  </g>
-                  <text x={1.6} y={1.8} textAnchor="middle" className="ui-minimap__sub">{m.sub}</text>
-                </g>
-              )}
+              <text x={3.4} textAnchor="middle" y={1.7} className="ui-minimap__label">
+                {i > 0 && <tspan className="ui-minimap__num">{String(i).padStart(2, '0')} </tspan>}
+                {st.label}
+              </text>
             </g>
           )
         })}
@@ -77,7 +77,6 @@ const StaticMap = memo(function StaticMap() {
           ? <rect key={r.id} x={r.from} y={r.c - r.half} width={r.to - r.from} height={r.half * 2} className="ui-minimap__road" />
           : <rect key={r.id} x={r.c - r.half} y={r.from} width={r.half * 2} height={r.to - r.from} className="ui-minimap__road" />,
       )}
-      <rect x={9} y={-42} width={21} height={34} className="ui-minimap__plaza" rx={2} />
       {shapes.map((s) => <rect key={s.id} x={s.x0} y={s.z0} width={s.x1 - s.x0} height={s.z1 - s.z0} rx={1} className={`ui-minimap__bldg ${s.special ? 'is-special' : ''}`} />)}
     </g>
   )

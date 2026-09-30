@@ -23,6 +23,12 @@ npm run preview    # serve the production build
 | Close / back | `Esc` | Back / ✕ |
 | Toggle tips | `H` | — |
 
+## The journey — one location config
+
+**** () defines the route: START → 01 Home → 02 Education → 03 NFC Solutions → 04 Projects (the Project Studio inside the office) → 05 Design Journey → 06 Contact Café. Each stop sets its name, its question, icon, minimap position, arrival point, room, the companion's lines and the words the guide understands. The minimap (markers, route line, active highlight), the guide's quick links and typed commands, , the Next-stop chip and the menu all read from it. To add a stop, add an entry (plus an  entry if it has a room).
+
+The **Contact Café** (promenade, west of the start) is the ending: sit at the window table (E), Naveen sits across from you, asks how it went, and you can leave a review or skip before the contact details (phone, email, LinkedIn, resume from ) appear.
+
 ## Story, guide and navigation
 
 The world tells one story in ten chapters, each arriving as you reach its place:

@@ -9,6 +9,7 @@ import { isPlaceholder } from '@/data/projects'
  */
 export function ContactLinks({ tabbable = true, compact = false }: { tabbable?: boolean; compact?: boolean }) {
   const items = [
+    { key: 'phone', label: 'Call me', value: CONTACT.phone, href: `tel:${CONTACT.phone.replace(/\s/g, '')}` },
     { key: 'email', label: 'Email me', value: CONTACT.email, href: `mailto:${CONTACT.email}` },
     { key: 'linkedin', label: 'View LinkedIn', value: CONTACT.linkedin, href: CONTACT.linkedin },
     { key: 'resume', label: 'View resume', value: CONTACT.resume, href: CONTACT.resume },

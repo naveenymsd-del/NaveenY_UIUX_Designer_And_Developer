@@ -42,7 +42,7 @@ for (let i = 0; i < 7; i++) {
   await p.locator('.ui-journey-chip button').click()
   await sleep(9000)
   const where = await p.evaluate(() => document.querySelector('.ui-where b')?.textContent)
-  const panel = await p.evaluate(() => document.querySelector('.ui-final.is-visible h2')?.textContent ?? null)
+  const panel = await p.evaluate(() => document.querySelector('.ui-cafe.is-visible')?.textContent?.slice(0, 60) ?? null)
   console.log(`B next stop "${chip}" → arrived: ${where}${panel ? ' · ' + panel : ''}`)
   await p.screenshot({ path: `qa-screens/183-${mode}-B-${i}-${chip.replace(/\s/g, '')}.png` })
   await p.keyboard.press('Escape')

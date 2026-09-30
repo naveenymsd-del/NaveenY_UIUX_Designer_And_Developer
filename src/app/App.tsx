@@ -18,7 +18,7 @@ import { WebGLFallback, hasWebGL } from '@/components/ui/WebGLFallback'
 import { ZoneToast } from '@/components/ui/ZoneToast'
 import { FadeOverlay } from '@/components/ui/FadeOverlay'
 import { CompanionBubble } from '@/components/ui/CompanionBubble'
-import { FinalPanel } from '@/components/ui/FinalPanel'
+import { CafeConversation } from '@/components/ui/CafeConversation'
 import { GuidePanel } from '@/components/ui/GuidePanel'
 import { GreetBubble } from '@/components/ui/GreetBubble'
 import { JourneyChip } from '@/components/ui/JourneyChip'
@@ -76,7 +76,7 @@ export function App() {
         <TipsOverlay />
         <LocationPanel />
         <ProjectPanel />
-        <FinalPanel />
+        <CafeConversation />
         <GuidePanel />
         <NameTag />
         <GreetBubble />

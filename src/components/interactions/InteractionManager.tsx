@@ -9,6 +9,7 @@ import { enterInterior, exitInterior } from '@/core/interiors'
 import type { InteriorId } from '@/data/interiors'
 import { navigate } from '@/app/routes'
 import { goToProjects } from '@/core/journey'
+import { sitAtCafe } from '@/core/cafe'
 
 const _v = new Vector3()
 
@@ -112,6 +113,9 @@ export function activateLocation(loc: InteractiveDef) {
       break
     case 'EXIT_INTERIOR':
       void exitInterior(loc.destination as InteriorId)
+      break
+    case 'CAFE_SIT':
+      void sitAtCafe(loc.id)
       break
     case 'GO_PROJECTS':
       goToProjects()

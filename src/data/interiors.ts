@@ -6,7 +6,7 @@ import type { SpecialPose } from '@/core/runtime'
  * furniture layout, people and story points — is declared here in room-local
  * coordinates (x right, z toward the door; the door is on the +z wall).
  */
-export type InteriorId = 'education' | 'office' | 'home'
+export type InteriorId = 'education' | 'office' | 'home' | 'cafe'
 
 export interface InteriorDef {
   id: InteriorId
@@ -46,14 +46,14 @@ export const STUDIO = {
 
 export const INTERIORS: Record<InteriorId, InteriorDef> = {
   education: {
-    id: 'education', name: 'My Education', subtitle: 'Chapter 03 · What I learned',
+    id: 'education', name: 'My Education', subtitle: 'Chapter 02 · Where I started',
     origin: [320, 0, -120], width: 24, depth: 18, height: 3.8,
     outside: { pos: [0, -55.6], yaw: 0 },
     establish: { position: [9.5, 3.2, 7.4], target: [-4, 1.3, -3] },
     palette: { floor: 0xb58a62, wall: 0xf1e9dc, wainscot: 0x4f6b58, trim: 0xf7f2ea, ceiling: 0xf4efe6 },
   },
   office: {
-    id: 'office', name: 'NFC Solutions', subtitle: 'Chapter 06 · My professional world',
+    id: 'office', name: 'NFC Solutions', subtitle: 'Chapter 03 · My professional world',
     origin: [320, 0, 0], width: 28, depth: 20, height: 3.8,
     outside: { pos: [13.6, 17], yaw: -Math.PI / 2 },
     establish: { position: [11.5, 3.3, 8.6], target: [-2, 1.2, -3.5] },
@@ -62,6 +62,13 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     spots: {
       studio: { pos: [16.4, 6.6], yaw: 2.35, establish: { position: [15.0, 2.75, 9.3], target: [22.6, 1.45, -1.2] } },
     },
+  },
+  cafe: {
+    id: 'cafe', name: 'Contact Café', subtitle: 'Chapter 06 · Let’s talk',
+    origin: [320, 0, 240], width: 14, depth: 11, height: 3.3,
+    outside: { pos: [-14, 54.2], yaw: Math.PI },
+    establish: { position: [5.2, 2.5, 4.2], target: [-1.5, 1.0, -2.5] },
+    palette: { floor: 0x8a6448, wall: 0xefe4d2, wainscot: 0x5b4032, trim: 0xf6efe3, ceiling: 0xf3eadc },
   },
   home: {
     id: 'home', name: 'My Home', subtitle: 'Chapter 01 · Who I am',
@@ -149,6 +156,9 @@ export interface InteriorPerson {
 }
 
 const chairY = 0.47
+
+/** the window table in the café: Naveen sits on the far side, the visitor on the near side */
+export const CAFE_TABLE = { x: 3.4, z: -2.6, naveen: -0.78, visitor: 0.78 }
 // desk chair sits 0.62 behind the desk edge, facing the monitor
 const deskSeat = (d: { x: number; z: number; facing: 1 | -1 }) => ({ x: d.x, z: d.z + d.facing * 0.72, yaw: d.facing > 0 ? Math.PI : 0 })
 
@@ -177,6 +187,10 @@ export const INTERIOR_PEOPLE: InteriorPerson[] = [
   // Project Studio: a quiet review at the collaboration table
   { room: 'office', x: 16.65, z: -2.0, yaw: Math.PI / 2, pose: 'sitTalk', seatY: chairY, outfit: 'office', fidget: ['work'] },
   { room: 'office', x: 18.55, z: -1.4, yaw: -Math.PI / 2, pose: 'work', seatY: chairY, outfit: 'office', fidget: ['sitTalk', 'sit'] },
+  // ── Contact Café: a barista, and a couple chatting over coffee (the window table is kept for you)
+  { room: 'cafe', x: -4.6, z: -4.1, yaw: 0, pose: 'coffee', outfit: 'office', prop: 'cup' },
+  { room: 'cafe', x: -1.6, z: 1.3, yaw: Math.PI / 2, pose: 'sitTalk', seatY: chairY, outfit: 'student', prop: 'cup' },
+  { room: 'cafe', x: -0.1, z: 1.3, yaw: -Math.PI / 2, pose: 'sit', seatY: chairY, outfit: 'office', fidget: ['sitTalk'] },
   // ── Education
   ...[0, 2, 4].map((i) => ({ room: 'education' as const, x: EDU_DESKS[i][0], z: EDU_DESKS[i][1] + 0.62, yaw: Math.PI, pose: 'work' as const, seatY: chairY, outfit: 'student' as const })),
   { room: 'education', x: 9.2, z: -7.6, yaw: -0.3, pose: 'talk', outfit: 'teacher' },
@@ -195,7 +209,7 @@ export const INTERIOR_ROUTES: { room: InteriorId; points: [number, number][]; sp
 export type StoryKind =
   | 'timeline' | 'classroom' | 'book' | 'certificates' | 'growth' | 'bell'
   | 'reception' | 'workspace' | 'meeting' | 'designWall'
-  | 'hello' | 'desk' | 'laptop' | 'bookshelf' | 'journey' | 'portfolio' | 'window' | 'contact' | 'skills' | 'approach'
+  | 'hello' | 'desk' | 'laptop' | 'bookshelf' | 'journey' | 'portfolio' | 'window' | 'contact' | 'skills' | 'approach' | 'conversation'
 
 export interface InteriorStory {
   room: InteriorId
@@ -232,5 +246,6 @@ export const INTERIOR_STORIES: InteriorStory[] = [
   { room: 'home', kind: 'window', name: 'Looking Ahead', x: -4.8, z: -5.1, radius: 1.7, label: 'Press E to look outside', cam: { position: [-3.4, 1.9, -2.6], target: [-5, 1.8, -7] } },
   { room: 'home', kind: 'skills', name: 'Tools & skills', x: -7.1, z: 3.9, radius: 2.6, label: 'Press E to see my skills', cam: { position: [-4.4, 2.0, 4.6], target: [-9, 1.6, 3.9] } },
   { room: 'home', kind: 'approach', name: 'Design Approach', x: 6.7, z: -5.2, radius: 1.8, label: 'Press E to see how I approach design', cam: { position: [5.6, 2.0, -2.4], target: [6.8, 1.7, -7] } },
+  { room: 'cafe', kind: 'conversation', name: 'Sit down with Naveen', x: CAFE_TABLE.x, z: CAFE_TABLE.z + 1.3, radius: 2.0, label: 'Press E to sit down', cam: { position: [CAFE_TABLE.x, 1.22, CAFE_TABLE.z + 1.05], target: [CAFE_TABLE.x, 1.02, CAFE_TABLE.z - 0.75] } },
   { room: 'home', kind: 'contact', name: 'Contact', x: -4.6, z: 5.6, radius: 1.6, label: 'Press E to get in touch', cam: { position: [-2.4, 2.0, 3.4], target: [-4.6, 1.5, 7] } },
 ]

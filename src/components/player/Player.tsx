@@ -238,7 +238,11 @@ export function Player() {
     rt.grounded = s.grounded
 
     // ── visual follow ──────────────────────────────────────────────────
+    // seated: stand up as soon as the conversation is closed
+    if (rt.seated && !game.activeLocationId) rt.seated = false
+    anim.pose = rt.seated ? 'sit' : anim.pose === 'sit' ? 'none' : anim.pose
     visual.current.position.copy(_next)
+    if (rt.seated) visual.current.position.y += 0.47
     visual.current.rotation.y = rt.yaw
     if (s.grounded) s.groundY = _next.y
     const height = Math.max(0, _next.y - s.groundY)
