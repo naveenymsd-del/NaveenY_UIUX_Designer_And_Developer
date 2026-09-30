@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react'
+import type { Group } from 'three'
+import { useEffect, useMemo , useRef } from 'react'
 import { BuildingModel } from '@/components/models/BuildingModel'
 import { PropModels } from '@/components/models/PropModels'
 import { BUILDINGS } from '@/data/cityLayout'
@@ -41,8 +42,21 @@ export function City({ shadows = true, parts = true }: { shadows?: boolean; part
   useEffect(() => {
     setLoading({ worldReady: true })
   }, [setLoading])
+  // the city never moves: once everything has mounted, compute its matrices one
+  // last time and take the ~800 static objects out of the per-frame scene update
+  const root = useRef<Group>(null)
+  useEffect(() => {
+    const g = root.current
+    if (!g) return
+    g.matrixWorldAutoUpdate = true
+    const t = window.setTimeout(() => {
+      g.updateMatrixWorld(true)
+      g.matrixWorldAutoUpdate = false
+    }, 2500)
+    return () => window.clearTimeout(t)
+  }, [data])
   return (
-    <group name="city">
+    <group name="city" ref={root}>
       <Ground lawns={data.lawns} tiles={data.tiles} />
       {parts && <InstancedParts parts={data.parts} shadows={shadows} />}
       <Screens screens={data.screens} />

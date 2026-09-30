@@ -88,7 +88,7 @@ export function GameCamera() {
     if (game.phase === 'intro') {
       if (!introRuntime.running && introSeen()) skipIntro()
       introRuntime.running = true
-      introRuntime.t += dt
+      if (!(introRuntime as { freeze?: boolean }).freeze) introRuntime.t += dt
     }
 
     // ── follow camera simulation ───────────────────────────────────────

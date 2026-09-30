@@ -89,7 +89,7 @@ function discover(place: Place) {
 
 const ZONE_LINES: Record<string, { place: Place; text: string }> = {
   campus: { place: 'education', text: 'This is where the journey <b>started</b> — step inside.' },
-  home: { place: 'home', text: 'This is my home. Want to know the person behind the work?' },
+  home: { place: 'home', text: 'Want to know the person behind the <b>designs</b>?' },
   nfc: { place: 'office', text: 'This is where my professional design journey became <b>real</b>.' },
   park: { place: 'park', text: 'This is how I think <b>before I design</b>. Follow the stones.' },
   growth: { place: 'career', text: 'Walk this path — it’s how I <b>grew</b>, one step at a time.' },
@@ -100,9 +100,8 @@ function onStore(s: ReturnType<typeof useGameStore.getState>, prev: ReturnType<t
   if (s.phase === 'playing' && prev.phase !== 'playing' && !state.started) {
     state.started = true
     state.lastDiscovery = performance.now()
-    say('Welcome. Take your time — there’s a lot to explore here.', { ms: 4200, emote: 'wave' })
-    say('Walk around, meet the people, and discover the projects inside <b>NFC Solutions</b>.', { ms: 5200, emote: 'explain' })
-    say('Let’s start at <b>home</b> — come and meet me.', { ms: 3800, point: PLACE_POINTS.home })
+    say('Welcome. <b>Naveen’s world</b> is yours to explore.', { ms: 4200, emote: 'wave' })
+    say('Go anywhere — click me whenever you want a shortcut.', { ms: 4200, emote: 'explain' })
   }
   // arriving somewhere for the first time
   if (s.visitedZones.length > prev.visitedZones.length) {
@@ -113,11 +112,11 @@ function onStore(s: ReturnType<typeof useGameStore.getState>, prev: ReturnType<t
   // leaving a room: hand the visitor on to the next chapter
   if (s.interior !== prev.interior && !s.interior && prev.interior) {
     if (prev.interior === 'home' && !s.discovered.includes('education'))
-      window.setTimeout(() => say('Want to see where the journey <b>started</b>?', { ms: 3600, point: PLACE_POINTS.education }), 900)
+      window.setTimeout(() => say('Curious where the journey <b>started</b>?', { ms: 3600, point: PLACE_POINTS.education }), 900)
     if (prev.interior === 'education') {
       window.setTimeout(() => {
         say('Learning was only the beginning.', { ms: 2800 })
-        say('Let’s see where that journey became <b>real work</b>.', { ms: 3600, point: PLACE_POINTS.career })
+        say('Ready to see where those skills became <b>real products</b>?', { ms: 3800, point: PLACE_POINTS.career })
       }, 900)
     }
   }

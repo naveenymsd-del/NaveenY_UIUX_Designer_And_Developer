@@ -9,6 +9,8 @@ export type MoveState = 'idle' | 'walk' | 'run' | 'jump' | 'fall' | 'land'
 export type SpecialPose = 'none' | 'sit' | 'talk' | 'look' | 'phone' | 'wave' | 'work' | 'read' | 'coffee' | 'sitTalk'
 
 export interface CharacterAnim {
+  /** animate every Nth frame (distance LOD: 1 near, 2 mid) */
+  every?: number
   state: MoveState
   /** horizontal speed in m/s */
   speed: number

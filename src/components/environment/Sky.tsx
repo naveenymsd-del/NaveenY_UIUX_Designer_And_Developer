@@ -65,8 +65,8 @@ export function Sky() {
               col += vec3(0.85, 0.9, 1.0) * star * uStars * smoothstep(0.06, 0.35, d.y) * 0.9;
               // the moon: a soft disc with a faint halo
               float m = max(dot(d, uMoonDir), 0.0);
-              col += vec3(0.92, 0.94, 1.0) * smoothstep(0.99955, 0.99975, m) * 1.1 * uStars;
-              col += vec3(0.55, 0.62, 0.8) * pow(m, 60.0) * 0.18 * uStars;
+              col += vec3(0.9, 0.92, 0.98) * smoothstep(0.99965, 0.9998, m) * 0.55 * uStars;
+              col += vec3(0.5, 0.56, 0.72) * pow(m, 900.0) * 0.12 * uStars;
             }
             col = mix(col, uHorizon * 1.02, smoothstep(0.02, -0.2, vDir.y));
             // after dusk the horizon band melts into the fog, so the fogged city has no visible edge
@@ -117,6 +117,7 @@ export function Sky() {
     cloudMat.color.copy(sky.clouds)
     // at night clouds all but vanish into the sky rather than hang as pale discs
     cloudMat.opacity = 0.92 - sky.stars * 0.84
+    cloudGroup.current.visible = sky.stars < 0.9
   })
 
   return (

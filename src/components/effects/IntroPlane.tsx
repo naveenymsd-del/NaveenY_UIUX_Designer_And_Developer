@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import {
-  BoxGeometry, BufferGeometry, CanvasTexture, Color, CylinderGeometry, DoubleSide, type Group, LatheGeometry,
+  BoxGeometry, BufferAttribute, BufferGeometry, CanvasTexture, Color, CylinderGeometry, DoubleSide, type Group, LatheGeometry,
   Line, LineBasicMaterial, type Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SphereGeometry,
   SRGBColorSpace, Vector2, Vector3,
 } from 'three'
@@ -11,6 +11,65 @@ import { useGameStore } from '@/stores/gameStore'
 import { UI_FONT } from '@/utils/textures'
 
 const BANNER = { length: 19, height: 2.5, rope: 9 }
+
+/** NACA-like airfoil outline (chord along +z from 0 → 1, thickness in y) */
+function airfoil(chord: number, t: number, n = 14) {
+  const pts: Vector2[] = []
+  for (let i = 0; i <= n; i++) {
+    const x = 1 - Math.cos((i / n) * Math.PI * 0.5) // cluster points at the rounded leading edge
+    const y = 5 * t * (0.2969 * Math.sqrt(x) - 0.126 * x - 0.3516 * x * x + 0.2843 * x ** 3 - 0.1036 * x ** 4)
+    pts.push(new Vector2(x * chord, y * chord))
+  }
+  for (let i = n - 1; i > 0; i--) pts.push(new Vector2(pts[i].x, -pts[i].y * 0.55))
+  return pts
+}
+
+/**
+ * A lifting surface swept along an axis: airfoil sections from root to tip,
+ * linearly tapered, with sweep (tip moved aft) and dihedral. axis 'x' = wing /
+ * tailplane (symmetric both sides), 'y' = fin (one side, going up).
+ */
+function surface(opts: { span: number; root: number; tip: number; t: number; sweep: number; dihedral?: number; axis: 'x' | 'y'; stations?: number; bands?: [number, number] }) {
+  const { span, root, tip, t, sweep, dihedral = 0, axis } = opts
+  const stations = opts.stations ?? 8
+  const sec = airfoil(1, t)
+  const m = sec.length
+  const pos: number[] = []
+  const idx: number[] = []
+  const sides = axis === 'x' ? [-1, 1] : [1]
+  sides.forEach((side) => {
+    const base = pos.length / 3
+    for (let k = 0; k <= stations; k++) {
+      const f = k / stations
+      const chord = root + (tip - root) * f
+      const along = f * span * (axis === 'x' ? 0.5 : 1)
+      const aft = sweep * f
+      for (const q of sec) {
+        const z = aft + q.x * chord - chord * 0.25 // quarter-chord on the axis
+        const th = q.y
+        if (axis === 'x') pos.push(side * along, th + along * dihedral, z)
+        else pos.push(th, along, z)
+      }
+    }
+    for (let k = 0; k < stations; k++)
+      for (let i = 0; i < m; i++) {
+        const a = base + k * m + i
+        const b = base + k * m + ((i + 1) % m)
+        const c = a + m
+        const d = b + m
+        if (side > 0) idx.push(a, b, c, b, d, c)
+        else idx.push(a, c, b, b, c, d)
+      }
+    // tip cap
+    const tipBase = base + stations * m
+    for (let i = 1; i < m - 1; i++) side > 0 ? idx.push(tipBase, tipBase + i, tipBase + i + 1) : idx.push(tipBase, tipBase + i + 1, tipBase + i)
+  })
+  const g = new BufferGeometry()
+  g.setAttribute('position', new BufferAttribute(new Float32Array(pos), 3))
+  g.setIndex(idx)
+  g.computeVertexNormals()
+  return g
+}
 
 /** "WELCOME TO MY PORTFOLIO" on cream cloth, hemmed, set in the display face */
 function bannerTexture() {
@@ -60,7 +119,7 @@ export function IntroPlane() {
   const prop = useRef<Mesh>(null!)
   const strobe = useRef<Mesh>(null!)
   const res = useMemo(() => {
-    const body = new MeshStandardMaterial({ color: '#f3f0e9', roughness: 0.38, metalness: 0.1, fog: false })
+    const body = new MeshStandardMaterial({ color: '#f3f0e9', roughness: 0.3, metalness: 0.15, fog: false, envMapIntensity: 1.2 })
     const navy = new MeshStandardMaterial({ color: '#25365a', roughness: 0.45, metalness: 0.1, fog: false })
     const accent = new MeshStandardMaterial({ color: '#ec7a2c', roughness: 0.45, fog: false })
     const glass = new MeshStandardMaterial({ color: '#1d2633', roughness: 0.08, metalness: 0.6, fog: false })
@@ -101,7 +160,15 @@ export function IntroPlane() {
     }
     const ropePts = [new Vector3(0, 0, 0), new Vector3(BANNER.rope, -0.9, 0)]
     const rope = new Line(new BufferGeometry().setFromPoints(ropePts), new LineBasicMaterial({ color: '#3a3d44', fog: false }))
+    const wing = surface({ span: 11, root: 1.62, tip: 1.2, t: 0.13, sweep: 0.05, dihedral: 0.028, axis: 'x' })
+    const wingStripe = surface({ span: 11.05, root: 0.22, tip: 0.2, t: 0.02, sweep: 0.9, dihedral: 0.028, axis: 'x', stations: 4 })
+    wingStripe.translate(0, 0.06, 1.1)
+    const fin = surface({ span: 1.55, root: 1.35, tip: 0.72, t: 0.1, sweep: 0.72, axis: 'y' })
+    const rudder = surface({ span: 1.3, root: 0.34, tip: 0.3, t: 0.06, sweep: 0.62, axis: 'y', stations: 4 })
+    rudder.translate(0, 0.05, 0.78)
+    const tailplane = surface({ span: 3.4, root: 0.95, tip: 0.6, t: 0.1, sweep: 0.18, axis: 'x' })
     return {
+      wing, wingStripe, fin, rudder, tailplane,
       body, navy, accent, glass, dark, fuselage, cloth, clothMat, uTime, rope,
       box: new BoxGeometry(1, 1, 1),
       cyl: new CylinderGeometry(0.5, 0.5, 1, 12),
@@ -129,6 +196,8 @@ export function IntroPlane() {
     // after dark the banner is lit from the plane's belly light so it stays readable
     const night = sky.lights
     res.clothMat.emissive.setRGB(0.55 * night, 0.52 * night, 0.46 * night)
+    // the white airframe catches city glow and its own lights, so it never reads as a grey cut-out
+    res.body.emissive.setRGB(0.32 * night, 0.31 * night, 0.3 * night)
     strobe.current.visible = night > 0.2 && Math.sin(t * 9) > 0.85
   })
 
@@ -144,27 +213,26 @@ export function IntroPlane() {
         {/* cheat line stripe */}
         <mesh geometry={res.box} material={res.navy} position={[0.6, -0.05, 3.2]} scale={[0.03, 0.12, 4.6]} />
         <mesh geometry={res.box} material={res.navy} position={[-0.6, -0.05, 3.2]} scale={[0.03, 0.12, 4.6]} />
-        {/* high wing with slight taper and struts */}
-        <mesh geometry={res.box} material={res.body} position={[0, 0.72, 2.3]} scale={[7.2, 0.13, 1.6]} />
-        <mesh geometry={res.box} material={res.body} position={[4.6, 0.74, 2.35]} scale={[2.2, 0.11, 1.35]} rotation-z={0.03} />
-        <mesh geometry={res.box} material={res.body} position={[-4.6, 0.74, 2.35]} scale={[2.2, 0.11, 1.35]} rotation-z={-0.03} />
-        <mesh geometry={res.box} material={res.navy} position={[0, 0.8, 2.3]} scale={[11.1, 0.02, 0.2]} />
+        {/* high wing: airfoil section, tapered outer panels, slight dihedral */}
+        <mesh geometry={res.wing} material={res.body} position={[0, 0.74, 1.6]} />
+        <mesh geometry={res.wingStripe} material={res.navy} position={[0, 0.745, 1.6]} />
         {[1, -1].map((sx) => (
-          <mesh key={sx} geometry={res.cyl} material={res.dark} position={[sx * 1.55, 0.1, 2.35]} rotation-z={sx * 1.05} scale={[0.05, 1.9, 0.05]} />
+          <mesh key={sx} geometry={res.cyl} material={res.dark} position={[sx * 1.55, 0.12, 2.3]} rotation-z={sx * 1.02} scale={[0.045, 1.95, 0.07]} />
         ))}
-        {/* tail: fin, rudder stripe, stabiliser */}
-        <mesh geometry={res.box} material={res.body} position={[0, 0.95, 7.55]} rotation-x={0.42} scale={[0.08, 1.35, 1.15]} />
-        <mesh geometry={res.box} material={res.accent} position={[0, 1.05, 7.95]} rotation-x={0.42} scale={[0.09, 0.9, 0.18]} />
-        <mesh geometry={res.box} material={res.body} position={[0, 0.2, 7.7]} scale={[3.4, 0.07, 0.95]} />
-        {/* landing gear */}
-        {[0.85, -0.85].map((sx) => (
+        {/* tail: swept fin with an orange rudder, tapered tailplane */}
+        <mesh geometry={res.fin} material={res.body} position={[0, 0.35, 6.95]} />
+        <mesh geometry={res.rudder} material={res.accent} position={[0, 0.35, 6.95]} />
+        <mesh geometry={res.tailplane} material={res.body} position={[0, 0.2, 7.2]} />
+        {/* fixed tricycle gear with streamlined wheel fairings */}
+        {[1, -1].map((sx) => (
           <group key={sx}>
-            <mesh geometry={res.cyl} material={res.dark} position={[sx * 0.75, -0.72, 2.7]} rotation-z={sx * 0.6} scale={[0.05, 0.75, 0.05]} />
-            <mesh geometry={res.cyl} material={res.dark} position={[sx * 1.05, -1.02, 2.7]} rotation-z={Math.PI / 2} scale={[0.34, 0.14, 0.34]} />
+            <mesh geometry={res.cyl} material={res.dark} position={[sx * 0.72, -0.62, 2.75]} rotation-z={sx * 0.72} scale={[0.04, 0.95, 0.12]} />
+            <mesh geometry={res.sphere} material={res.body} position={[sx * 1.1, -1.0, 2.72]} scale={[0.22, 0.34, 0.62]} />
+            <mesh geometry={res.cyl} material={res.dark} position={[sx * 1.1, -1.1, 2.72]} rotation-z={Math.PI / 2} scale={[0.3, 0.1, 0.3]} />
           </group>
         ))}
-        <mesh geometry={res.cyl} material={res.dark} position={[0, -0.72, 0.55]} scale={[0.05, 0.6, 0.05]} />
-        <mesh geometry={res.cyl} material={res.dark} position={[0, -1.0, 0.55]} rotation-z={Math.PI / 2} scale={[0.28, 0.12, 0.28]} />
+        <mesh geometry={res.cyl} material={res.dark} position={[0, -0.66, 0.6]} scale={[0.045, 0.62, 0.045]} />
+        <mesh geometry={res.sphere} material={res.body} position={[0, -0.98, 0.6]} scale={[0.18, 0.3, 0.52]} />
         {/* spinner + propeller (blades + motion disc) */}
         <mesh geometry={res.sphere} material={res.navy} position={[0, 0, -0.02]} scale={[0.26, 0.26, 0.4]} />
         <group ref={prop} position={[0, 0, -0.14]}>

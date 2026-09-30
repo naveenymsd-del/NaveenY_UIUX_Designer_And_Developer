@@ -70,8 +70,8 @@ const OFFICE_TOPS = [0xf3f0ea, 0xdfe6ee, 0x2f3f66, 0x4f5d73, 0x6f7f68, 0xd9c7a6,
 const OFFICE_BOTTOMS = [0x2b2d33, 0x2e3445, 0x5d5b55, 0x8a7a64, 0x1f2126, 0x4b4038]
 const OFFICE_SHOES = [0x2a2626, 0x5b3f2c, 0x2a2626, 0xf3f1ec, 0x3d3530]
 
-const FAR = 78
-const MID = 46
+const FAR = 58
+const MID = 32
 
 function pointAlong(route: RouteDef, frac: number) {
   const pts = route.points
@@ -270,6 +270,7 @@ export function NPCManager() {
         a.handle?.setShadow(d < shadowDist)
       }
       a.anim.active = lod < 2
+      a.anim.every = lod === 1 ? 3 : d > 22 ? 2 : 1
       if (lod === 2) {
         // paused agents must not block traffic from far away
         agentPositions.delete(a.id)

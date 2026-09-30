@@ -99,9 +99,16 @@ export function ProceduralCharacter({ anim, look, castShadow = true, detail = 'h
     legB: { thigh: 0, knee: 0, foot: 0, toe: 0 },
   })
 
+  const skip = useRef({ n: 0, acc: 0 })
   useFrame((_, rawDt) => {
     if (!anim.active) return
-    const dt = Math.min(rawDt, 1 / 20)
+    // distance LOD: mid-range people animate at a reduced rate (time is accumulated, so motion stays correct)
+    const sk = skip.current
+    sk.acc += rawDt
+    if (++sk.n < (anim.every ?? 1)) return
+    sk.n = 0
+    const dt = Math.min(sk.acc, 1 / 12)
+    sk.acc = 0
     const s = st.current
     const B = rig.bones
     s.t += dt

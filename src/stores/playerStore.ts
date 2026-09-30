@@ -22,5 +22,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setMoveState: (moveState) => {
     if (get().moveState !== moveState) set({ moveState })
   },
-  setPose: (x, z, heading) => set({ x, z, heading }),
+  setPose: (x, z, heading) => {
+    const s = get()
+    // standing still costs nothing: only publish real movement
+    if (Math.abs(s.x - x) < 0.05 && Math.abs(s.z - z) < 0.05 && Math.abs(s.heading - heading) < 0.02) return
+    set({ x, z, heading })
+  },
 }))

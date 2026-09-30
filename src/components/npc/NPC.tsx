@@ -37,7 +37,12 @@ export function NPC({ agent }: { agent: Agent }) {
         }
       },
       setVisible: (v) => {
-        if (group.current) group.current.visible = v
+        const g = group.current
+        if (!g) return
+        g.visible = v
+        // hidden people drop out of the per-frame scene-graph update entirely (23 bones each)
+        g.matrixWorldAutoUpdate = v
+        if (v) g.updateMatrixWorld(true)
       },
       setShadow: (v) => {
         group.current?.traverse((o) => {
@@ -47,6 +52,8 @@ export function NPC({ agent }: { agent: Agent }) {
     }
     agent.handle.sync(agent.pos, agent.yaw)
     agent.handle.setShadow(false)
+    // the manager may have decided LOD before this handle existed: apply it now
+    agent.handle.setVisible(agent.lod < 2)
     return () => {
       agent.handle = null
     }
