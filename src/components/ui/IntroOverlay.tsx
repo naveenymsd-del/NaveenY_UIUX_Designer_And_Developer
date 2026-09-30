@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { INTRO, introRuntime, skipIntro } from '@/core/intro'
+import { INTRO, introRuntime, markIntroSeen, skipIntro } from '@/core/intro'
 import { beginJourney } from '@/core/journey'
 import { useGameStore } from '@/stores/gameStore'
 import { SoundButton } from './SoundButton'
@@ -24,9 +24,14 @@ export function IntroOverlay() {
     return () => clearInterval(id)
   }, [phase])
 
+  // remember the intro for this session so returning visitors land on the hero
+  useEffect(() => {
+    if (t >= INTRO.heroAt - 0.4) markIntroSeen()
+  }, [t])
+
   if (phase !== 'intro' && phase !== 'transition') return null
   const hero = t >= INTRO.heroAt - 0.4
-  const credit = t > 1.4 && !hero
+  const credit = t > INTRO.planeEnd + 0.4 && !hero
   const leaving = phase === 'transition'
 
   return (
@@ -39,7 +44,7 @@ export function IntroOverlay() {
       <section className="ui-intro__hero" aria-hidden={!hero} aria-labelledby="intro-title">
         <p className="ui-intro__eyebrow">UI/UX Designer · Interactive portfolio</p>
         <h1 id="intro-title" className="ui-intro__title">Naveen</h1>
-        <p className="ui-intro__subtitle">Designing human experiences with technology, interaction and&nbsp;AI.</p>
+        <p className="ui-intro__subtitle">Designing human experiences with technology and&nbsp;AI.</p>
         <p className="ui-intro__welcome">{night ? 'Welcome. Ready to explore?' : 'Welcome. Take your time exploring my world.'}</p>
         <div className="ui-intro__actions">
           <button className="ui-btn ui-btn--primary ui-btn--lg" onClick={() => beginJourney('street')} tabIndex={hero ? 0 : -1} autoFocus={hero}>

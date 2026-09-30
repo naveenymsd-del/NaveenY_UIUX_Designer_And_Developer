@@ -19,6 +19,8 @@ import { ZoneToast } from '@/components/ui/ZoneToast'
 import { FadeOverlay } from '@/components/ui/FadeOverlay'
 import { CompanionBubble } from '@/components/ui/CompanionBubble'
 import { FinalPanel } from '@/components/ui/FinalPanel'
+import { GuidePanel } from '@/components/ui/GuidePanel'
+import { GreetBubble } from '@/components/ui/GreetBubble'
 import { NameTag } from '@/components/ui/NameTag'
 import { initJourney } from '@/core/journey'
 import { useDayNight } from '@/core/dayNight'
@@ -74,7 +76,9 @@ export function App() {
         <LocationPanel />
         <ProjectPanel />
         <FinalPanel />
+        <GuidePanel />
         <NameTag />
+        <GreetBubble />
         <ProjectRail />
         <CompanionBubble />
         <FadeOverlay />

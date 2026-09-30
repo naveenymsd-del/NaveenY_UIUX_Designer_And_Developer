@@ -542,3 +542,37 @@ export function genNightFurniture(ctx: GenContext) {
     lightPoolAt(ctx, fx + Math.cos(a) * 5.1, fz + Math.sin(a) * 5.1, 1.6, 0xffcf96)
   }
 }
+
+/**
+ * Growth Walk stands (the animated boards are StoryProps). The furniture
+ * itself matures along the path: a wooden easel, then a steel frame, then a
+ * dark, lit gallery stand — the world gets more refined as the career does.
+ */
+export function genGrowthWalk(ctx: GenContext, stations: [number, number][], yaw: number) {
+  const { b } = ctx
+  stations.forEach(([x, z], i) => {
+    const tier = i < 2 ? 0 : i < 5 ? 1 : 2
+    b.push(x, SIDEWALK_Y, z, yaw)
+    if (tier === 0) {
+      // wooden easel
+      for (const sx of [-0.45, 0.45]) b.box(PALETTE.walnut, [sx, 0.95, 0.05], [0.06, 1.9, 0.06], { rot: [0.1, 0, 0] })
+      b.box(PALETTE.walnut, [0, 0.8, 0.03], [1.1, 0.05, 0.12])
+      b.box(PALETTE.walnut, [0, 0.9, -0.35], [0.05, 1.7, 0.05], { rot: [-0.3, 0, 0] })
+    } else if (tier === 1) {
+      // brushed steel frame on a plinth
+      b.box(0xcfd3d8, [0, 0.12, 0], [1.2, 0.24, 0.5])
+      for (const sx of [-0.62, 0.62]) b.box(0x8f969e, [sx, 1.1, 0], [0.05, 1.9, 0.05], { mat: 'metal' })
+      b.box(0x8f969e, [0, 2.03, 0], [1.3, 0.05, 0.05], { mat: 'metal' })
+    } else {
+      // dark gallery stand with a warm lit edge
+      b.box(0x22252c, [0, 0.14, 0], [1.3, 0.28, 0.55])
+      b.box(0x2b2e34, [0, 1.12, -0.06], [1.46, 1.3, 0.08])
+      b.box(0xffe0b8, [0, 1.8, 0.0], [1.3, 0.025, 0.02], { mat: 'emissive', cast: false })
+    }
+    // a small number plate at the foot
+    b.box(tier === 2 ? 0x2b2e34 : 0xe9e2d6, [0.52, 0.3, 0.27], [0.22, 0.14, 0.02], { cast: false })
+    b.collider([0, 0.9, 0], [1.3, 1.8, 0.45])
+    b.pop()
+    lightPoolAt(ctx, x + 1.1, z - 0.3, 1.3, 0xffd9a6)
+  })
+}

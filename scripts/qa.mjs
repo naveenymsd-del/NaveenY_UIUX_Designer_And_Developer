@@ -141,7 +141,9 @@ async function runMobile(browser) {
     await boot(page, `${base}/street?debug&touch`)
     await shot(page, `20-mobile-intro-${w}`)
     await page.getByRole('button', { name: 'Start exploring' }).tap()
-    await sleep(4800)
+    // wait for the hand-off to finish (slower GPUs take a little longer), then a beat
+    await page.waitForSelector('.ui-mobile.is-visible', { timeout: 20000 })
+    await sleep(800)
     await shot(page, `21-mobile-play-${w}`)
     // drive the joystick with a synthetic pointer
     const j = await page.locator('.ui-joystick').boundingBox()

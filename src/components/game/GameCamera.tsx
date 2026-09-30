@@ -3,8 +3,9 @@ import { interactionGroups, useRapier } from '@react-three/rapier'
 import { useEffect, useRef } from 'react'
 import { type PerspectiveCamera, Vector3 } from 'three'
 import { CAMERA_DEFAULTS, cameraRuntime, cinematicRuntime, playerRuntime } from '@/core/runtime'
-import { INTRO, introCamera, introRuntime } from '@/core/intro'
+import { INTRO, introCamera, introRuntime, introSeen, skipIntro } from '@/core/intro'
 import { getLocation } from '@/data/locations'
+import { TRAVEL } from '@/core/navigation'
 import { INTERIORS, roomToWorld, type InteriorId } from '@/data/interiors'
 import { getProject, PROJECTS_OVERVIEW_CAMERA } from '@/data/projects'
 import { useGameStore } from '@/stores/gameStore'
@@ -21,6 +22,7 @@ interface CamPose {
 function shotKey(): string {
   const g = useGameStore.getState()
   if (g.shotOverride) return 'override'
+  if (g.travel) return 'travel'
   if (g.phase === 'loading' || g.phase === 'intro') return introRuntime.t >= INTRO.heroAt ? 'hero' : 'intro'
   if (g.establishing) return `establish:${g.establishing}:${g.establishSpot ?? ''}`
   if (g.cameraShot) return `loc:${g.cameraShot}`
@@ -36,6 +38,8 @@ function durationFor(from: string, to: string) {
   if (from.startsWith('establish')) return 1.8
   // the flight lands exactly on the hero pose; a skip glides there instead of cutting
   if (from === 'intro' && to === 'hero') return introRuntime.skipped ? 1.7 : 0.001
+  if (to === 'travel') return 0.85
+  if (from === 'travel') return 1.25
   if ((from === 'intro' || from === 'hero') && to === 'follow') return 3.2
   if (to === 'follow') return 1.35
   if (from === 'follow') return 1.6
@@ -82,6 +86,7 @@ export function GameCamera() {
     s.time += dt
     const game = useGameStore.getState()
     if (game.phase === 'intro') {
+      if (!introRuntime.running && introSeen()) skipIntro()
       introRuntime.running = true
       introRuntime.t += dt
     }
@@ -150,7 +155,27 @@ export function GameCamera() {
       s.key = key
     }
     const live = s.live
-    if (key === 'override' && game.shotOverride) {
+    if (key === 'travel' && game.travel) {
+      // aerial glide: the ground point slides from origin to destination, camera high behind it
+      const tr = game.travel
+      const k = Math.min(1, Math.max(0, ((performance.now() - tr.start) / 1000 - 0.35) / (TRAVEL.duration - 0.6)))
+      const e = k * k * (3 - 2 * k)
+      const gx = tr.from[0] + (tr.to[0] - tr.from[0]) * e
+      const gz = tr.from[1] + (tr.to[1] - tr.from[1]) * e
+      live.target.set(gx, 1, gz)
+      // the camera trails the direction of travel (a steady heading, no swing when the player moves)
+      let dx = tr.to[0] - tr.from[0]
+      let dz = tr.to[1] - tr.from[1]
+      const len = Math.hypot(dx, dz)
+      if (len < 1) {
+        dx = 0
+        dz = -1
+      } else {
+        dx /= len
+        dz /= len
+      }
+      live.pos.set(gx - dx * TRAVEL.back, TRAVEL.height, gz - dz * TRAVEL.back)
+    } else if (key === 'override' && game.shotOverride) {
       live.pos.set(...game.shotOverride.position)
       live.target.set(...game.shotOverride.target)
     } else if (key === 'intro' || key === 'hero') {

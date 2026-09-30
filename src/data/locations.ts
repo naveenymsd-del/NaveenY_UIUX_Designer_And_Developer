@@ -1,5 +1,6 @@
 import { PROJECTS } from './projects'
 import {
+  CAREER_STAGES,
   ACTIVITY_STORIES, AI_STORY, DESIGN_PROCESS, EDUCATION_STORIES, HOME_STORIES, OFFICE_STORIES, type StoryContent,
 } from './portfolioContent'
 import { INTERIORS, INTERIOR_STORIES, roomToWorld, studioBay, type InteriorId } from './interiors'
@@ -55,6 +56,16 @@ export const ACTIVITY_SPOTS: Record<'learning' | 'visual' | 'uiux' | 'interactiv
   uiux: { pos: [-20.6, 0.25, 30.6], yaw: 0 },
   interactive: { pos: [-17.2, 1.5, 34.7], yaw: Math.PI },
 }
+/**
+ * The Growth Walk: eight stations on the avenue's east sidewalk, from the
+ * Education campus toward NFC Solutions (skipping the mid-block crossing).
+ * Boards face walkers coming from the campus.
+ */
+export const GROWTH_WALK: [number, number][] = [
+  [5.95, -43], [5.95, -38.6], [5.95, -34.2], [5.95, -29.8], [5.95, -20.4], [5.95, -16], [5.95, -11.6], [5.95, -7.2],
+]
+export const GROWTH_YAW = Math.atan2(0.35, -0.94)
+
 /** the lookout at the park deck's telescope: the journey's quiet ending */
 export const FINAL_SPOT: [number, number, number] = [-13.4, 1.5, 37.4]
 
@@ -133,6 +144,17 @@ const street: InteractiveDef[] = [
       label: 'Press E to take a look', mobileLabel: 'Look', action: 'OPEN_LOCATION', destination: `activity-${k}`,
       cameraTarget: { position: [spot.pos[0] + 2.6, spot.pos[1] + 2, spot.pos[2] + 2.6], target: [spot.pos[0], spot.pos[1] + 0.8, spot.pos[2]] },
       accent: '#c98a45', quiet: true,
+    }
+  }),
+  ...GROWTH_WALK.map<InteractiveDef>(([x, z], i) => {
+    const st = CAREER_STAGES[i]
+    return {
+      id: `career-${st.n}`, name: `${st.n} · ${st.title}`, kicker: 'How I grew', type: 'story',
+      description: st.line,
+      content: { kicker: `Chapter 04 · How I grew · ${st.n} of 0${CAREER_STAGES.length}`, heading: st.title, body: st.line, items: [{ label: 'Details', text: st.detail }] },
+      position: [x + 1.4, 0.15, z - 0.4], interactionRadius: 1.7,
+      label: `Press E · ${st.title}`, mobileLabel: st.title, action: 'OPEN_LOCATION', destination: `career-${st.n}`,
+      cameraTarget: { position: [x + 3.4, 1.9, z - 3.2], target: [x, 1.35, z] }, accent: '#ec7a2c', quiet: true,
     }
   }),
   ...PROJECTS.map<InteractiveDef>((p) => ({
@@ -222,9 +244,10 @@ export interface ZoneDef {
 }
 
 export const ZONES: ZoneDef[] = [
-  { id: 'campus', name: 'Education Campus', subtitle: 'Where it started', center: [0, -49], radius: 8, reveal: [0, 7, -66] },
-  { id: 'nfc', name: 'NFC Solutions', subtitle: 'My workplace', center: [8, 17], radius: 6.5, reveal: [23, 7, 17] },
-  { id: 'home', name: 'My Home', subtitle: 'About me', center: [-7, -25], radius: 5, reveal: [-16, 3.5, -25] },
-  { id: 'park', name: 'Design Park', subtitle: 'Process · AI · activities', center: [-16, 16], radius: 8, reveal: [-16, 1.5, 15.5] },
+  { id: 'campus', name: 'Education Campus', subtitle: 'Chapter 02 · Where I started', center: [0, -49], radius: 8, reveal: [0, 7, -66] },
+  { id: 'nfc', name: 'NFC Solutions', subtitle: 'Chapter 05 · Real products', center: [8, 17], radius: 6.5, reveal: [23, 7, 17] },
+  { id: 'home', name: 'My Home', subtitle: 'Chapter 01 · Who I am', center: [-7, -25], radius: 5, reveal: [-16, 3.5, -25] },
+  { id: 'park', name: 'Design Park', subtitle: 'Chapter 07 · How I design', center: [-16, 16], radius: 8, reveal: [-16, 1.5, 15.5] },
+  { id: 'growth', name: 'The Growth Walk', subtitle: 'Chapter 04 · How I grew', center: [6.6, -41], radius: 3.6, reveal: [6, 1.8, -30] },
   { id: 'plaza', name: 'Project Pavilions', subtitle: 'A preview · full projects inside NFC Solutions', center: [19, -25], radius: 11, reveal: [19, 3, -25] },
 ]

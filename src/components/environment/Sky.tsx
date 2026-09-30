@@ -115,7 +115,8 @@ export function Sky() {
     u.uFog.value.copy(sky.fog)
     u.uFogBlend.value = sky.lights
     cloudMat.color.copy(sky.clouds)
-    cloudMat.opacity = 0.92 - sky.stars * 0.35
+    // at night clouds all but vanish into the sky rather than hang as pale discs
+    cloudMat.opacity = 0.92 - sky.stars * 0.84
   })
 
   return (

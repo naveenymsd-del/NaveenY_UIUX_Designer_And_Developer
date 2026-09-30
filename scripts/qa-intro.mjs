@@ -11,13 +11,13 @@ await p.goto(`http://localhost:5173/street?debug&desktop${process.argv[3] ? '&' 
 await sleep(1500)
 await p.screenshot({ path: `qa-screens/90-loading-${process.argv[3] ? 'n-' : ''}${vp[0]}.png` })
 await p.waitForFunction(() => window.__intro && window.__intro.running, null, { timeout: 90000 })
-for (const t of [2, 6.5, 10, 13.5]) {
+for (const t of [1.5, 3.2, 4.8, 6.4, 9, 12.5]) {
   await p.waitForFunction((t) => window.__intro.t >= t, t, { timeout: 60000 })
   await p.screenshot({ path: `qa-screens/91-intro-${process.argv[3] ? 'n-' : ''}${String(t).replace('.', '_')}-${vp[0]}.png` })
 }
-await p.waitForFunction(() => window.__intro.t >= 17.5, null, { timeout: 60000 })
+await p.waitForFunction(() => window.__intro.t >= 16.8, null, { timeout: 60000 })
 await p.screenshot({ path: `qa-screens/92-hero-${process.argv[3] ? 'n-' : ''}${vp[0]}.png` })
-await p.waitForFunction(() => window.__intro.t >= 21.5, null, { timeout: 60000 })
+await p.waitForFunction(() => window.__intro.t >= 20.4, null, { timeout: 60000 })
 await p.screenshot({ path: `qa-screens/93-hero-msg-${process.argv[3] ? 'n-' : ''}${vp[0]}.png` })
 await p.getByRole('button', { name: 'Start exploring' }).click()
 await sleep(5200)

@@ -26,9 +26,10 @@ export const PLACE_POINTS: Record<Place, Vector3> = {
   ai: new Vector3(-25.5, 2, 25),
   projects: new Vector3(18, 5, 17),
   final: new Vector3(FINAL_SPOT[0], 2.5, FINAL_SPOT[2]),
+  career: new Vector3(6, 2, -40),
 }
 
-const ORDER: Place[] = ['education', 'home', 'office', 'park', 'projects', 'final']
+const ORDER: Place[] = ['home', 'education', 'career', 'office', 'projects', 'park', 'final']
 
 const state = {
   started: false,
@@ -87,10 +88,11 @@ function discover(place: Place) {
 }
 
 const ZONE_LINES: Record<string, { place: Place; text: string }> = {
-  campus: { place: 'education', text: 'This is where the journey began — step inside.' },
-  home: { place: 'home', text: 'Want to know the person behind the work?' },
-  nfc: { place: 'office', text: 'This is where ideas become real products.' },
-  park: { place: 'park', text: 'Want to see how Naveen approaches design? Follow the stones.' },
+  campus: { place: 'education', text: 'This is where the journey <b>started</b> — step inside.' },
+  home: { place: 'home', text: 'This is my home. Want to know the person behind the work?' },
+  nfc: { place: 'office', text: 'This is where my professional design journey became <b>real</b>.' },
+  park: { place: 'park', text: 'This is how I think <b>before I design</b>. Follow the stones.' },
+  growth: { place: 'career', text: 'Walk this path — it’s how I <b>grew</b>, one step at a time.' },
 }
 
 function onStore(s: ReturnType<typeof useGameStore.getState>, prev: ReturnType<typeof useGameStore.getState>) {
@@ -100,7 +102,7 @@ function onStore(s: ReturnType<typeof useGameStore.getState>, prev: ReturnType<t
     state.lastDiscovery = performance.now()
     say('Welcome. Take your time — there’s a lot to explore here.', { ms: 4200, emote: 'wave' })
     say('Walk around, meet the people, and discover the projects inside <b>NFC Solutions</b>.', { ms: 5200, emote: 'explain' })
-    say('Let’s start with where the journey began.', { ms: 3800, point: PLACE_POINTS.education })
+    say('Let’s start at <b>home</b> — come and meet me.', { ms: 3800, point: PLACE_POINTS.home })
   }
   // arriving somewhere for the first time
   if (s.visitedZones.length > prev.visitedZones.length) {
@@ -108,10 +110,26 @@ function onStore(s: ReturnType<typeof useGameStore.getState>, prev: ReturnType<t
     const z = ZONE_LINES[id]
     if (z && discover(z.place)) say(z.text, { emote: 'excited' })
   }
+  // leaving a room: hand the visitor on to the next chapter
+  if (s.interior !== prev.interior && !s.interior && prev.interior) {
+    if (prev.interior === 'home' && !s.discovered.includes('education'))
+      window.setTimeout(() => say('Want to see where the journey <b>started</b>?', { ms: 3600, point: PLACE_POINTS.education }), 900)
+    if (prev.interior === 'education') {
+      window.setTimeout(() => {
+        say('Learning was only the beginning.', { ms: 2800 })
+        say('Let’s see where that journey became <b>real work</b>.', { ms: 3600, point: PLACE_POINTS.career })
+      }, 900)
+    }
+  }
   if (s.interior !== prev.interior && s.interior) {
     if (s.interior === 'office') {
       discover('office')
-      if (!s.establishSpot) window.setTimeout(() => say('Welcome to the office.', { ms: 3000, emote: 'greet' }), 900)
+      if (!s.establishSpot) {
+        window.setTimeout(() => {
+          say('This is where I work on <b>real products</b>.', { ms: 3200, emote: 'greet' })
+          say('Want to explore some of them? The <b>Project Studio</b> is through the glass.', { ms: 4200, emote: 'point' })
+        }, 900)
+      }
     }
     if (s.interior === 'education') discover('education')
     if (s.interior === 'home') discover('home')

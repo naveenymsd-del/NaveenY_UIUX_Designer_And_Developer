@@ -5,8 +5,8 @@ import {
   MeshStandardMaterial, PlaneGeometry, SRGBColorSpace, TorusGeometry,
 } from 'three'
 import { playerRuntime } from '@/core/runtime'
-import { AI_AREA, ACTIVITY_SPOTS, PROCESS_STATIONS } from '@/data/locations'
-import { AI_HUMAN_STEPS, AI_WORKFLOW, DESIGN_PROCESS, EDUCATION_TIMELINE, PROFILE } from '@/data/portfolioContent'
+import { AI_AREA, ACTIVITY_SPOTS, GROWTH_WALK, GROWTH_YAW, PROCESS_STATIONS } from '@/data/locations'
+import { AI_HUMAN_STEPS, AI_WORKFLOW, CAREER_STAGES, DESIGN_PROCESS, EDUCATION_TIMELINE, PROFILE, TOOLS } from '@/data/portfolioContent'
 import { INTERIORS, roomToWorld, studioBay, type InteriorId } from '@/data/interiors'
 import { isPlaceholder, PROJECTS, type ProjectDef } from '@/data/projects'
 import { soundManager } from '@/core/sound/SoundManager'
@@ -461,6 +461,264 @@ function HomeProps() {
   )
 }
 
+/** one board of the Growth Walk: the drawing matures from pencil sketch to polished product */
+function stageArt(i: number) {
+  const st = CAREER_STAGES[i]
+  const c = document.createElement('canvas')
+  c.width = 512
+  c.height = 380
+  const g = c.getContext('2d')!
+  const dark = i >= 5
+  g.fillStyle = i === 0 ? '#f3eee2' : dark ? '#1c1f25' : '#f7f4ef'
+  g.fillRect(0, 0, 512, 380)
+  const ink = dark ? '#f3efe7' : '#1f2328'
+  const soft = dark ? 'rgba(243,239,231,0.55)' : 'rgba(31,35,40,0.45)'
+  const accent = '#ec7a2c'
+  const rr = (x: number, y: number, w: number, h: number, r: number, fill: string) => {
+    g.fillStyle = fill
+    g.beginPath()
+    g.roundRect(x, y, w, h, r)
+    g.fill()
+  }
+  // a fixed wobble so the sketch never changes between visits
+  let seed = 11 + i
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
+  // header
+  g.fillStyle = accent
+  g.font = `700 22px ${UI_FONT}`
+  g.fillText(st.n, 28, 44)
+  g.fillStyle = ink
+  g.font = `640 30px ${UI_FONT}`
+  g.fillText(st.title.toUpperCase(), 68, 44)
+  const X = 28
+  const Y = 70
+  g.lineCap = 'round'
+  g.lineJoin = 'round'
+  switch (i) {
+    case 0: {
+      // pencil sketch: wobbly frames and scribbles
+      g.strokeStyle = 'rgba(60,60,60,0.7)'
+      g.lineWidth = 2
+      const wob = (x: number, y: number, w: number, h: number) => {
+        g.beginPath()
+        g.moveTo(x + rnd() * 3, y)
+        g.lineTo(x + w, y + rnd() * 4)
+        g.lineTo(x + w - rnd() * 3, y + h)
+        g.lineTo(x, y + h - rnd() * 4)
+        g.closePath()
+        g.stroke()
+      }
+      wob(X + 20, Y + 20, 200, 220)
+      wob(X + 250, Y + 20, 180, 100)
+      wob(X + 250, Y + 140, 180, 100)
+      for (let k = 0; k < 5; k++) {
+        g.beginPath()
+        g.moveTo(X + 40, Y + 60 + k * 30)
+        g.bezierCurveTo(X + 90, Y + 50 + k * 30, X + 130, Y + 75 + k * 30, X + 190, Y + 60 + k * 30)
+        g.stroke()
+      }
+      break
+    }
+    case 1: {
+      // first UI: plain grey boxes
+      rr(X + 20, Y + 10, 440, 36, 2, '#c9c6bf')
+      rr(X + 20, Y + 60, 140, 180, 2, '#d8d5ce')
+      for (let k = 0; k < 4; k++) rr(X + 180, Y + 60 + k * 46, 280, 34, 2, '#e1ded7')
+      break
+    }
+    case 2: {
+      // UX thinking: a person, a journey, insight points
+      g.fillStyle = ink
+      g.beginPath()
+      g.arc(X + 70, Y + 80, 26, 0, Math.PI * 2)
+      g.fill()
+      rr(X + 38, Y + 112, 64, 70, 30, ink)
+      g.strokeStyle = accent
+      g.lineWidth = 4
+      g.setLineDash([10, 10])
+      g.beginPath()
+      g.moveTo(X + 130, Y + 130)
+      g.bezierCurveTo(X + 220, Y + 40, X + 300, Y + 220, X + 440, Y + 110)
+      g.stroke()
+      g.setLineDash([])
+      for (const [px, py] of [[X + 200, Y + 90], [X + 300, Y + 160], [X + 420, Y + 115]]) {
+        g.fillStyle = '#f7f4ef'
+        g.beginPath()
+        g.arc(px, py, 12, 0, Math.PI * 2)
+        g.fill()
+        g.strokeStyle = ink
+        g.lineWidth = 3
+        g.stroke()
+      }
+      break
+    }
+    case 3: {
+      // systems: a tidy component sheet on a grid
+      const cols = ['#25365a', '#ec7a2c', '#9cb88a', '#d8c9a8']
+      cols.forEach((col, k) => rr(X + 20 + k * 60, Y + 10, 48, 48, 10, col))
+      rr(X + 20, Y + 80, 150, 40, 20, '#25365a')
+      rr(X + 185, Y + 80, 150, 40, 20, 'rgba(37,54,90,0.12)')
+      rr(X + 20, Y + 140, 315, 40, 8, 'rgba(31,35,40,0.08)')
+      rr(X + 20, Y + 195, 96, 40, 8, 'rgba(31,35,40,0.08)')
+      rr(X + 128, Y + 195, 96, 40, 8, 'rgba(31,35,40,0.08)')
+      rr(X + 236, Y + 195, 99, 40, 8, 'rgba(31,35,40,0.08)')
+      g.strokeStyle = soft
+      g.lineWidth = 1
+      for (let gx = X + 360; gx < X + 460; gx += 16) {
+        g.beginPath()
+        g.moveTo(gx, Y + 10)
+        g.lineTo(gx, Y + 235)
+        g.stroke()
+      }
+      break
+    }
+    case 4: {
+      // real product: a polished app screen
+      rr(X + 20, Y + 5, 440, 240, 16, '#ffffff')
+      rr(X + 20, Y + 5, 440, 44, 16, '#25365a')
+      rr(X + 40, Y + 66, 190, 110, 12, 'rgba(236,122,44,0.16)')
+      rr(X + 250, Y + 66, 190, 50, 12, 'rgba(31,35,40,0.07)')
+      rr(X + 250, Y + 126, 190, 50, 12, 'rgba(31,35,40,0.07)')
+      rr(X + 40, Y + 192, 400, 36, 10, '#ec7a2c')
+      break
+    }
+    case 5: {
+      // interaction: a phone with motion arcs
+      rr(X + 150, Y, 150, 250, 26, '#f3efe7')
+      rr(X + 165, Y + 30, 120, 70, 12, accent)
+      rr(X + 165, Y + 112, 120, 30, 8, 'rgba(31,35,40,0.14)')
+      rr(X + 165, Y + 150, 120, 30, 8, 'rgba(31,35,40,0.14)')
+      g.strokeStyle = accent
+      g.lineWidth = 3
+      for (const r of [40, 62, 84]) {
+        g.globalAlpha = 1 - r / 110
+        g.beginPath()
+        g.arc(X + 340, Y + 70, r, -0.8, 0.8)
+        g.stroke()
+      }
+      g.globalAlpha = 1
+      break
+    }
+    case 6: {
+      // AI-assisted: variations fanned out, one chosen by a human
+      for (let k = 0; k < 5; k++) {
+        g.save()
+        g.translate(X + 230, Y + 250)
+        g.rotate((k - 2) * 0.22)
+        rr(-60, -210, 120, 160, 12, k === 2 ? '#f3efe7' : 'rgba(243,239,231,0.18)')
+        g.restore()
+      }
+      g.fillStyle = accent
+      g.beginPath()
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2
+        const r = k % 2 ? 10 : 28
+        g.lineTo(X + 400 + Math.cos(a) * r, Y + 50 + Math.sin(a) * r)
+      }
+      g.fill()
+      break
+    }
+    default: {
+      // today: the signature
+      g.fillStyle = ink
+      g.font = `640 64px ${UI_FONT}`
+      g.fillText(PROFILE.name, X + 12, Y + 110)
+      g.fillStyle = accent
+      g.fillRect(X + 14, Y + 132, 60, 4)
+      g.fillStyle = soft
+      g.font = `600 22px ${UI_FONT}`
+      g.fillText(PROFILE.role.toUpperCase(), X + 14, Y + 176)
+      g.fillText(PROFILE.experience.toUpperCase(), X + 14, Y + 208)
+    }
+  }
+  g.fillStyle = soft
+  g.font = `500 21px ${UI_FONT}`
+  g.fillText(st.line, 28, 352)
+  const t = new CanvasTexture(c)
+  t.colorSpace = SRGBColorSpace
+  t.anisotropy = 4
+  return t
+}
+
+/** Growth Walk boards: they brighten and turn slightly toward you as you walk up. */
+function GrowthWalk() {
+  const boards = useRef<(Group | null)[]>([])
+  const mats = useMemo(() => CAREER_STAGES.map((_, i) => new MeshBasicMaterial({ map: stageArt(i), color: new Color(0.86, 0.86, 0.86) })), [])
+  useFrame((_, dt) => {
+    GROWTH_WALK.forEach(([x, z], i) => {
+      const b = boards.current[i]
+      if (!b) return
+      const near = distTo(x, z) < 3.6 ? 1 : 0
+      mats[i].color.setScalar(easeTo(mats[i].color.r, 0.86 + near * 0.16, dt, 4))
+      b.rotation.x = easeTo(b.rotation.x, -near * 0.06, dt, 4)
+      b.position.y = easeTo(b.position.y, 1.2 + near * 0.04, dt, 4)
+    })
+  })
+  return (
+    <>
+      {GROWTH_WALK.map(([x, z], i) => (
+        <group key={i} position={[x, 0.15, z]} rotation-y={GROWTH_YAW}>
+          <group ref={(g) => { boards.current[i] = g }} position={[0, 1.2, i >= 5 ? 0.0 : 0.09]}>
+            <mesh geometry={G.plane} material={mats[i]} scale={[1.22, 0.9, 1]} />
+          </group>
+        </group>
+      ))}
+    </>
+  )
+}
+
+/**
+ * Home · skill wall: one tile per tool / practice (TOOLS). The wall brightens
+ * as you approach and the column you stand in front of steps forward.
+ */
+function SkillWall() {
+  const hw = INTERIORS.home.width / 2
+  const origin = useRoomPos('home', -hw + 0.12, 3.9, 0)
+  const tiles = useRef<(Mesh | null)[]>([])
+  const res = useMemo(() => {
+    const dot = { tool: '#ec7a2c', code: '#7fa3d6', practice: '#9cb88a' }
+    return TOOLS.map((t) => {
+      const tex = textTexture({
+        w: 256, h: 120, bg: '#1f2328', align: 'center', pad: 14,
+        lines: [
+          { text: t.name.toUpperCase(), size: t.name.length > 14 ? 22 : 26, weight: 700, color: '#f7f4ef', gap: 6 },
+          { text: t.group === 'tool' ? 'TOOL' : t.group === 'code' ? 'CODE' : 'PRACTICE', size: 14, weight: 700, color: dot[t.group] },
+        ],
+      })
+      return new MeshBasicMaterial({ map: tex, color: new Color(0.8, 0.8, 0.8) })
+    })
+  }, [])
+  useFrame((_, dt) => {
+    const p = playerRuntime.position
+    const d = Math.hypot(p.x - origin[0], p.z - origin[2])
+    const near = d < 3.4
+    TOOLS.forEach((_, i) => {
+      const m = tiles.current[i]
+      if (!m) return
+      const col = i % 4
+      const tz = origin[2] + (col - 1.5) * 0.72
+      const focus = near && Math.abs(p.z - tz) < 0.45 ? 1 : 0
+      const mat = res[i]
+      const want = near ? 1 + focus * 0.18 : 0.8
+      mat.color.setScalar(easeTo(mat.color.r, want, dt, 5))
+      m.position.z = easeTo(m.position.z, focus * 0.05, dt, 6)
+    })
+  })
+  return (
+    <group position={origin} rotation-y={Math.PI / 2}>
+      {TOOLS.map((t, i) => {
+        const col = i % 4
+        const row = Math.floor(i / 4)
+        return (
+          <group key={t.name} position={[(col - 1.5) * 0.72, 2.1 - row * 0.38, 0]}>
+            <mesh ref={(m) => { tiles.current[i] = m }} geometry={G.plane} material={res[i]} scale={[0.66, 0.31, 1]} />
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
 function OfficeProps() {
   const plate = useRoomPos('office', 11, 2.72, 0.8)
   const tex = useMemo(() => textTexture({ w: 256, h: 80, bg: '#2e3035', align: 'center', pad: 18, lines: [{ text: PROFILE.name.toUpperCase(), size: 30, weight: 800, color: '#ffffff' }] }), [])
@@ -574,6 +832,7 @@ export function StoryProps() {
           {PROCESS_STATIONS.map((_, i) => <ProcessBoard key={i} index={i} />)}
           <AIRing />
           <ActivityObjects />
+          <GrowthWalk />
         </>
       )}
       {interior === 'education' && (
@@ -585,7 +844,12 @@ export function StoryProps() {
           <Bell />
         </>
       )}
-      {interior === 'home' && <HomeProps />}
+      {interior === 'home' && (
+        <>
+          <HomeProps />
+          <SkillWall />
+        </>
+      )}
       {interior === 'office' && (
         <>
           <OfficeProps />

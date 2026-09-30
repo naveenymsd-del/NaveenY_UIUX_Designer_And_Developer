@@ -7,20 +7,45 @@ import { SPAWN } from './runtime'
  * entrance and the overlay copy, so every layer stays in sync — and skipping
  * simply jumps the clock to the hero moment.
  *
- *  0 s   high above the neighbourhood, drifting
- *  5 s   the companion blinks awake, waiting in the air
- *  6–13  camera sweeps in over the park and down the avenue; the companion leads
- *  13–16 settle on the street: the avatar is revealed, the companion arrives
- *  16 s+ hero: greeting, title, start
+ *  0–7 s   a light aircraft crosses the sky right → left towing a cloth banner,
+ *            "WELCOME TO MY PORTFOLIO"; the camera tracks it over the rooftops
+ *  7–12 s   as it leaves, the camera tips down into the city through the haze
+ *  9 s      the companion blinks awake and leads the way
+ *  12–15 s  down the avenue, under the welcome arch, onto the avatar
+ *  15.4 s+  hero: greeting, title, start
  */
 export const INTRO = {
-  heroAt: 16,
-  aiWakeAt: 5,
-  aiArriveAt: 14.2,
+  planeEnd: 7.2,
+  heroAt: 15.4,
+  aiWakeAt: 9.2,
+  aiArriveAt: 14.0,
   messages: [
-    { at: 16.2, text: 'Hi. I’m your <b>AI companion</b>.', ms: 3600 },
-    { at: 20.0, text: 'Let me show you around <b>Naveen’s world</b>.', ms: 4600 },
+    { at: 15.7, text: 'Hi. I’m your <b>AI companion</b>.', ms: 3400 },
+    { at: 19.3, text: 'Let me show you around <b>Naveen’s world</b>.', ms: 4400 },
   ],
+}
+
+/** the banner plane: altitude, track and speed (world space) */
+export const PLANE = { y: 60, z: 50, x0: 95, speed: 27 }
+export function planeX(t: number) {
+  return PLANE.x0 - PLANE.speed * t
+}
+
+const SEEN_KEY = 'mindscape:intro-seen'
+/** returning in the same browser session: the intro isn't forced again */
+export function introSeen() {
+  try {
+    return sessionStorage.getItem(SEEN_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+export function markIntroSeen() {
+  try {
+    sessionStorage.setItem(SEEN_KEY, '1')
+  } catch {
+    /* storage blocked */
+  }
 }
 
 export const introRuntime = {
@@ -40,20 +65,36 @@ export function skipIntro() {
 const P = (x: number, y: number, z: number) => new Vector3(x, y, z)
 const S = SPAWN
 
-// camera flight (positions and look targets share the same timing)
-const TIMES = [0, 5.5, 9.5, 13, INTRO.heroAt]
-// inside the backdrop skyline ring (z < 110, |x| < 84) and below the clouds;
-// it comes down along the avenue axis and glides under the welcome arch
+// plane pass: the camera drifts right → left above the rooftops, looking up at the plane
+// inside the backdrop ring (z < 110) and above the rooftops
+const PLANE_CAM_A = P(12, 44, 104)
+const PLANE_CAM_B = P(-6, 47, 100)
+function planeShot(t: number, outPos: Vector3, outTarget: Vector3) {
+  const f = Math.min(1, t / INTRO.planeEnd)
+  const e = f * f * (3 - 2 * f)
+  outPos.lerpVectors(PLANE_CAM_A, PLANE_CAM_B, e)
+  // lead the plane a little; start framed on open sky before it enters
+  const px = Math.max(-40, Math.min(30, planeX(t) * 0.42))
+  outTarget.set(px, PLANE.y - 5 + Math.sin(t * 0.4) * 0.4, PLANE.z)
+}
+const _ps = new Vector3()
+const _pt = new Vector3()
+planeShot(INTRO.planeEnd, _ps, _pt)
+
+// city flight (positions and look targets share the same timing), starting exactly
+// where the plane shot ends; inside the backdrop skyline ring and below the clouds,
+// down the avenue axis and under the welcome arch
+const TIMES = [INTRO.planeEnd, 9.4, 11.8, 13.6, INTRO.heroAt]
 const posCurve = new CatmullRomCurve3([
-  P(62, 80, 104),
-  P(46, 60, 102),
-  P(12, 30, 104),
+  _ps.clone(),
+  P(24, 44, 100),
+  P(10, 26, 104),
   P(3, 3.4, S.z + 18),
   P(-1.6, 1.72, S.z + 4.3),
 ], false, 'centripetal')
 const tgtCurve = new CatmullRomCurve3([
-  P(0, 0, 14),
-  P(-4, 0, 22),
+  _pt.clone(),
+  P(-6, 2, 26),
   P(-3, 2, 50),
   P(-0.6, 2.0, S.z - 3),
   P(-1.25, 1.38, S.z - 0.4),
@@ -62,7 +103,7 @@ const tgtCurve = new CatmullRomCurve3([
 export const HERO_SHOT = { position: posCurve.points[4].clone(), target: tgtCurve.points[4].clone() }
 
 function curveParam(t: number) {
-  if (t <= 0) return 0
+  if (t <= TIMES[0]) return 0
   if (t >= TIMES[TIMES.length - 1]) return 1
   let i = 0
   while (t > TIMES[i + 1]) i++
@@ -77,6 +118,10 @@ const PORTRAIT_POS = P(-0.9, 1.95, S.z + 5.6).sub(posCurve.points[4])
 const PORTRAIT_TGT = P(0.15, 1.05, S.z - 0.2).sub(tgtCurve.points[4])
 
 export function introCamera(t: number, outPos: Vector3, outTarget: Vector3, portrait = false) {
+  if (t < INTRO.planeEnd) {
+    planeShot(t, outPos, outTarget)
+    return
+  }
   const u = curveParam(t)
   posCurve.getPoint(u, outPos)
   tgtCurve.getPoint(u, outTarget)
@@ -105,7 +150,7 @@ const _t = new Vector3()
  */
 /** atmospheric haze that lifts as the camera descends (0 = dense, 1 = clear) */
 export function introClearness(t: number) {
-  const f = Math.min(1, Math.max(0, (t - 0.6) / 9.5))
+  const f = Math.min(1, Math.max(0, (t - 5.5) / 6.5))
   return f * f * (3 - 2 * f)
 }
 

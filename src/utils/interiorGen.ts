@@ -463,9 +463,10 @@ function home(ctx: GenContext, r: InteriorDef) {
   addSign(ctx, 'MY JOURNEY', { bg: '#f3ece1', fg: '#5c4535', shape: 'rect', weight: 800 }, [0, 0, 0], 2.0, 0.3)
   b.pop()
   // skills board on the west wall, by the entrance
-  b.box(0x2e3035, [-hw + 0.06, 1.65, 3.9], [0.05, 1.2, 1.9], { cast: false })
-  for (let i = 0; i < 6; i++) b.box(rng.pick([0xf6f1e8, 0xe3d2a2, 0xbcd0d8, 0xd9c7a6]), [-hw + 0.1, 1.95 - Math.floor(i / 2) * 0.34, 3.4 + (i % 2) * 0.9], [0.01, 0.24, 0.7], { cast: false })
-  b.push(-hw + 0.1, 2.45, 3.9, Math.PI / 2)
+  // (the tool tiles themselves are live StoryProps so they can respond to the visitor)
+  b.box(0x2e3035, [-hw + 0.06, 1.55, 3.9], [0.05, 1.7, 3.0], { cast: false })
+  b.box(0xb48a62, [-hw + 0.09, 0.66, 3.9], [0.14, 0.04, 3.1], { cast: false })
+  b.push(-hw + 0.1, 2.62, 3.9, Math.PI / 2)
   addSign(ctx, 'SKILLS', { bg: '#2e3035', fg: '#f7f4ef', shape: 'rect', weight: 700 }, [0, 0, 0.01], 0.9, 0.18)
   b.pop()
   // design-approach sketch board on the north wall

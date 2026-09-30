@@ -3,6 +3,7 @@ import { say } from '@/core/companion'
 import { soundManager } from '@/core/sound/SoundManager'
 import { useGameStore } from '@/stores/gameStore'
 import { CompanionGlyph } from './CompanionGlyph'
+import { PROFILE } from '@/data/portfolioContent'
 import { ContactLinks } from './ContactLinks'
 import { FeedbackForm } from './FeedbackForm'
 
@@ -21,8 +22,9 @@ export function FinalPanel() {
       return
     }
     setMode('thanks')
-    say('Thanks for exploring <b>Naveen’s world</b>.', { ms: 3600, emote: 'celebrate', interrupt: true })
-    say('Have any thoughts or suggestions?', { ms: 3800, emote: 'explain' })
+    say('Thanks for taking the time to explore <b>my world</b>.', { ms: 3600, emote: 'celebrate', interrupt: true })
+    say('I hope you enjoyed the journey.', { ms: 3000, emote: 'greet' })
+    say('Have a suggestion?', { ms: 3000, emote: 'explain' })
     const t = setTimeout(() => {
       setVisible(true)
       ref.current?.focus({ preventScroll: true })
@@ -38,8 +40,9 @@ export function FinalPanel() {
   return (
     <aside className={`ui-final ${visible ? 'is-visible' : ''}`} role="dialog" aria-labelledby="final-title">
       <CompanionGlyph size={52} />
-      <p className="ui-kicker">The Lookout</p>
-      <h2 id="final-title">Thanks for taking the time.</h2>
+      <p className="ui-kicker">Chapter 10 · Let’s connect</p>
+      <h2 id="final-title">Thank you for exploring.</h2>
+      <p className="ui-final__sign"><b>{PROFILE.name}</b> · {PROFILE.role} · Designing human experiences with AI</p>
       {mode === 'thanks' ? (
         <>
           <p>I hope you enjoyed walking around. If something sparked a thought, I’d love to hear it.</p>

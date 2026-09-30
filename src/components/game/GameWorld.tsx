@@ -7,6 +7,8 @@ import { AmbientParticles, Birds, DustPuffs, FeedbackPulse, FountainSpray, World
 import { AICompanion } from '@/components/effects/AICompanion'
 import { DayNightSystem } from '@/components/effects/DayNightSystem'
 import { NightLights } from '@/components/effects/NightLights'
+import { IntroPlane } from '@/components/effects/IntroPlane'
+import { NavMarker } from '@/components/effects/NavMarker'
 import { StoryProps } from '@/components/interactions/StoryProps'
 import { InteractionManager } from '@/components/interactions/InteractionManager'
 import { InteractiveObjects } from '@/components/interactions/InteractiveObject'
@@ -33,6 +35,8 @@ export function GameWorld() {
       <WorldClock />
       <DayNightSystem />
       <NightLights />
+      <IntroPlane />
+      <NavMarker />
       <Sky />
       <Lighting shadowMapSize={q.shadowMapSize} shadows={q.shadows && !off.has('shadows')} env={!off.has('env')} shadowInterval={quality === 'high' ? 1 : 2} />
       <City shadows={q.shadows && !off.has('shadows')} parts={!off.has('parts')} />

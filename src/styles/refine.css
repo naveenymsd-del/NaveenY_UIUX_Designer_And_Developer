@@ -962,3 +962,129 @@
 .app.is-night .ui-bubble { box-shadow: 0 18px 38px -16px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.06); }
 .app.is-night .ui-minimap { filter: brightness(0.82) saturate(0.9); }
 .ui-top, .ui-where, .ui-status, .ui-icon-btn { transition: background 1.2s var(--ease-out), color 1.2s var(--ease-out), box-shadow 1.2s var(--ease-out), opacity 0.8s var(--ease), transform 0.8s var(--ease); }
+
+/* ── guide (companion navigator) ─────────────────────────────────────── */
+.ui-guide-btn { padding: 0; }
+.ui-guide-btn .ui-companion { overflow: visible; }
+.ui-guide-btn.is-open { box-shadow: 0 0 0 2px var(--ai), var(--surface-shadow); }
+.ui-guide {
+  position: absolute;
+  top: calc(84px + var(--safe-top));
+  right: calc(var(--gutter) + var(--safe-right));
+  width: min(400px, calc(100vw - 24px));
+  padding: 18px 18px 14px;
+  border-radius: 22px;
+  background: var(--paper-1);
+  color: var(--ink-1);
+  box-shadow: 0 30px 60px -28px rgba(18, 20, 26, 0.55), 0 0 0 1px var(--hair);
+  opacity: 0;
+  transform: translateY(-10px) scale(0.98);
+  transform-origin: top right;
+  transition: opacity 0.35s var(--ease-out), transform 0.5s var(--ease-out);
+  pointer-events: none;
+  z-index: 40;
+}
+.ui-guide.is-open { opacity: 1; transform: none; pointer-events: auto; }
+.ui-guide__head { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+.ui-guide__head h2 { margin: 2px 0 0; font-family: var(--font-display); font-weight: 600; font-size: 20px; letter-spacing: var(--track-heading); }
+.ui-guide__head .ui-kicker { color: var(--ai); }
+.ui-guide__close { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; }
+.ui-guide__close:hover { background: rgba(22, 24, 29, 0.06); }
+.ui-guide__close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.ui-guide__quick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 16px 0 12px; }
+.ui-guide__quick button {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px 4px 10px;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px var(--hair);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background 0.2s, transform 0.3s var(--ease-out), box-shadow 0.2s;
+}
+.ui-guide__quick button:hover { background: #fff; transform: translateY(-2px); box-shadow: inset 0 0 0 1px var(--ai), 0 8px 18px -12px rgba(236, 122, 44, 0.6); }
+.ui-guide__quick svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.ui-guide__ask { display: flex; gap: 6px; align-items: center; padding: 4px 4px 4px 14px; border-radius: 999px; background: rgba(22, 24, 29, 0.05); box-shadow: inset 0 0 0 1px var(--hair); }
+.ui-guide__ask:focus-within { box-shadow: inset 0 0 0 1.5px var(--ai); }
+.ui-guide__ask input { flex: 1; min-width: 0; height: 38px; border: 0; background: none; font: inherit; font-size: 14px; color: inherit; outline: none; pointer-events: auto; user-select: text; }
+.ui-guide__ask button { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--ink-1); color: var(--paper-1); }
+.ui-guide__ask button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ui-guide__hint { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 10px 0 0; font-size: 12px; color: var(--ink-3); }
+.ui-guide__hint.is-miss { color: #9a4c14; }
+.ui-guide__chip { padding: 3px 8px; border-radius: 999px; background: rgba(22, 24, 29, 0.05); font-size: 12px; color: var(--ink-2); }
+.ui-guide__chip:hover { background: rgba(236, 122, 44, 0.14); color: #9a4c14; }
+@media (max-width: 640px) {
+  .ui-guide { top: auto; bottom: calc(12px + var(--safe-bottom)); left: 12px; right: 12px; width: auto; transform-origin: bottom center; }
+  .ui-guide__quick { grid-template-columns: repeat(5, 1fr); }
+  .ui-guide__quick button { font-size: 9.5px; letter-spacing: 0.04em; }
+}
+
+/* ── NPC greetings ───────────────────────────────────────────────────── */
+.ui-greet-anchor { position: absolute; left: 0; top: 0; will-change: transform; pointer-events: none; }
+.ui-greet {
+  transform: translate(-50%, -100%) translateY(6px) scale(0.92);
+  opacity: 0;
+  padding: 6px 11px;
+  border-radius: 12px 12px 12px 4px;
+  background: var(--paper-1);
+  color: var(--ink-1);
+  font-size: 13px;
+  font-weight: 550;
+  white-space: nowrap;
+  box-shadow: 0 10px 22px -12px rgba(18, 20, 26, 0.6), 0 0 0 1px var(--hair);
+  transition: opacity 0.35s var(--ease-out), transform 0.45s var(--ease-out);
+}
+.ui-greet.is-visible { opacity: 1; transform: translate(-50%, -100%); }
+.ui-final__sign { margin: -4px 0 14px !important; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3) !important; }
+.ui-final__sign b { color: var(--ink-1); font-family: var(--font-display); letter-spacing: 0.16em; }
+/* a closed guide must never intercept taps (its buttons opt into pointer events) */
+.ui-guide { visibility: hidden; transition: opacity 0.35s var(--ease-out), transform 0.5s var(--ease-out), visibility 0s linear 0.5s; }
+.ui-guide.is-open { visibility: visible; transition-delay: 0s; }
+
+/* phones: the header must fit in one row — compact chips, time only */
+@media (max-width: 480px) {
+  .ui-top { gap: 6px; }
+  .ui-top__right { gap: 6px; }
+  .ui-status { height: 38px; padding: 0 10px; }
+  .ui-status__time { padding-right: 0; }
+  .ui-status__time b { font-size: 12.5px; white-space: nowrap; }
+  .ui-icon-btn { width: 38px; height: 38px; }
+  .ui-icon-btn svg { width: 18px; height: 18px; }
+  .ui-guide-btn .ui-companion { width: 26px; height: 26px; }
+  .ui-menu-btn { width: 40px; height: 40px; }
+  .ui-brand { height: 38px; padding: 0 12px; }
+  .ui-brand__word { font-size: 13px; letter-spacing: 0.14em; }
+  .ui-where { height: 34px; }
+}
+@media (max-width: 360px) {
+  .ui-status { display: none; }
+}
+
+/* touch controls in the same ink / paper language (no toy blues) */
+.ui-joystick__ring { background: rgba(247, 244, 239, 0.28); box-shadow: inset 0 0 0 1.5px rgba(247, 244, 239, 0.7), 0 10px 30px -14px rgba(18, 20, 26, 0.5); }
+.ui-joystick__thumb { background: radial-gradient(circle at 35% 30%, #ffffff, #e9e4da); box-shadow: 0 8px 18px -8px rgba(18, 20, 26, 0.6); }
+.ui-jump { background: rgba(22, 24, 29, 0.86); color: var(--paper-1); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset, 0 12px 26px -12px rgba(18, 20, 26, 0.7); }
+.ui-jump.is-pressed { background: var(--ai); }
+.ui-stick-icon--lg { color: var(--ink-1); }
+.ui-jump-icon { background: var(--ink-1); color: var(--paper-1); }
+.ui-tips { color: var(--ink-1); }
+.app.is-night .ui-tips { color: var(--paper-1); }
+.app.is-night .ui-stick-icon--lg { color: var(--paper-1); }
+.app.is-night .ui-jump-icon { background: var(--paper-1); color: var(--ink-1); }
+@media (max-width: 480px) {
+  /* location is still announced on arrival (zone toast) and shown on the minimap */
+  .ui-where { display: none; }
+  .ui-top__left { flex-wrap: nowrap; }
+  .ui-back { height: 38px; padding: 0 12px 0 8px; font-size: 13px; }
+}
+/* the Back button takes no room until it's needed */
+.ui-back:not(.is-visible) { width: 0; padding: 0; margin: 0; overflow: hidden; border: 0; }
+.ui-top__left, .ui-top__right { min-width: 0; }
+.ui-top__right { flex-shrink: 0; }
+@media (max-width: 480px) {
+  .ui-back.is-visible { width: 38px; padding: 0; justify-content: center; }
+  .ui-back__label { display: none; }
+}

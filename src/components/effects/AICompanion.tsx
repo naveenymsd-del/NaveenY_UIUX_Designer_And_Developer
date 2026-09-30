@@ -11,6 +11,7 @@ import { sky } from '@/core/dayNight'
 import type { PointLight } from 'three'
 import { AI_AREA, PROCESS_STATIONS, getLocation } from '@/data/locations'
 import { useGameStore } from '@/stores/gameStore'
+import { useUIStore } from '@/stores/uiStore'
 import { damp, dampAngle } from '@/utils/movement'
 
 /** DOM bubble the companion writes into directly (registered by CompanionBubble). */
@@ -58,6 +59,7 @@ export function AICompanion() {
       eyeMat: new MeshBasicMaterial({ color: new Color(1.55, 1.3, 1.05) }),
       tipMat: new MeshBasicMaterial({ color: new Color(1.7, 1.2, 0.75) }),
       shadowMat: new MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.22, depthWrite: false }),
+      hitMat: new MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
     }
   }, [])
 
@@ -250,7 +252,9 @@ export function AICompanion() {
     res.shadowMat.opacity = Math.max(0, 0.24 - h * 0.06)
 
     // ── speech bubble ────────────────────────────────────────────────────
-    const msg = visible ? tickCompanion(now) : null
+    // on touch screens the controls tip card comes first; lines wait their turn
+    const hold = g.tipsOpen && useUIStore.getState().isTouch
+    const msg = visible && !hold ? tickCompanion(now) : null
     if (msg && companionBubble.anchor) {
       _proj.copy(root.current.position).setY(root.current.position.y + 0.36).project(camera)
       if (_proj.z < 1 && Math.abs(_proj.x) < 1.1 && Math.abs(_proj.y) < 1.1) {
@@ -267,7 +271,19 @@ export function AICompanion() {
 
   return (
     <>
-      <group ref={root}>
+      <group
+        ref={root}
+        onClick={(e) => {
+          e.stopPropagation()
+          if (useGameStore.getState().phase !== 'playing') return
+          useUIStore.getState().setGuideOpen(true)
+          emote('greet', 1400)
+        }}
+        onPointerOver={() => { document.body.style.cursor = 'pointer' }}
+        onPointerOut={() => { document.body.style.cursor = '' }}
+      >
+        {/* generous invisible hit area so the small companion is easy to click */}
+        <mesh geometry={res.body} scale={2.4} material={res.hitMat} />
         <pointLight ref={glowLight} color="#ffb070" intensity={0} distance={2.8} decay={2} position={[0.05, 0.36, 0.05]} />
         <group ref={body}>
           <mesh geometry={res.body} material={res.shell} scale={[1, 1.1, 0.94]} castShadow />

@@ -28,7 +28,7 @@ export const PROFILE = {
   role: 'UI/UX Designer',
   experience: '4+ years experience',
   company: 'NFC Solutions',
-  tagline: 'Designing human experiences with technology, interaction and AI.',
+  tagline: 'Designing human experiences with technology and AI.',
 }
 
 /**
@@ -170,9 +170,15 @@ export const HOME_STORIES: Record<string, StoryContent> = {
     cta: { label: 'Contact', action: 'contact' },
   },
   skills: {
-    kicker: 'Skills', heading: 'What I bring',
-    body: '[ADD YOUR KEY SKILLS]',
-    items: [P('Research & UX', '[ADD RESEARCH / UX SKILLS]'), P('UI & visual design', '[ADD UI SKILLS]'), P('Prototyping & handoff', '[ADD PROTOTYPING SKILLS]')],
+    kicker: 'Tools & skills', heading: 'What I work with',
+    body: 'Design first, with enough code and AI to explore, prototype and collaborate well.',
+    items: [
+      P('Figma', 'UI design, prototyping and design systems'),
+      P('Claude · ChatGPT', 'AI-assisted exploration, research, ideation and problem solving'),
+      P('HTML · CSS · JS · React', 'Understanding implementation and collaborating with developers'),
+      P('Three.js', 'Interactive 3D experiences — like this portfolio'),
+      P('Practice', 'UX research · wireframing · prototyping · interaction design · responsive design · design systems'),
+    ],
   },
   approach: {
     kicker: 'Design approach', heading: 'How I approach a problem',
@@ -214,3 +220,43 @@ export const ACTIVITY_STORIES: Record<string, StoryContent> = {
   uiux: { kicker: 'Activity · UI/UX design', heading: 'Designing interfaces', body: 'Clear hierarchy, honest interactions and accessible defaults.' },
   interactive: { kicker: 'Activity · Interactive design', heading: 'Designing in 3D', body: 'Exploring interactive and spatial experiences — like this neighbourhood.' },
 }
+
+// ── Tools & skills (Home · skill wall) ─────────────────────────────────────
+/**
+ * The tools and practices on the Home skill wall. Keep only what you really
+ * use; each note is one line. Order = wall order (left → right, top → bottom).
+ */
+export const TOOLS: { name: string; note: string; group: 'tool' | 'practice' | 'code' }[] = [
+  { name: 'Figma', note: 'UI design, prototyping and design systems', group: 'tool' },
+  { name: 'Claude', note: 'AI-assisted exploration, ideation and design workflows', group: 'tool' },
+  { name: 'ChatGPT', note: 'Research, ideation, content exploration and problem solving', group: 'tool' },
+  { name: 'Framer', note: 'Interactive prototypes and motion', group: 'tool' },
+  { name: 'HTML / CSS', note: 'Understanding implementation constraints and collaborating with developers', group: 'code' },
+  { name: 'JavaScript', note: 'Interaction logic behind prototypes', group: 'code' },
+  { name: 'React', note: 'Component thinking that mirrors design systems', group: 'code' },
+  { name: 'Three.js', note: 'Interactive 3D experiences — like this portfolio', group: 'code' },
+  { name: 'Design Systems', note: 'Reusable components and consistent patterns', group: 'practice' },
+  { name: 'UX Research', note: 'Understanding people before designing for them', group: 'practice' },
+  { name: 'Wireframing', note: 'Structure and flow before visuals', group: 'practice' },
+  { name: 'Prototyping', note: 'Making ideas real enough to test', group: 'practice' },
+  { name: 'Interaction Design', note: 'How things respond, move and feel', group: 'practice' },
+  { name: 'Responsive Design', note: 'Layouts that work on every screen', group: 'practice' },
+  { name: 'AI-assisted Design', note: 'AI explores possibilities; human judgment decides', group: 'practice' },
+]
+
+// ── Career transformation (the Growth Walk, campus → NFC Solutions) ───────
+/**
+ * Eight stations along the avenue from the Education campus to NFC Solutions.
+ * The stage names follow the journey Naveen described; replace the
+ * [ADD …] lines with real specifics (years, first tools, milestones).
+ */
+export const CAREER_STAGES: { n: string; title: string; line: string; detail: string }[] = [
+  { n: '01', title: 'Early design', line: 'Simple sketches and first layouts.', detail: '[ADD HOW YOUR DESIGN JOURNEY BEGAN]' },
+  { n: '02', title: 'First UI', line: 'Basic screens — learning what works.', detail: '[ADD YOUR FIRST UI WORK]' },
+  { n: '03', title: 'UX thinking', line: 'Understanding users, not just screens.', detail: '[ADD WHEN UX THINKING CLICKED FOR YOU]' },
+  { n: '04', title: 'Systems', line: 'Components, patterns and design systems.', detail: '[ADD DESIGN SYSTEM EXPERIENCE]' },
+  { n: '05', title: 'Real products', line: 'Designing applications people use.', detail: `[ADD PRODUCT WORK — e.g. at ${PROFILE.company}]` },
+  { n: '06', title: 'Interaction', line: 'Prototypes, motion and interactive experiences.', detail: '[ADD INTERACTION / PROTOTYPING MILESTONES]' },
+  { n: '07', title: 'AI-assisted design', line: 'AI explores possibilities; I make the decisions.', detail: '[ADD HOW AI CHANGED YOUR WORKFLOW]' },
+  { n: '08', title: 'Today', line: 'A professional UI/UX designer.', detail: `${PROFILE.role} · ${PROFILE.experience} · ${PROFILE.company}` },
+]

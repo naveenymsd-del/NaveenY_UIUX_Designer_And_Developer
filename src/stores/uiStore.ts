@@ -16,6 +16,9 @@ function readSoundPref(): boolean {
 
 interface UIState {
   menuOpen: boolean
+  /** the companion's navigator panel */
+  guideOpen: boolean
+  setGuideOpen: (open: boolean) => void
   menuSection: MenuSection
   soundEnabled: boolean
   isTouch: boolean
@@ -31,6 +34,8 @@ interface UIState {
 
 export const useUIStore = create<UIState>((set, get) => ({
   menuOpen: false,
+  guideOpen: false,
+  setGuideOpen: (guideOpen) => set({ guideOpen }),
   menuSection: 'places',
   soundEnabled: readSoundPref(),
   isTouch: isTouchDevice(),

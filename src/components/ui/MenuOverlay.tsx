@@ -29,8 +29,9 @@ const ITEMS: Item[] = [
 ]
 
 const JOURNEY: { place: Place; label: string }[] = [
-  { place: 'education', label: 'Education' },
   { place: 'home', label: 'Home' },
+  { place: 'education', label: 'Education' },
+  { place: 'career', label: 'The Growth Walk' },
   { place: 'office', label: 'NFC Solutions' },
   { place: 'park', label: 'Design Park' },
   { place: 'projects', label: 'Projects' },

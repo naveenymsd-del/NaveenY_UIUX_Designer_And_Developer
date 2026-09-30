@@ -5,7 +5,7 @@ import type { InteriorId } from '@/data/interiors'
 export type Phase = 'loading' | 'intro' | 'transition' | 'playing'
 export type Mode = 'street' | 'projects'
 /** the journey's milestones (drives companion guidance and the menu's progress) */
-export type Place = 'education' | 'home' | 'office' | 'park' | 'ai' | 'projects' | 'final'
+export type Place = 'education' | 'home' | 'career' | 'office' | 'park' | 'ai' | 'projects' | 'final'
 
 export interface LoadingState {
   worldReady: boolean
@@ -45,6 +45,10 @@ interface GameState {
   /** named spot inside the room the establishing shot frames (e.g. the Project Studio) */
   establishSpot: string | null
   discovered: Place[]
+  /** aerial glide between places (navigateToLocation) */
+  travel: { from: [number, number]; to: [number, number]; start: number } | null
+  /** soft arrival marker */
+  navMarker: { x: number; z: number; until: number } | null
   /** location whose camera shot is shown during an approach (before a fade) */
   cameraShot: string | null
   /** feedback pulses consumed by fx */
@@ -88,6 +92,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   establishing: null,
   establishSpot: null,
   discovered: [],
+  travel: null,
+  navMarker: null,
   cameraShot: null,
   pulse: null,
 
@@ -122,6 +128,6 @@ export const useGameStore = create<GameState>((set, get) => ({
 }))
 
 /** True when the player should receive movement input. */
-export function controlsEnabled(s: Pick<GameState, 'phase' | 'mode' | 'activeLocationId' | 'activeProjectId' | 'fade' | 'establishing'>) {
-  return s.phase === 'playing' && s.mode === 'street' && !s.activeLocationId && !s.activeProjectId && !s.fade && !s.establishing
+export function controlsEnabled(s: Pick<GameState, 'phase' | 'mode' | 'activeLocationId' | 'activeProjectId' | 'fade' | 'establishing' | 'travel'>) {
+  return s.phase === 'playing' && s.mode === 'street' && !s.activeLocationId && !s.activeProjectId && !s.fade && !s.establishing && !s.travel
 }

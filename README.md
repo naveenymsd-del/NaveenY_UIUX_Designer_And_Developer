@@ -23,6 +23,38 @@ npm run preview    # serve the production build
 | Close / back | `Esc` | Back / ✕ |
 | Toggle tips | `H` | — |
 
+## Story, guide and navigation
+
+The world tells one story in ten chapters, each arriving as you reach its place:
+- 01 Who I am (Home)
+- 02 Where I started (campus)
+- 03 What I learned (classroom)
+- 04 How I grew (the Growth Walk)
+- 05 Real products (NFC Solutions)
+- 06 My professional world (the office)
+- 07 How I design (Design Park)
+- 08 How I use AI (AI area)
+- 09 What I build today (Project Studio)
+- 10 Let's connect (The Lookout)
+
+**Content lives in `src/data/portfolioContent.ts`:**
+- `TOOLS` is the Home skill wall.
+- `CAREER_STAGES` holds the eight Growth Walk boards.
+- Education, office and home stories, and `CONTACT`.
+
+Growth Walk positions are `GROWTH_WALK` in `src/data/locations.ts`.
+
+**The guide:** click the orange companion, or the guide button in the header, to open *Where would you like to go?*
+- Quick links: Home · Education · Design · Projects · Contact.
+- A text box understood locally, with no API: "projects", "college", "design process", "AI", "career", "resume"… The rules are `COMMANDS` in `src/core/navigation.ts`.
+- Travel uses `navigateToLocation(dest)`. The camera lifts into a ~2 s aerial glide, the player is moved while the camera is high, rooms are entered with the usual fade, and a soft ring marks the arrival point. Destinations are `DESTINATIONS` in the same file.
+
+**Greetings:** people you pass occasionally say hello. Lines depend on the time of day and the place, and colleagues say "Hey Naveen!". A 42 % roll, a 50 s per-person cooldown and a 5 s global quiet period keep it natural. The lines are `LINES` in `src/components/npc/NPCManager.tsx`.
+
+**Colleagues:** names are in `src/data/colleagues.ts` and are revealed only up close. Who sits, walks and works is `INTERIOR_PEOPLE` / `INTERIOR_ROUTES` in `src/data/interiors.ts`. To add an employee, add them to `COLLEAGUES` and give a person in `INTERIOR_PEOPLE` that `name`.
+
+**Opening:** a light aircraft tows a cloth banner, *WELCOME TO MY PORTFOLIO*, across the sky, then the camera tips down into the city. It is about 15 s, uses the same world at any time of day, and can be skipped with Skip intro or Esc. It isn't forced again in the same browser session. The timing is `INTRO` / `PLANE` in `src/core/intro.ts` and the model is `components/effects/IntroPlane.tsx`.
+
 ## Visitor flow
 
 1. **Loading** shows a dark skyline whose windows switch on as the world builds, with staged messages ("Preparing the people…") and "Ready.".

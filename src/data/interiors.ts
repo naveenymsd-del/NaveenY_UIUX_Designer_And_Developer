@@ -46,14 +46,14 @@ export const STUDIO = {
 
 export const INTERIORS: Record<InteriorId, InteriorDef> = {
   education: {
-    id: 'education', name: 'My Education', subtitle: 'Learning journey',
+    id: 'education', name: 'My Education', subtitle: 'Chapter 03 · What I learned',
     origin: [320, 0, -120], width: 24, depth: 18, height: 3.8,
     outside: { pos: [0, -55.6], yaw: 0 },
     establish: { position: [9.5, 3.2, 7.4], target: [-4, 1.3, -3] },
     palette: { floor: 0xb58a62, wall: 0xf1e9dc, wainscot: 0x4f6b58, trim: 0xf7f2ea, ceiling: 0xf4efe6 },
   },
   office: {
-    id: 'office', name: 'NFC Solutions', subtitle: 'My workplace',
+    id: 'office', name: 'NFC Solutions', subtitle: 'Chapter 06 · My professional world',
     origin: [320, 0, 0], width: 28, depth: 20, height: 3.8,
     outside: { pos: [13.6, 17], yaw: -Math.PI / 2 },
     establish: { position: [11.5, 3.3, 8.6], target: [-2, 1.2, -3.5] },
@@ -64,7 +64,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     },
   },
   home: {
-    id: 'home', name: 'My Home', subtitle: 'Profile & story',
+    id: 'home', name: 'My Home', subtitle: 'Chapter 01 · Who I am',
     origin: [320, 0, 120], width: 18, depth: 14, height: 3.4,
     outside: { pos: [-7.4, -25], yaw: Math.PI / 2 },
     establish: { position: [6.2, 2.8, 5.2], target: [-1.5, 1.1, -2.5] },
@@ -170,8 +170,8 @@ export const INTERIOR_PEOPLE: InteriorPerson[] = [
   { room: 'office', x: -8.4, z: -7.4, yaw: -Math.PI / 2, pose: 'sit', seatY: chairY, outfit: 'office', fidget: ['sitTalk'] },
   { room: 'office', x: -9.5, z: -5.2, yaw: Math.PI, pose: 'sitTalk', seatY: chairY, outfit: 'office', fidget: ['sit'] },
   // design wall: two colleagues collaborating over sketches
-  { room: 'office', x: 10.6, z: -6.6, yaw: -2.3, pose: 'talk', outfit: 'office', name: 'Kajal', fidget: ['look'] },
-  { room: 'office', x: 9.6, z: -7.4, yaw: 0.8, pose: 'talk', outfit: 'office', prop: 'tablet', name: 'Geetha', fidget: ['read'] },
+  { room: 'office', x: 10.6, z: -6.6, yaw: -2.3, pose: 'talk', outfit: 'office', fidget: ['look'] },
+  { room: 'office', x: 9.6, z: -7.4, yaw: 0.8, pose: 'talk', outfit: 'office', prop: 'tablet', fidget: ['read'] },
   // coffee point
   { room: 'office', x: -11.6, z: -0.6, yaw: 1.2, pose: 'coffee', outfit: 'office', prop: 'cup', fidget: ['phone'] },
   // Project Studio: a quiet review at the collaboration table
@@ -187,7 +187,7 @@ export const INTERIOR_PEOPLE: InteriorPerson[] = [
 /** Walkers inside rooms (room-local waypoint loops). */
 export const INTERIOR_ROUTES: { room: InteriorId; points: [number, number][]; speed: number; name?: string; prop?: InteriorPerson['prop'] }[] = [
   // moving between desks and into the Project Studio, tablet in hand
-  { room: 'office', name: 'Kiran', prop: 'tablet', speed: 1.1, points: [[-2.6, 4.6], [9.5, 4.6], [12.8, 5.8], [15.6, 6.4], [15.6, -6.6], [15.6, 6.4], [12.8, 5.8], [9.5, 4.6], [1.6, 4.6], [1.6, -3.8], [-2.6, -3.8]] },
+  { room: 'office', prop: 'tablet', speed: 1.1, points: [[-2.6, 4.6], [9.5, 4.6], [12.8, 5.8], [15.6, 6.4], [15.6, -6.6], [15.6, 6.4], [12.8, 5.8], [9.5, 4.6], [1.6, 4.6], [1.6, -3.8], [-2.6, -3.8]] },
   { room: 'education', points: [[-3, 4.6], [5.5, 4.6], [5.5, 1.2], [-3, 1.2]], speed: 1.05 },
 ]
 
@@ -230,7 +230,7 @@ export const INTERIOR_STORIES: InteriorStory[] = [
   { room: 'home', kind: 'journey', name: 'Career Journey', x: 7.2, z: -2.2, radius: 2.0, label: 'Press E to see my journey', cam: { position: [4.2, 2.0, -1.0], target: [9, 1.6, -2.2] } },
   { room: 'home', kind: 'portfolio', name: 'Selected Work', x: 7.2, z: 2.8, radius: 2.0, label: 'Press E to see selected work', cam: { position: [4.2, 2.0, 3.8], target: [9, 1.6, 2.8] } },
   { room: 'home', kind: 'window', name: 'Looking Ahead', x: -4.8, z: -5.1, radius: 1.7, label: 'Press E to look outside', cam: { position: [-3.4, 1.9, -2.6], target: [-5, 1.8, -7] } },
-  { room: 'home', kind: 'skills', name: 'Skills', x: -7.3, z: 3.9, radius: 1.8, label: 'Press E to see my skills', cam: { position: [-4.4, 2.0, 4.6], target: [-9, 1.6, 3.9] } },
+  { room: 'home', kind: 'skills', name: 'Tools & skills', x: -7.1, z: 3.9, radius: 2.6, label: 'Press E to see my skills', cam: { position: [-4.4, 2.0, 4.6], target: [-9, 1.6, 3.9] } },
   { room: 'home', kind: 'approach', name: 'Design Approach', x: 6.7, z: -5.2, radius: 1.8, label: 'Press E to see how I approach design', cam: { position: [5.6, 2.0, -2.4], target: [6.8, 1.7, -7] } },
   { room: 'home', kind: 'contact', name: 'Contact', x: -4.6, z: 5.6, radius: 1.6, label: 'Press E to get in touch', cam: { position: [-2.4, 2.0, 3.4], target: [-4.6, 1.5, 7] } },
 ]

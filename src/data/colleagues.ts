@@ -17,9 +17,6 @@ export const COLLEAGUES: Colleague[] = [
   { name: 'Murali', role: '', look: 'a' },
   { name: 'Subbu', role: '', look: 'a' },
   { name: 'SaiB', role: '', look: 'a' },
-  { name: 'Kajal', role: '', look: 'b' },
   { name: 'Sai', role: '', look: 'a' },
   { name: 'Viswa Pani', role: '', look: 'a' },
-  { name: 'Kiran', role: '', look: 'a' },
-  { name: 'Geetha', role: '', look: 'b' },
 ]

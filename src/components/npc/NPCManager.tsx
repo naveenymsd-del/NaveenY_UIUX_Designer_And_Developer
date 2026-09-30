@@ -18,6 +18,8 @@ import type { SeatDef } from '@/utils/buildingGen'
 import { NPC, type NPCHandle } from './NPC'
 import { COLLEAGUES } from '@/data/colleagues'
 import { nameTag } from '@/components/ui/NameTag'
+import { greetBubble } from '@/components/ui/GreetBubble'
+import { getTime } from '@/core/dayNight'
 import type { SpecialPose } from '@/core/runtime'
 
 type Kind = 'walker' | 'wander' | 'sit' | 'talk' | 'still' | 'greeter'
@@ -58,6 +60,9 @@ export interface Agent {
   fidget?: SpecialPose[]
   fidgetT: number
   fidgetOn: boolean
+  /** last time this person said hello (ms) */
+  greetedAt: number
+  waveT: number
 }
 
 // believable workplace wardrobe: shirts, blouses, knits and jackets in muted tones
@@ -149,6 +154,7 @@ export function NPCManager() {
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
   const tagState = useRef({ id: '', shown: false })
+  const greetState = useRef({ agent: null as Agent | null, until: 0, nextCheck: 0, quietUntil: 0, last: '' })
 
   const agents = useMemo(() => {
     const rng = createRng(606)
@@ -182,7 +188,7 @@ export function NPCManager() {
         pos: new Vector3(x, SIDEWALK_Y, z), seg: 1, dir: 1, pauseChance: 0.2, wait: 0,
         target: new Vector3(), talkTimer: rng.range(0, 4), groundY: SIDEWALK_Y, groundTimer: rng.range(0, 0.5), handle: null, lod: 0,
         seated: false, baseYaw: yaw, basePose: 'none', greeted: false, greetT: 0,
-        name: colleague?.name, role: colleague?.role, fidgetT: 6 + rng.range(0, 12), fidgetOn: false,
+        name: colleague?.name, role: colleague?.role, fidgetT: 6 + rng.range(0, 12), fidgetOn: false, greetedAt: -1e9, waveT: 0,
       }
     }
     for (const w of WALKERS) {
@@ -287,6 +293,7 @@ export function NPCManager() {
       a.handle?.sync(a.pos, a.yaw)
     }
     updateNameTag(agents, tagState.current, camera, size)
+    updateGreeting(agents, greetState.current, tagState.current, camera, size, dt)
   }, -1)
 
   return (
@@ -341,6 +348,93 @@ function updateNameTag(agents: Agent[], st: { id: string; shown: boolean }, came
   if (st.shown) {
     st.shown = false
     card.classList.remove('is-visible')
+  }
+}
+
+// ── passing greetings ──────────────────────────────────────────────────
+const LINES = {
+  morning: ['Good morning!', 'Morning!'],
+  afternoon: ['Good afternoon!', 'Hey!'],
+  evening: ['Good evening!', 'Evening!'],
+  night: ['Hi there!', 'Hey!'],
+  street: ['Hey!', 'Hi!', 'What’s up?', 'Hi there!', 'Hey Naveen!'],
+  park: ['Hi!', 'Hi there!', 'Hey!'],
+  office: ['Hey Naveen!', 'Good to see you!', 'Hi Naveen!', 'Hey!'],
+}
+
+function pickLine(a: Agent, last: string) {
+  const g = useGameStore.getState()
+  const h = getTime()
+  const time = h >= 5 && h < 12 ? LINES.morning : h >= 12 && h < 17 ? LINES.afternoon : h >= 17 && h < 22 ? LINES.evening : LINES.night
+  const p = playerRuntime.position
+  const inPark = !g.interior && p.x > -43 && p.x < -8 && p.z > 7 && p.z < 43
+  const place = g.interior === 'office' || a.name ? LINES.office : inPark ? LINES.park : LINES.street
+  // mostly place-flavoured, sometimes time-of-day; never the same line twice in a row
+  const pool = [...place, ...place, ...time].filter((l) => l !== last)
+  return pool[Math.floor(Math.random() * pool.length)]
+}
+
+/**
+ * Now and then, someone you pass says hello. A probability roll, a per-person
+ * cooldown and a global quiet period keep it natural — never a chorus.
+ */
+function updateGreeting(
+  agents: Agent[], st: { agent: Agent | null; until: number; nextCheck: number; quietUntil: number; last: string },
+  tag: { id: string; shown: boolean }, camera: import('three').Camera, size: { width: number; height: number }, dt: number,
+) {
+  const card = greetBubble.card
+  const anchor = greetBubble.anchor
+  if (!card || !anchor) return
+  const now = performance.now()
+  const g = useGameStore.getState()
+  const p = playerRuntime.position
+  const calm = g.phase === 'playing' && !g.activeLocationId && !g.activeProjectId && !g.establishing && !g.travel && !g.fade
+  if (st.agent && (now > st.until || !calm)) {
+    card.classList.remove('is-visible')
+    st.agent = null
+  }
+  if (!st.agent && calm && now > st.nextCheck && now > st.quietUntil) {
+    st.nextCheck = now + 400
+    let best: Agent | null = null
+    let bd = 3.6
+    for (const a of agents) {
+      if (a.lod > 0 || now - a.greetedAt < 50000) continue
+      const d = Math.hypot(a.pos.x - p.x, a.pos.z - p.z)
+      if (d < bd && d > 0.9 && Math.abs(a.pos.y - p.y) < 1.5) {
+        bd = d
+        best = a
+      }
+    }
+    if (best && Math.random() < 0.42) {
+      const line = pickLine(best, st.last)
+      st.last = line
+      st.agent = best
+      st.until = now + 2300
+      st.quietUntil = now + 2300 + 5000
+      best.greetedAt = now
+      card.textContent = line
+      card.classList.add('is-visible')
+      // a small wave from people standing around (not from walkers mid-stride or seated workers)
+      const pose = best.anim.pose
+      if (!best.seated && best.kind !== 'walker' && best.kind !== 'wander' && (pose === 'none' || pose === 'look' || pose === 'read' || pose === 'phone')) best.waveT = 1.6
+    } else if (best) best.greetedAt = now - 46000 // skipped the roll: this person may try again in ~4 s
+  }
+  // waving
+  for (const a of agents) {
+    if (a.waveT > 0) {
+      a.waveT -= dt
+      a.anim.pose = a.waveT > 0 ? 'wave' : a.basePose
+    }
+  }
+  if (st.agent) {
+    const a = st.agent
+    const lift = tag.shown && tag.id === a.id ? 0.42 : 0
+    _tag.set(a.pos.x, a.pos.y + (a.seated ? 1.55 : 2.05) * a.look.height + lift, a.pos.z).project(camera)
+    if (_tag.z < 1) {
+      const x = (_tag.x * 0.5 + 0.5) * size.width
+      const y = (-_tag.y * 0.5 + 0.5) * size.height
+      anchor.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`
+    }
   }
 }
 

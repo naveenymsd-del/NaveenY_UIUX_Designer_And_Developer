@@ -7,6 +7,7 @@ import { useGameStore } from '@/stores/gameStore'
 import { MenuButton } from './MenuButton'
 import { SoundButton } from './SoundButton'
 import { DayNightToggle } from './DayNightToggle'
+import { GuideButton } from './GuidePanel'
 import { WorldStatus } from './WorldStatus'
 
 /**
@@ -43,13 +44,14 @@ export function TopNavigation() {
           <b key={place.name}>{place.name}</b>
           <span>{place.sub}</span>
         </p>
-        <button className={`ui-btn ui-btn--glass ui-back ${showBack ? 'is-visible' : ''}`} onClick={back} tabIndex={showBack ? 0 : -1} aria-hidden={!showBack}>
+        <button className={`ui-btn ui-btn--glass ui-back ${showBack ? 'is-visible' : ''}`} onClick={back} tabIndex={showBack ? 0 : -1} aria-hidden={!showBack} aria-label={backLabel}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
-          {backLabel}
+          <span className="ui-back__label">{backLabel}</span>
         </button>
       </div>
       <div className="ui-top__right">
         <WorldStatus />
+        <GuideButton />
         <DayNightToggle />
         <SoundButton />
         <MenuButton />
