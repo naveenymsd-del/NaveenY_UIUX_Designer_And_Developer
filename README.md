@@ -25,9 +25,38 @@ npm run preview    # serve the production build
 
 ## The journey — one location config
 
-**** () defines the route: START → 01 Home → 02 Education → 03 NFC Solutions → 04 Projects (the Project Studio inside the office) → 05 Design Journey → 06 Contact Café. Each stop sets its name, its question, icon, minimap position, arrival point, room, the companion's lines and the words the guide understands. The minimap (markers, route line, active highlight), the guide's quick links and typed commands, , the Next-stop chip and the menu all read from it. To add a stop, add an entry (plus an  entry if it has a room).
+**`src/data/world.ts`** (`WORLD_STOPS`) defines the route:
 
-The **Contact Café** (promenade, west of the start) is the ending: sit at the window table (E), Naveen sits across from you, asks how it went, and you can leave a review or skip before the contact details (phone, email, LinkedIn, resume from ) appear.
+- START
+- 01 Home
+- 02 Education
+- 03 NFC Solutions
+- 04 Projects (the Project Studio inside the office)
+- 05 Design Journey
+- 06 Contact Café
+
+Each stop sets:
+
+- its name, its question and its icon;
+- its minimap position, arrival point and room;
+- the companion's lines;
+- the words the guide understands.
+
+These all read from it:
+
+- the minimap: markers, route line and active highlight;
+- the guide's quick links and typed commands;
+- `navigateToLocation`;
+- the Next-stop chip;
+- the menu.
+
+To add a stop, add an entry, plus an `INTERIORS` entry if it has a room.
+
+The **Contact Café** (on the promenade, west of the start) is the ending:
+
+1. Press E to sit at the window table. Naveen sits across from you and asks how it went.
+2. Leave a review, or skip.
+3. The contact details appear (phone, email, LinkedIn and resume, from `CONTACT` in `src/data/portfolioContent.ts`).
 
 ## Story, guide and navigation
 
