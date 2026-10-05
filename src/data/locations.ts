@@ -58,7 +58,7 @@ export const ACTIVITY_SPOTS: Record<'learning' | 'visual' | 'uiux' | 'interactiv
 }
 /**
  * The Growth Walk: eight stations on the avenue's east sidewalk, from the
- * Education campus toward NFC Solutions (skipping the mid-block crossing).
+ * Education campus toward Naveen Solutions (skipping the mid-block crossing).
  * Boards face walkers coming from the campus.
  */
 export const GROWTH_WALK: [number, number][] = [
@@ -70,7 +70,7 @@ export const GROWTH_YAW = Math.atan2(0.35, -0.94)
 const street: InteractiveDef[] = [
   {
     id: 'info', name: 'Information', kicker: 'Start here', type: 'info',
-    description: 'Welcome to Mindscape Avenue — Naveen’s world. The story goes: Home → Education → NFC Solutions (projects inside) → Design Journey → Contact Café. Go in any order.',
+    description: 'Welcome to Mindscape Avenue — Naveen’s world. The story goes: Home → Education → Naveen Solutions (projects inside) → Design Journey → Contact Café. Go in any order.',
     position: [5.2, 0.15, 71.5], interactionRadius: 3.2,
     label: 'Press E to read the map', mobileLabel: 'Map', action: 'OPEN_LOCATION', destination: 'info',
     cameraTarget: { position: [0.5, 3.2, 77.5], target: [5.6, 1.6, 70.4] }, accent: '#2f4a8a',
@@ -84,10 +84,10 @@ const street: InteractiveDef[] = [
     cameraTarget: { position: [7, 4.2, -45], target: [0, 5.2, -66] }, accent: '#4f6b58',
   },
   {
-    id: 'nfc', name: 'NFC Solutions', kicker: 'Explore my workplace', type: 'office',
+    id: 'Naveen', name: 'Naveen Solutions', kicker: 'Explore my workplace', type: 'office',
     description: 'The office where I design every day.',
     position: [14.2, 0.15, 17], interactionRadius: 3.4,
-    label: 'Press E to enter NFC Solutions', mobileLabel: 'Enter', action: 'ENTER_INTERIOR', destination: 'office',
+    label: 'Press E to enter Naveen Solutions', mobileLabel: 'Enter', action: 'ENTER_INTERIOR', destination: 'office',
     cameraTarget: { position: [3.5, 3.6, 24], target: [22, 5.5, 17] }, accent: '#2f4a8a',
   },
   {
@@ -145,7 +145,7 @@ const street: InteractiveDef[] = [
   }),
 ]
 
-/** one screen bay per project in the Project Studio (NFC Solutions office) */
+/** one screen bay per project in the Project Studio (Naveen Solutions office) */
 const studio: InteractiveDef[] = PROJECTS.map((p, i) => {
   const bay = studioBay(i)
   const [sx, sz] = bay.screen
@@ -177,7 +177,7 @@ const STORY_CONTENT: Record<string, StoryContent> = {
 const interior: InteractiveDef[] = [
   ...INTERIOR_STORIES.map<InteractiveDef>((s) => {
     const content = s.kind === 'bell'
-      ? { kicker: 'Education', heading: 'Ding!', body: 'Ready for the next chapter? NFC Solutions is where the learning became real work.' }
+      ? { kicker: 'Education', heading: 'Ding!', body: 'Ready for the next chapter? Naveen Solutions is where the learning became real work.' }
       : STORY_CONTENT[`${s.room}:${s.kind}`] ?? { kicker: s.name, heading: s.name, body: '' }
     return {
       id: `${s.room}-${s.kind}`, name: s.name, kicker: content.kicker, type: 'story' as const,
@@ -225,7 +225,7 @@ export interface ZoneDef {
 export const ZONES: ZoneDef[] = [
   { id: 'start', name: 'Start', subtitle: 'Welcome to my world', center: [0, 68], radius: 7, reveal: [0, 3, 60] },
   { id: 'campus', name: 'Education Campus', subtitle: 'Chapter 02 · Where I started', center: [0, -49], radius: 8, reveal: [0, 7, -66] },
-  { id: 'nfc', name: 'NFC Solutions', subtitle: 'Chapter 04 · Where I work', center: [8, 17], radius: 6.5, reveal: [23, 7, 17] },
+  { id: 'Naveen', name: 'Naveen Solutions', subtitle: 'Chapter 04 · Where I work', center: [8, 17], radius: 6.5, reveal: [23, 7, 17] },
   { id: 'home', name: 'My Home', subtitle: 'Chapter 01 · Who I am', center: [-7, -25], radius: 5, reveal: [-16, 3.5, -25] },
   { id: 'park', name: 'Design Journey', subtitle: 'Chapter 06 · How I think', center: [-16, 16], radius: 8, reveal: [-16, 1.5, 15.5] },
   { id: 'growth', name: 'The Growth Walk', subtitle: 'Chapter 03 · How I grew', center: [6.6, -41], radius: 3.6, reveal: [6, 1.8, -30] },

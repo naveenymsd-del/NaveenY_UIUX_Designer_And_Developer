@@ -1,5 +1,5 @@
 # Builds the portfolio and publishes it to GitHub Pages on every push to main.
-# Live at https://naveenymsd-del.github.io/NaveenY_UIUX_Designer_And_Developer/
+# Live at https://Naveenymsd-del.github.io/NaveenY_UIUX_Designer_And_Developer/
 name: Deploy to GitHub Pages
 
 on:

@@ -99,7 +99,7 @@ export function MenuOverlay() {
               <p className="ui-kicker">About</p>
               <h2>{PROFILE.name}, {PROFILE.role}.</h2>
               <p className="ui-menu__lead">{PROFILE.tagline}</p>
-              <p>{PROFILE.experience}, currently at {PROFILE.company}. This neighbourhood is my portfolio as a place: my education on the campus, my story at home, my projects inside the NFC Solutions office, my process on the Design Journey — and a coffee at the Contact Café.</p>
+              <p>{PROFILE.experience}, currently at {PROFILE.company}. This neighbourhood is my portfolio as a place: my education on the campus, my story at home, my projects inside the Naveen Solutions office, my process on the Design Journey — and a coffee at the Contact Café.</p>
               <button className="ui-btn ui-btn--quiet" onClick={() => { setOpen(false); navigateToLocation('home') }} tabIndex={tab}>Visit my home ↗</button>
             </div>
           )}

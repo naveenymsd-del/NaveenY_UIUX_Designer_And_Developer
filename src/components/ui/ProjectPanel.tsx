@@ -87,7 +87,7 @@ export function ProjectPanel() {
     tabRefs.current[n]?.focus()
   }
   const cs = shown.caseStudy
-  const where = interior === 'office' ? 'Project Studio · NFC Solutions' : 'Project pavilion'
+  const where = interior === 'office' ? 'Project Studio · Naveen Solutions' : 'Project pavilion'
 
   return (
     <aside className={`ui-case ${visible ? 'is-visible' : ''}`} role="dialog" aria-labelledby="case-title" style={{ ['--accent' as string]: shown.accent }}>

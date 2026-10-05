@@ -6,7 +6,7 @@ import { createRng } from './rng'
 import { interiorPainter } from './textures'
 
 /**
- * The three story landmarks on the street: Education campus, NFC Solutions
+ * The three story landmarks on the street: Education campus, Naveen Solutions
  * office and Home. Each has its own architectural language so they read
  * as distinct places from a distance.
  */
@@ -259,7 +259,7 @@ export function genHome(ctx: GenContext, def: BuildingDef) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// NFC SOLUTIONS — modern office: curtain wall, canopy, forecourt
+// Naveen SOLUTIONS — modern office: curtain wall, canopy, forecourt
 // ────────────────────────────────────────────────────────────────────────────
 export function genOffice(ctx: GenContext, def: BuildingDef) {
   const { b } = ctx
@@ -280,7 +280,7 @@ export function genOffice(ctx: GenContext, def: BuildingDef) {
   // curtain wall
   const cols = 9
   const cw = w / cols
-  const lobby = ctx.decor.add(384, 192, interiorPainter('office', 3), 'int-nfc-lobby')
+  const lobby = ctx.decor.add(384, 192, interiorPainter('office', 3), 'int-Naveen-lobby')
   for (let f = 0; f < floors; f++) {
     const y0 = f === 0 ? 0 : gH + (f - 1) * fH
     const fh = f === 0 ? gH : fH
@@ -300,7 +300,7 @@ export function genOffice(ctx: GenContext, def: BuildingDef) {
   b.box(frame, [0, H + 0.1, 0], [w + 0.2, 0.4, d + 0.1])
   // top signage band
   b.box(frame, [0, H - 0.9, front - 0.04], [w + 0.05, 1.3, 0.2])
-  addSign(ctx, 'NFC SOLUTIONS', { bg: '#2e3035', fg: '#ffffff', shape: 'rect', weight: 700 }, [0, H - 0.9, front + 0.07], 7.4, 0.95)
+  addSign(ctx, 'Naveen SOLUTIONS', { bg: '#2e3035', fg: '#ffffff', shape: 'rect', weight: 700 }, [0, H - 0.9, front + 0.07], 7.4, 0.95)
   // entrance canopy + lettering over the doors
   b.box(frame, [0, 3.7, front + 1.4], [7.2, 0.22, 3.0])
   for (const x of [-3.3, 3.3]) {
@@ -308,7 +308,7 @@ export function genOffice(ctx: GenContext, def: BuildingDef) {
     b.cylCollider([x, 0, front + 2.6], 0.1, 3.6)
   }
   for (const x of [-2.2, 0, 2.2]) b.box(0xfff6e6, [x, 3.58, front + 1.6], [0.8, 0.03, 0.8], { mat: 'emissive', cast: false })
-  addSign(ctx, 'NFC SOLUTIONS', { bg: '#f2f1ee', fg: '#2e3035', shape: 'rect', weight: 700 }, [0, 4.15, front + 0.02], 3.8, 0.42)
+  addSign(ctx, 'Naveen SOLUTIONS', { bg: '#f2f1ee', fg: '#2e3035', shape: 'rect', weight: 700 }, [0, 4.15, front + 0.02], 3.8, 0.42)
   b.box(frame, [-1.0, 1.4, front - 0.12], [0.06, 2.8, 0.1], { cast: false })
   b.box(frame, [1.0, 1.4, front - 0.12], [0.06, 2.8, 0.1], { cast: false })
   // side facades: stone with ribbon windows
@@ -347,9 +347,9 @@ export function genOffice(ctx: GenContext, def: BuildingDef) {
   // monolith sign
   b.push(-5.4, 0, front + 6.3)
   b.box(0x3b3e44, [0, 0.65, 0], [2.4, 1.3, 0.4])
-  addSign(ctx, 'NFC SOLUTIONS', { bg: '#3b3e44', fg: '#ffffff', shape: 'rect', weight: 700 }, [0, 0.72, 0.21], 2.0, 0.34)
+  addSign(ctx, 'Naveen SOLUTIONS', { bg: '#3b3e44', fg: '#ffffff', shape: 'rect', weight: 700 }, [0, 0.72, 0.21], 2.0, 0.34)
   b.push(0, 0.72, -0.21, Math.PI)
-  addSign(ctx, 'NFC SOLUTIONS', { bg: '#3b3e44', fg: '#ffffff', shape: 'rect', weight: 700 }, [0, 0, 0], 2.0, 0.34)
+  addSign(ctx, 'Naveen SOLUTIONS', { bg: '#3b3e44', fg: '#ffffff', shape: 'rect', weight: 700 }, [0, 0, 0], 2.0, 0.34)
   b.pop()
   b.collider([0, 0.65, 0], [2.4, 1.3, 0.4])
   b.pop()

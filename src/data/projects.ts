@@ -1,6 +1,6 @@
 /**
  * Projects — the single source of truth for every place a project appears:
- * the Project Studio screens inside NFC Solutions, the case-study
+ * the Project Studio screens inside Naveen Solutions, the case-study
  * presentation, the menu and the /projects overview (street pavilions).
  *
  * Only facts you provide belong here. Anything unknown stays a

@@ -1,7 +1,7 @@
 /**
  * Portfolio content — everything the world "says" about Naveen lives here.
  *
- * Only facts already provided are stated (name, role, 4+ years, NFC
+ * Only facts already provided are stated (name, role, 4+ years, Naveen
  * Solutions). Everything else is a clearly marked placeholder in [BRACKETS]
  * to be replaced with real details. Keep entries short: the world shows them
  * on boards, plaques and small cards, not as long pages.
@@ -27,7 +27,7 @@ export const PROFILE = {
   name: 'Naveen',
   role: 'UI/UX Designer',
   experience: '4+ years experience',
-  company: 'NFC Solutions',
+  company: 'Naveen Solutions',
   tagline: 'Designing human experiences with technology and AI.',
   /** the Home introduction (visitor-facing) */
   intro: 'I’m Naveen, a UI/UX Designer with 4+ years of experience creating intuitive digital experiences across web applications, mobile products, enterprise systems and interactive experiences.',
@@ -94,11 +94,11 @@ export const EDUCATION_STORIES: Record<string, StoryContent> = {
   },
 }
 
-// ── NFC Solutions (workplace) ───────────────────────────────────────────────
+// ── Naveen Solutions (workplace) ───────────────────────────────────────────────
 export const OFFICE_STORIES: Record<string, StoryContent> = {
   reception: {
-    kicker: 'My professional world', heading: 'NFC Solutions',
-    body: 'This is where design moves from ideas to real products. At NFC Solutions, I work as part of a collaborative environment where design, product and technology come together to solve real problems and create usable digital experiences.',
+    kicker: 'My professional world', heading: 'Naveen Solutions',
+    body: 'This is where design moves from ideas to real products. At Naveen Solutions, I work as part of a collaborative environment where design, product and technology come together to solve real problems and create usable digital experiences.',
     items: [
       P('Collaboration', 'Design + Product + Engineering. Great products are rarely created by one person — they grow through conversations, reviews, iterations and collaboration.'),
       P('Real products', 'Understanding requirements, balancing user needs, working within technical constraints and continuously refining the experience.'),
@@ -109,7 +109,7 @@ export const OFFICE_STORIES: Record<string, StoryContent> = {
     body: 'I work across the design process — from understanding problems and exploring ideas to creating interfaces, prototypes, systems and interactive experiences.',
     items: [
       P('Focus areas', 'UX thinking · UI design · user flows · wireframes · prototypes · design systems · interaction design · responsive design · AI-assisted exploration · collaboration with development'),
-      P('Since', '[ADD START DATE AT NFC SOLUTIONS]'),
+      P('Since', '[ADD START DATE AT Naveen SOLUTIONS]'),
     ],
   },
   meeting: {
@@ -168,7 +168,7 @@ export const HOME_STORIES: Record<string, StoryContent> = {
   },
   portfolio: {
     kicker: 'Selected work', heading: 'Work I’m proud of',
-    body: 'The full case studies live in the Project Studio, inside the NFC Solutions office.',
+    body: 'The full case studies live in the Project Studio, inside the Naveen Solutions office.',
     cta: { label: 'Go to the Project Studio', action: 'projects' },
   },
   window: {
@@ -261,9 +261,9 @@ export const TOOLS: { name: string; note: string; group: 'tool' | 'practice' | '
   { name: 'AI-assisted Design', note: 'AI explores possibilities; human judgment decides', group: 'practice' },
 ]
 
-// ── Career transformation (the Growth Walk, campus → NFC Solutions) ───────
+// ── Career transformation (the Growth Walk, campus → Naveen Solutions) ───────
 /**
- * Eight stations along the avenue from the Education campus to NFC Solutions.
+ * Eight stations along the avenue from the Education campus to Naveen Solutions.
  * The stage names follow the journey Naveen described; replace the
  * [ADD …] lines with real specifics (years, first tools, milestones).
  */

@@ -27,7 +27,7 @@ export interface InteriorDef {
 }
 
 /**
- * The Project Studio: a glass-walled wing on the east side of the NFC
+ * The Project Studio: a glass-walled wing on the east side of the Naveen
  * Solutions office (room-local x 14 → 24). Projects are shown on screens along
  * its east wall, one bay per project, in PROJECTS order — adding a project
  * adds a bay (up to BAY_Z.length; extend the list for more).
@@ -53,7 +53,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     palette: { floor: 0xb58a62, wall: 0xf1e9dc, wainscot: 0x4f6b58, trim: 0xf7f2ea, ceiling: 0xf4efe6 },
   },
   office: {
-    id: 'office', name: 'NFC Solutions', subtitle: 'Chapter 04 · Where I work',
+    id: 'office', name: 'Naveen Solutions', subtitle: 'Chapter 04 · Where I work',
     origin: [320, 0, 0], width: 28, depth: 20, height: 3.8,
     outside: { pos: [13.6, 17], yaw: -Math.PI / 2 },
     establish: { position: [11.5, 3.3, 8.6], target: [-2, 1.2, -3.5] },
@@ -158,12 +158,12 @@ export interface InteriorPerson {
 const chairY = 0.47
 
 /** the window table in the café: Naveen sits on the far side, the visitor on the near side */
-export const CAFE_TABLE = { x: 3.4, z: -2.6, naveen: -0.78, visitor: 0.78 }
+export const CAFE_TABLE = { x: 3.4, z: -2.6, Naveen: -0.78, visitor: 0.78 }
 // desk chair sits 0.62 behind the desk edge, facing the monitor
 const deskSeat = (d: { x: number; z: number; facing: 1 | -1 }) => ({ x: d.x, z: d.z + d.facing * 0.72, yaw: d.facing > 0 ? Math.PI : 0 })
 
 export const INTERIOR_PEOPLE: InteriorPerson[] = [
-  // ── NFC Solutions office
+  // ── Naveen Solutions office
   // desks: heads-down work, with the odd glance at a phone or a stretch back
   ...([[0, 'Murali'], [2, 'Subbu'], [3, 'SaiB'], [4, 'Sai'], [7, 'Viswa Pani'], [8, undefined]] as const).map(([i, name], k) => {
     const s = deskSeat(OFFICE_DESKS[i])
@@ -231,7 +231,7 @@ export const INTERIOR_STORIES: InteriorStory[] = [
   { room: 'education', kind: 'certificates', name: 'Certificates', x: 10.2, z: 1.4, radius: 2.6, label: 'Press E to view certificates', cam: { position: [5.6, 2.1, 2.2], target: [12, 1.8, 1.4] } },
   { room: 'education', kind: 'growth', name: 'Notice Board', x: 7.6, z: 6.8, radius: 2.2, label: 'Press E to read the notices', cam: { position: [6.5, 2.1, 2.8], target: [7.8, 1.7, 9] } },
   { room: 'education', kind: 'bell', name: 'School Bell', x: -3.2, z: 7.0, radius: 1.8, label: 'Press E to ring the bell', cam: { position: [-1.2, 2.2, 4.4], target: [-3.4, 1.8, 7.6] } },
-  // NFC Solutions
+  // Naveen Solutions
   { room: 'office', kind: 'reception', name: 'Reception', x: -3.6, z: 6.4, radius: 2.6, label: 'Press E to explore my workplace', cam: { position: [0.5, 2.3, 8.4], target: [-8, 1.8, 4.5] } },
   { room: 'office', kind: 'workspace', name: 'My Desk', x: 11, z: 5.0, radius: 2.2, label: 'Press E to see my role', cam: { position: [8.8, 2.4, 7.4], target: [11, 1.0, 3.2] } },
   { room: 'office', kind: 'meeting', name: 'Meeting Room', x: -7.2, z: -3.8, radius: 2.4, label: 'Press E to join the meeting', cam: { position: [-4.2, 2.6, -2.0], target: [-9.8, 1.0, -7] } },

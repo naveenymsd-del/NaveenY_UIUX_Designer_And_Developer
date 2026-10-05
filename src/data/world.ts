@@ -10,7 +10,7 @@ import type { Place } from '@/stores/gameStore'
  * Order = the recommended story path. Visitors can still go anywhere.
  * To add a stop: add an entry (and, if it has a room, an INTERIORS entry).
  */
-export type StopId = 'start' | 'home' | 'education' | 'nfcSolutions' | 'projects' | 'designJourney' | 'contactCafe'
+export type StopId = 'start' | 'home' | 'education' | 'NaveenSolutions' | 'projects' | 'designJourney' | 'contactCafe'
 export type StopIcon = 'start' | 'home' | 'education' | 'office' | 'projects' | 'design' | 'cafe'
 
 export interface WorldStop {
@@ -51,7 +51,7 @@ export const WORLD_STOPS: WorldStop[] = [
     id: 'home', label: 'HOME', name: 'Home', line: 'Who am I?', icon: 'home', place: 'home',
     mapAt: [-15, -25], arrive: [-8.2, -25], yaw: -Math.PI / 2, room: { id: 'home', location: 'home' }, point: [-13, 3, -25],
     hello: 'This is me — my <b>tools & skills</b> are on the wall to the left.', suggest: 'Let’s start at <b>home</b> — come and meet me.',
-    words: '\\b(home|take me home|about|me|profile|who|naveen|skills?|tools?)\\b',
+    words: '\\b(home|take me home|about|me|profile|who|Naveen|skills?|tools?)\\b',
   },
   {
     id: 'education', label: 'EDUCATION', name: 'Education', line: 'Where did I start?', icon: 'education', place: 'education',
@@ -60,14 +60,14 @@ export const WORLD_STOPS: WorldStop[] = [
     words: '\\b(education|college|study|studies|school|universit(y|ies)|learn(ing)?|degree|class(room)?|career|journey|timeline)\\b',
   },
   {
-    id: 'nfcSolutions', label: 'NFC SOLUTIONS', name: 'NFC Solutions', line: 'Where did I become a professional?', icon: 'office', place: 'office',
-    mapAt: [21, 11], arrive: [10.8, 17], yaw: Math.PI / 2, room: { id: 'office', location: 'nfc' }, point: [18, 5, 17],
+    id: 'NaveenSolutions', label: 'Naveen SOLUTIONS', name: 'Naveen Solutions', line: 'Where did I become a professional?', icon: 'office', place: 'office',
+    mapAt: [21, 11], arrive: [10.8, 17], yaw: Math.PI / 2, room: { id: 'office', location: 'Naveen' }, point: [18, 5, 17],
     hello: 'Welcome to my <b>professional world</b>.', suggest: 'Let’s see where those skills became <b>real</b>.',
-    words: '\\b(office|company|nfc|work ?place|colleagues?|team|job)\\b',
+    words: '\\b(office|company|Naveen|work ?place|colleagues?|team|job)\\b',
   },
   {
     id: 'projects', label: 'PROJECTS', name: 'Projects', line: 'What have I designed?', icon: 'projects', place: 'projects',
-    mapAt: [23, 24], arrive: [10.8, 17], yaw: Math.PI / 2, room: { id: 'office', location: 'nfc', spot: 'studio' }, point: [18, 5, 17],
+    mapAt: [23, 24], arrive: [10.8, 17], yaw: Math.PI / 2, room: { id: 'office', location: 'Naveen', spot: 'studio' }, point: [18, 5, 17],
     hello: 'These are some of the <b>products</b> I’ve worked on.', suggest: 'Want to see what I’ve <b>designed</b>?',
     words: '\\b(projects?|show projects|work|case ?stud(y|ies)|portfolio|intellistaff|calmscient|ebounti|task|wastebeminerals)\\b',
   },
@@ -90,7 +90,7 @@ export const getStop = (id: StopId) => WORLD_STOPS.find((s) => s.id === id)!
 export const STORY_STOPS = WORLD_STOPS.filter((s) => s.place)
 
 /** Local command matching for the guide: most specific stops are tested first. */
-const MATCH_ORDER: StopId[] = ['projects', 'contactCafe', 'nfcSolutions', 'education', 'designJourney', 'home', 'start']
+const MATCH_ORDER: StopId[] = ['projects', 'contactCafe', 'NaveenSolutions', 'education', 'designJourney', 'home', 'start']
 export function matchStop(text: string): StopId | null {
   const t = text.toLowerCase().trim()
   if (!t) return null

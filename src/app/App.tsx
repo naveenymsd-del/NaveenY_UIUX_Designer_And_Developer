@@ -49,8 +49,8 @@ export function App() {
   useEffect(() => {
     const setLoading = useGameStore.getState().setLoading
     const fonts = Promise.all([
-      document.fonts.load('640 48px "Bricolage Grotesque Variable"', 'NAVEEN'),
-      document.fonts.load('800 48px "Bricolage Grotesque Variable"', 'NFC SOLUTIONS'),
+      document.fonts.load('640 48px "Bricolage Grotesque Variable"', 'Naveen'),
+      document.fonts.load('800 48px "Bricolage Grotesque Variable"', 'Naveen SOLUTIONS'),
       document.fonts.load('500 24px "Instrument Sans Variable"'),
     ])
       .then(() => document.fonts.ready)

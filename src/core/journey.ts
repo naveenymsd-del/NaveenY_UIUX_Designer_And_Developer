@@ -24,7 +24,7 @@ export const PLACE_POINTS: Record<Place, Vector3> = {
   home: pt('home'),
   education: pt('education'),
   career: new Vector3(6, 2, -40),
-  office: pt('nfcSolutions'),
+  office: pt('NaveenSolutions'),
   projects: pt('projects'),
   park: pt('designJourney'),
   ai: pt('designJourney'),
@@ -62,13 +62,13 @@ export function beginJourney(kind: 'street' | 'work') {
     g.setPhase('transition')
     return
   }
-  // "View my work": straight to the Project Studio inside NFC Solutions
+  // "View my work": straight to the Project Studio inside Naveen Solutions
   // mark the journey as started first so the street welcome lines don't queue up
   state.started = true
   state.lastDiscovery = performance.now()
   say('Let’s head to the <b>office</b>.', { ms: 2600, emote: 'point', point: PLACE_POINTS.office, interrupt: true })
   g.setPhase('playing')
-  window.setTimeout(() => enterInterior('office', 'nfc', { spot: 'studio', approachMs: 1900 }), 250)
+  window.setTimeout(() => enterInterior('office', 'Naveen', { spot: 'studio', approachMs: 1900 }), 250)
 }
 
 /** Quick travel to the projects from anywhere (menu, street pavilions, CTAs). */
@@ -81,7 +81,7 @@ export function goToProjects() {
   }
   g.closePanels()
   say('Let’s head to the <b>office</b> — the projects live there.', { ms: 3000, emote: 'point', point: PLACE_POINTS.office, interrupt: true })
-  enterInterior('office', g.interior ? undefined : 'nfc', { spot: 'studio', approachMs: g.interior ? 0 : 900, from: g.interior ?? undefined })
+  enterInterior('office', g.interior ? undefined : 'Naveen', { spot: 'studio', approachMs: g.interior ? 0 : 900, from: g.interior ?? undefined })
 }
 
 function discover(place: Place) {
@@ -112,7 +112,7 @@ const ZONE_LINES: Record<string, string> = {
   home: 'Step inside my <b>home</b> — this is who I am.',
   campus: 'That’s where the story <b>started</b>.',
   growth: 'Walk this path — it’s how I <b>grew</b>, one step at a time.',
-  nfc: 'Ready to see where the journey became <b>real</b>?',
+  Naveen: 'Ready to see where the journey became <b>real</b>?',
   cafe: 'The <b>Contact Café</b> — the last stop. Come in.',
 }
 

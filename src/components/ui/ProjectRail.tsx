@@ -24,7 +24,7 @@ export function ProjectRail() {
             tabIndex={visible ? 0 : -1}
             onClick={() => { soundManager.play('open'); navigate('/street'); window.setTimeout(goToProjects, 400) }}
           >
-            See them in the Project Studio at NFC Solutions →
+            See them in the Project Studio at Naveen Solutions →
           </button>
         </div>
       )}

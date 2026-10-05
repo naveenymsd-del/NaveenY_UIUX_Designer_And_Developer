@@ -99,7 +99,7 @@ export function LoadingScreen() {
         <div className="ui-loading__guide" aria-hidden="true">
           <CompanionGlyph awake={ready} />
         </div>
-        <p className="ui-loading__brand">NAVEEN</p>
+        <p className="ui-loading__brand">Naveen</p>
         <p className="ui-loading__title">Interactive portfolio</p>
         <p className="ui-loading__lead">Preparing your journey…</p>
         <div className="ui-loading__meter" aria-hidden="true">

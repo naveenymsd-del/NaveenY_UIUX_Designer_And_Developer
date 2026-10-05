@@ -1,4 +1,4 @@
-// "View my work" → NFC Solutions Project Studio → open a project → tabs → close → back outside.
+// "View my work" → Naveen Solutions Project Studio → open a project → tabs → close → back outside.
 import { chromium } from 'playwright-core'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const vp = process.argv[2] ? process.argv[2].split('x').map(Number) : [1440, 900]

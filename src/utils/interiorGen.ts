@@ -199,7 +199,7 @@ function office(ctx: GenContext, r: InteriorDef) {
   chair(b, -6.2, 5.2, 0, graphite, true)
   b.push(-hw + 0.08, 0, 5.5, Math.PI / 2)
   for (let i = 0; i < 24; i++) b.box(oak, [-3 + i * 0.26, 1.7, 0.02], [0.18, 3.4, 0.05], { cast: false })
-  addSign(ctx, 'NFC SOLUTIONS', { bg: '#2e3035', fg: '#ffffff', shape: 'rect', weight: 700 }, [0, 2.2, 0.08], 4.2, 0.62)
+  addSign(ctx, 'Naveen SOLUTIONS', { bg: '#2e3035', fg: '#ffffff', shape: 'rect', weight: 700 }, [0, 2.2, 0.08], 4.2, 0.62)
   b.pop()
   plant(b, rng, -hw + 0.8, 8.8, 1.3)
   plant(b, rng, -hw + 0.8, 2.2, 1.1)
@@ -454,7 +454,7 @@ function cafe(ctx: GenContext, r: InteriorDef) {
   b.add('cyl8', 0x2b2e34, [tx, 0.37, tz], [0.08, 0.72, 0.08], { cast: false })
   b.add('cyl', 0x2b2e34, [tx, 0.02, tz], [0.5, 0.03, 0.5], { cast: false })
   b.cylCollider([tx, 0, tz], 0.5, 0.78)
-  chair(b, tx, tz + CAFE_TABLE.naveen, 0, walnut)
+  chair(b, tx, tz + CAFE_TABLE.Naveen, 0, walnut)
   chair(b, tx, tz + CAFE_TABLE.visitor, Math.PI, walnut)
   // two coffees and a little plant on the table
   for (const dz of [-0.2, 0.22]) {

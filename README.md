@@ -1,6 +1,6 @@
 # Naveen — interactive 3D portfolio (Mindscape Avenue)
 
-A playable portfolio neighbourhood for the browser. It opens with a cinematic flight: the city emerges from a morning haze, the orange AI companion wakes, and the camera glides under the welcome arch to the avatar. From there you walk the street in third person. The places are the **Education** campus, **My Home** (profile), the **Design Park** (design process, AI workflow and activities), and the **NFC Solutions** office, where colleagues work and the **Project Studio** holds the projects. The journey ends at **The Lookout**, with thanks, contact links and feedback. Everything is original, procedural geometry. You can swap any piece for your own GLB or audio without touching gameplay code.
+A playable portfolio neighbourhood for the browser. It opens with a cinematic flight: the city emerges from a morning haze, the orange AI companion wakes, and the camera glides under the welcome arch to the avatar. From there you walk the street in third person. The places are the **Education** campus, **My Home** (profile), the **Design Park** (design process, AI workflow and activities), and the **Naveen Solutions** office, where colleagues work and the **Project Studio** holds the projects. The journey ends at **The Lookout**, with thanks, contact links and feedback. Everything is original, procedural geometry. You can swap any piece for your own GLB or audio without touching gameplay code.
 
 ```bash
 npm install
@@ -30,7 +30,7 @@ npm run preview    # serve the production build
 - START
 - 01 Home
 - 02 Education
-- 03 NFC Solutions
+- 03 Naveen Solutions
 - 04 Projects (the Project Studio inside the office)
 - 05 Design Journey
 - 06 Contact Café
@@ -65,7 +65,7 @@ The world tells one story in ten chapters, each arriving as you reach its place:
 - 02 Where I started (campus)
 - 03 What I learned (classroom)
 - 04 How I grew (the Growth Walk)
-- 05 Real products (NFC Solutions)
+- 05 Real products (Naveen Solutions)
 - 06 My professional world (the office)
 - 07 How I design (Design Park)
 - 08 How I use AI (AI area)
@@ -95,7 +95,7 @@ Growth Walk positions are `GROWTH_WALK` in `src/data/locations.ts`.
 1. **Loading** shows a dark skyline whose windows switch on as the world builds, with staged messages ("Preparing the people…") and "Ready.".
 2. **Intro** is a cinematic flight (about 16 s, with **Skip intro** or Esc) that ends on the hero: name, one line, **Start exploring** / **View my work**.
 3. **Start exploring** puts you on the street. The companion greets you in two or three short lines and suggests where to begin.
-4. **View my work** takes you straight to the Project Studio inside NFC Solutions.
+4. **View my work** takes you straight to the Project Studio inside Naveen Solutions.
 5. As you explore, the companion speaks only at meaningful moments: arriving somewhere, opening a project, and one rare nudge after a long quiet spell.
 
 ## Routes and modes
@@ -198,11 +198,11 @@ All personal text lives in **`src/data/portfolioContent.ts`**. Nothing in it is 
 - `PROFILE`: name, role, tagline
 - `CONTACT`: email, LinkedIn, resume, portfolio links (any placeholder shows as "coming soon", never as a broken link)
 - `EDUCATION_TIMELINE` / `EDUCATION_STORIES`: degree, institution, years, certificates
-- `OFFICE_STORIES`: role, responsibilities and team at NFC Solutions
+- `OFFICE_STORIES`: role, responsibilities and team at Naveen Solutions
 - `HOME_STORIES`: about me, personal journey, interests
 - `DESIGN_PROCESS` (steps 01–09), `AI_WORKFLOW`, `ACTIVITY_STORIES`: the Design Park texts
 
-The NFC Solutions building uses text signage only. To use the official logo, add it and reference it in `landmarkGen.genOffice` / `interiorGen`, keeping its aspect ratio.
+The Naveen Solutions building uses text signage only. To use the official logo, add it and reference it in `landmarkGen.genOffice` / `interiorGen`, keeping its aspect ratio.
 
 ### Interiors
 

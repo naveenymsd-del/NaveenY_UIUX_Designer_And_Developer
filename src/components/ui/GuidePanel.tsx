@@ -8,7 +8,7 @@ import { STORY_STOPS } from '@/data/world'
 import { STOP_ICONS } from './stopIcons'
 
 const QUICK = STORY_STOPS
-const HINTS = ['take me home', 'show my education', 'NFC', 'show projects', 'how do you design', 'let’s connect']
+const HINTS = ['take me home', 'show my education', 'Naveen', 'show projects', 'how do you design', 'let’s connect']
 
 /**
  * The companion's navigator (not a chatbot): quick destinations plus a text
@@ -39,7 +39,7 @@ export function GuidePanel() {
     const dest = matchCommand(text)
     if (dest) return go(dest)
     setMiss(true)
-    say('I can take you <b>home</b>, to <b>education</b>, <b>NFC Solutions</b>, the <b>projects</b>, the <b>Design Journey</b> or the <b>Contact Café</b>.', { ms: 4200, emote: 'think', interrupt: true })
+    say('I can take you <b>home</b>, to <b>education</b>, <b>Naveen Solutions</b>, the <b>projects</b>, the <b>Design Journey</b> or the <b>Contact Café</b>.', { ms: 4200, emote: 'think', interrupt: true })
   }
 
   return (

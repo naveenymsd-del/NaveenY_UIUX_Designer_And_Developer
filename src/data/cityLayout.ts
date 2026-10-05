@@ -155,7 +155,7 @@ const handPlaced: BuildingDef[] = [
   B(36, -12.5, 12, 9, 'S', 'corner', 3, { palette: 1, shop: 'plum' }),
 
   // ── Café block (x 5..46, z 4..46)
-  B(23, 17, 18, 14, 'W', 'special', 4, { special: 'office', id: 'nfc-office' }),
+  B(23, 17, 18, 14, 'W', 'special', 4, { special: 'office', id: 'Naveen-office' }),
   B(37, 13, 10, 10, 'N', 'apartment', 4, { palette: 11, shop: 'sol' }),
   B(15, 30, 8, 12, 'W', 'shop', 2, { shop: 'kiln', palette: 1 }),
   B(15, 38, 12, 8, 'S', 'corner', 3, { shop: 'peach', palette: 5 }),

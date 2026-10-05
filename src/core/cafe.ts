@@ -16,7 +16,7 @@ export async function sitAtCafe(locationId: string) {
   soundManager.play('open', { volume: 0.5 })
   g.setState({ fade: true })
   await wait(380)
-  const [x, , z] = roomToWorld('cafe', CAFE_TABLE.x, CAFE_TABLE.z + CAFE_TABLE.naveen)
+  const [x, , z] = roomToWorld('cafe', CAFE_TABLE.x, CAFE_TABLE.z + CAFE_TABLE.Naveen)
   requestTeleport(new Vector3(x, 0.4, z), 0)
   playerRuntime.seated = true
   useGameStore.getState().openLocation(locationId)

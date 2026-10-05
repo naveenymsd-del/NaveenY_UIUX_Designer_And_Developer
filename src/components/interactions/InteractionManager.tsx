@@ -129,7 +129,7 @@ export function activateLocation(loc: InteractiveDef) {
       soundManager.play('bell')
       storyEvents.bellAt = performance.now()
       // the bell rings in the next chapter
-      say('Ready for the next chapter? <b>NFC Solutions</b> is where it became real work.', { ms: 4200, emote: 'point', point: new Vector3(18, 5, 17), interrupt: true })
+      say('Ready for the next chapter? <b>Naveen Solutions</b> is where it became real work.', { ms: 4200, emote: 'point', point: new Vector3(18, 5, 17), interrupt: true })
       break
     default:
       soundManager.play('open')

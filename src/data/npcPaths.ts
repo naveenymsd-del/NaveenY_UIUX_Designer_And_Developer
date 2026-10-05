@@ -91,7 +91,7 @@ export const WANDER_AREAS = [
 export const SIT_HINTS: [number, number][] = [
   [19 + 6.8 * Math.cos(Math.PI / 6), -25 + 6.8 * Math.sin(Math.PI / 6)],
   [19 + 6.8 * Math.cos((7 * Math.PI) / 6), -25 + 6.8 * Math.sin((7 * Math.PI) / 6)],
-  [10.6, 13], [10.6, 21], // NFC Solutions forecourt benches
+  [10.6, 13], [10.6, 21], // Naveen Solutions forecourt benches
   [-11.6, -56.3], [11.6, -56.3], // campus benches
   [-35, 27.6], [-6.4, 72.5],
 ]
@@ -118,7 +118,7 @@ export const STANDERS: StandDef[] = [
   // students chatting outside the campus
   { pos: [-3.4, -54.9], yaw: 1.9, pose: 'talk', pair: 7 },
   { pos: [-2.3, -55.4], yaw: -1.2, pose: 'talk', pair: 6 },
-  // colleagues on the NFC Solutions forecourt
+  // colleagues on the Naveen Solutions forecourt
   { pos: [12.4, 15.0], yaw: 2.2, pose: 'coffee', prop: 'cup' },
   { pos: [12.2, 19.6], yaw: -1.9, pose: 'phone', prop: 'phone' },
   // reading in the Design Park

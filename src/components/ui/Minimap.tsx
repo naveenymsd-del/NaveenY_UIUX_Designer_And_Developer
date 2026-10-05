@@ -13,7 +13,7 @@ const ROUTE = WORLD_STOPS.map((st) => st.mapAt)
 function currentStop(interior: string | null, x: number, z: number): StopId | null {
   if (interior === 'home') return 'home'
   if (interior === 'education') return 'education'
-  if (interior === 'office') return inStudio(x, z) ? 'projects' : 'nfcSolutions'
+  if (interior === 'office') return inStudio(x, z) ? 'projects' : 'NaveenSolutions'
   if (interior === 'cafe') return 'contactCafe'
   if (x > -43 && x < -8 && z > 7 && z < 43) return 'designJourney'
   for (const st of WORLD_STOPS) if (Math.hypot(x - st.arrive[0], z - st.arrive[1]) < 7) return st.id
