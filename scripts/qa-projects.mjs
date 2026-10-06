@@ -21,10 +21,12 @@ const pos = () => p.evaluate(() => ({ x: window.__mindscape?.x ?? 0, z: window._
 // mirrors src/data/projects.ts (order) and STUDIO bays in src/data/interiors.ts, office origin x = 320
 const PROJECTS = [
   { title: 'TASK', proto: 'vUIgk3l5i7TXJwCPXHq7xu', bay: [21.6, -6.2, Math.PI / 2] },
-  { title: 'KidPool', proto: 'UkougomRKZEjdNS0EC1Twf', bay: [21.6, -2.8, Math.PI / 2] },
-  { title: 'Spyder', proto: 'i852L2XjU3cEM6LpoRVOWN', bay: [21.6, 0.6, Math.PI / 2] },
+  { title: 'Calmscient', proto: '8JRaJprIyCtDy7zfMsOuSs', bay: [21.6, -2.8, Math.PI / 2] },
+  { title: 'KidPool', proto: 'UkougomRKZEjdNS0EC1Twf', bay: [21.6, 0.6, Math.PI / 2] },
+  { title: 'INTA', proto: 'QCaAaghXmnuMOjWVpdXSUB', bay: [21.6, 4.0, Math.PI / 2] },
+  { title: 'Spyder', proto: 'i852L2XjU3cEM6LpoRVOWN', bay: [21.6, 7.4, Math.PI / 2] },
 ]
-const REMOVED = ['IntelliStaff', 'Ebounti', 'WasteBeMinerals', 'ServiceNow', 'Calmscient', 'INTA']
+const REMOVED = ['IntelliStaff', 'Ebounti', 'WasteBeMinerals', 'ServiceNow']
 
 await p.goto(`${base}/street?debug${mobile ? '' : '&desktop'}`)
 await p.waitForFunction(() => window.__intro && window.__intro.running, null, { timeout: 90000 })
@@ -100,7 +102,7 @@ for (let k = 0; k < PROJECTS.length; k++) {
   await sleep(2200)
   seen.push(await title())
 }
-expect(seen.join('>') === 'KidPool>Spyder>TASK', `next cycles ${seen.join(' > ')}`)
+expect(seen.join('>') === 'Calmscient>KidPool>INTA>Spyder>TASK', `next cycles ${seen.join(' > ')}`)
 await p.getByRole('button', { name: /Previous project/ }).click()
 await sleep(2200)
 expect((await title()) === 'Spyder', `previous from TASK → "${await title()}"`)
@@ -115,8 +117,8 @@ const ask = async (text) => {
   await p.keyboard.press('Enter')
 }
 const chips = await p.evaluate(() => [...document.querySelectorAll('.ui-guide__projects button')].map((b) => b.textContent.replace(/^\d+/, '')))
-expect(chips.join(',') === 'TASK,KidPool,Spyder', `guide project buttons: ${chips.join(', ')}`)
-for (const cmd of ['Show TASK', 'Open KidPool', 'show spyder']) {
+expect(chips.join(',') === 'TASK,Calmscient,KidPool,INTA,Spyder', `guide project buttons: ${chips.join(', ')}`)
+for (const cmd of ['Show TASK', 'Open Calmscient', 'Open KidPool', 'Show INTA', 'show spyder']) {
   await ask(cmd)
   await sleep(2800)
   const t = await title()
@@ -124,7 +126,7 @@ for (const cmd of ['Show TASK', 'Open KidPool', 'show spyder']) {
   await p.keyboard.press('Escape')
   await sleep(1400)
 }
-for (const gone of ['Show IntelliStaff', 'Open Calmscient', 'show ServiceNow']) {
+for (const gone of ['Show IntelliStaff', 'Open Ebounti', 'show ServiceNow']) {
   await ask(gone)
   await sleep(1500)
   expect((await title()) === null, `guide "${gone}" opens nothing`)

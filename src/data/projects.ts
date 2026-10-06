@@ -88,6 +88,47 @@ export const PROJECT_CONTENT: ProjectContent[] = [
     accent: '#d9881a',
   },
   {
+    id: 'calmscient',
+    title: 'Calmscient',
+    category: 'Mental Health & Wellness · Mobile App',
+    description: 'A mental wellness platform: a mobile app for daily check-ins on mood, sleep, medication and symptoms, with admin dashboards behind it.',
+    role: 'UI/UX Designer, NFC Solutions',
+    year: 'Aug 2024 – Dec 2025',
+    tools: ['Figma'],
+    overview: [
+      'Calmscient is a mental health and wellness platform. Its mobile app gives people a short daily routine for looking after themselves — checking in on mood, sleep and medication, logging symptoms, doing guided exercises and keeping track of their own records.',
+      'I worked on its UX and UI at NFC Solutions from August 2024 to December 2025: user flows for key experiences such as mood tracking and symptom logging, wireframes and high-fidelity UI for the mobile app, and administrative dashboards that follow the same interaction patterns.',
+      'The home screen greets the user by name and leads into one-question check-ins — “How is your mood right now?”, “How many hours did you sleep last night?”, “Did you take your meds this morning?” — alongside a weekly summary, medical records, favourite exercises and a “Need to talk with someone?” shortcut, with journey, exercise and reward sections in the navigation.',
+      'The visual language is deliberately calm: a soft lavender-and-purple palette with a warm coral accent, so the app feels comforting rather than clinical.',
+    ],
+    challenges: [
+      {
+        title: 'Checking in without it feeling like a chore',
+        description: 'Daily tracking only works if it is quick. Each check-in is a single question with a simple answer and a skip option, so mood, sleep or medication can be recorded in a few taps.',
+      },
+      {
+        title: 'A calm, accessible interface',
+        description: 'People may open the app when they are anxious or low. Screens stay uncluttered, the palette is soft and the type readable, so everyday information never feels alarming.',
+      },
+      {
+        title: 'Support within reach',
+        description: 'Alongside tracking, the home screen keeps “Need to talk with someone?” visible, so help is one tap away rather than buried in a menu.',
+      },
+      {
+        title: 'Making progress visible',
+        description: 'A weekly summary, medical records and a journey and rewards section turn individual entries into something a user can look back on and feel encouraged by.',
+      },
+      {
+        title: 'One system for app and admin',
+        description: 'The mobile app and the administrative dashboards share consistent interaction patterns, so the platform behaves predictably for the people using it and the team managing it.',
+      },
+    ],
+    prototypeUrl:
+      'https://www.figma.com/proto/8JRaJprIyCtDy7zfMsOuSs/UI-UX-MOBILE-DESIGNS?node-id=48-5821&viewport=1583%2C-1322%2C0.2&t=xXUuRp9uhQlCeCK1-1&scaling=scale-down&content-scaling=fixed&starting-point-node-id=48%3A5821&show-proto-sidebar=1&page-id=0%3A1',
+    aliases: ['calm scient', 'mental health', 'wellness'],
+    accent: '#6e6bb3',
+  },
+  {
     id: 'kidpool',
     title: 'KidPool',
     category: 'School Carpooling · Mobile App',
@@ -130,6 +171,43 @@ export const PROJECT_CONTENT: ProjectContent[] = [
     accent: '#6f9a12',
   },
   {
+    id: 'inta',
+    title: 'INTA',
+    category: 'Professional Association · Website',
+    description: 'A website design for the International Trademark Association — the global network of brand owners and IP professionals — covering its events, resources, news and an AI assistant.',
+    overview: [
+      'INTA, the International Trademark Association, is a global network of brand owners and intellectual-property professionals. Its website has to serve members and newcomers alike: explaining what the association does, promoting its events and giving practitioners a way into a large library of resources.',
+      'The design covers a splash screen and the Home, About Us, Events, News and Resources pages, plus “Ask INTA”, an AI chat assistant. Home introduces the association’s work — trademark strategy and protection, legal resources and research, education and training, networking, anti-counterfeiting and policy — with a call to schedule a consultation.',
+      'Events presents programmes such as the Annual Meeting, the TMAP Meeting and IP workshops, and Resources and the footer lead to practice guides, webcasts, CLE/CPD, the career centre, the member directory and The Trademark Reporter.',
+    ],
+    challenges: [
+      {
+        title: 'One site, many kinds of professional',
+        description: 'Trademark administrators, paralegals, young practitioners, attorneys and business professionals all arrive with different needs. Home groups the association’s work into six clear areas so visitors find their interest first.',
+      },
+      {
+        title: 'Events with a lot to say',
+        description: 'Each programme has its own audience, location and registration timing. The Events page gives every event its own summary, so visitors can tell quickly which one is meant for them.',
+      },
+      {
+        title: 'A deep resource library',
+        description: 'Practice guides, webcasts, CLE/CPD, publications, the career centre and the member directory are a lot to navigate. The Resources page and a structured footer give each a direct, predictable path.',
+      },
+      {
+        title: 'Answering questions directly',
+        description: '“Ask INTA” lets visitors ask questions such as how to pay for membership, with suggested topics — about INTA, upcoming events, membership benefits, resources, career development, support — instead of searching page by page.',
+      },
+      {
+        title: 'Credibility for an expert audience',
+        description: 'News, advocacy and policy work are given prominent space, so the site reflects the authority a professional association needs with the people it represents.',
+      },
+    ],
+    prototypeUrl:
+      'https://www.figma.com/proto/QCaAaghXmnuMOjWVpdXSUB/INTADesign?node-id=17616-105510&viewport=27096%2C-7560%2C0.3&t=AvpwDXISkSBHOWm3-1&scaling=scale-down-width&content-scaling=fixed&starting-point-node-id=17616%3A105510&page-id=0%3A1',
+    aliases: ['trademark', 'international trademark association'],
+    accent: '#1f5e8c',
+  },
+  {
     id: 'spyder',
     title: 'Spyder',
     category: 'Accounting Services Website · Design Assignment',
@@ -165,27 +243,6 @@ export const PROJECT_CONTENT: ProjectContent[] = [
       'https://www.figma.com/proto/i852L2XjU3cEM6LpoRVOWN/UI-UX-Web-Designs?page-id=0%3A1&node-id=6-6031&viewport=-1230%2C107%2C0.13&t=veHL1rWqirIBKMHR-1&scaling=scale-down&content-scaling=fixed&starting-point-node-id=6%3A6031&show-proto-sidebar=1',
     aliases: ['ghc', 'accounting'],
     accent: '#2347b5',
-  },
-]
-
-/**
- * Prototypes the connected Figma account can't open yet. They stay out of the
- * portfolio until their files are shared and the content is written from them.
- */
-export const PENDING_PROJECTS: { id: string; title: string; prototypeUrl: string; reason: string }[] = [
-  {
-    id: 'calmscient',
-    title: 'Calmscient',
-    prototypeUrl:
-      'https://www.figma.com/proto/8JRaJprIyCtDy7zfMsOuSs/UI-UX-MOBILE-DESIGNS?node-id=48-5821&viewport=1583%2C-1322%2C0.2&t=xXUuRp9uhQlCeCK1-1&scaling=scale-down&content-scaling=fixed&starting-point-node-id=48%3A5821&show-proto-sidebar=1&page-id=0%3A1',
-    reason: 'Figma file not accessible to the connected account — share it, then write Overview and Challenges from the prototype.',
-  },
-  {
-    id: 'inta',
-    title: 'INTA',
-    prototypeUrl:
-      'https://www.figma.com/proto/QCaAaghXmnuMOjWVpdXSUB/INTADesign?node-id=17616-105510&viewport=27096%2C-7560%2C0.3&t=AvpwDXISkSBHOWm3-1&scaling=scale-down-width&content-scaling=fixed&starting-point-node-id=17616%3A105510&page-id=0%3A1',
-    reason: 'Figma file not accessible to the connected account — share it, then write Overview and Challenges from the prototype.',
   },
 ]
 
@@ -246,10 +303,3 @@ export function matchProject(text: string): ProjectDef | null {
   return null
 }
 
-/** development-time note of prototypes waiting to be verified */
-export function reportPendingProjects() {
-  if (!import.meta.env.DEV || !PENDING_PROJECTS.length) return
-  console.groupCollapsed(`[projects] ${PENDING_PROJECTS.length} prototype(s) waiting for Figma access — not shown`)
-  for (const p of PENDING_PROJECTS) console.info(`${p.title}: ${p.reason}`)
-  console.groupEnd()
-}

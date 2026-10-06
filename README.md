@@ -155,7 +155,7 @@ Projects live in **`src/data/projects.ts`** (`PROJECT_CONTENT`). Each entry auto
 - a case-study presentation (01 Overview · 02 Challenges, with an "Open prototype" link next to the title);
 - a pavilion in the `/projects` overview.
 
-Only projects with a verified Figma prototype belong in this file (`prototypeUrl`), and Overview and Challenges are written from that prototype. Prototypes waiting for Figma access are listed in `PENDING_PROJECTS` and are not shown. The studio fits five bays on its east wall and continues onto the back wall. Extend `STUDIO.BAY_Z` / `BACK_BAYS` in `src/data/interiors.ts` for more.
+Only projects with a verified Figma prototype belong in this file (`prototypeUrl`), and Overview and Challenges are written from that prototype. The studio fits five bays on its east wall and continues onto the back wall. Extend `STUDIO.BAY_Z` / `BACK_BAYS` in `src/data/interiors.ts` for more.
 
 ## Colleagues
 
