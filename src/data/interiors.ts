@@ -29,8 +29,9 @@ export interface InteriorDef {
 /**
  * The Project Studio: a glass-walled wing on the east side of the Naveen
  * Solutions office (room-local x 14 → 24). Projects are shown on screens along
- * its east wall, one bay per project, in PROJECTS order — adding a project
- * adds a bay (up to BAY_Z.length; extend the list for more).
+ * its east wall and then the back (north) wall, one bay per project, in
+ * PROJECTS order — adding a project adds a bay (up to BAY_Z + BACK_BAYS;
+ * extend the lists for more).
  */
 export const STUDIO = {
   x0: 14,
@@ -39,9 +40,11 @@ export const STUDIO = {
   door: [4.4, 8.4] as [number, number],
   screenX: 23.9,
   standX: 21.6,
-  BAY_Z: [-7.6, -3.9, -0.2, 3.5, 7.2] as number[],
-  /** a fifth+ bay continues on the back (north) wall */
-  BACK_BAYS: [[17.2, -9.9], [20.4, -9.9]] as [number, number][],
+  BAY_Z: [-6.2, -2.8, 0.6, 4.0, 7.4] as number[],
+  /** the sixth+ bays continue on the back (north) wall */
+  BACK_BAYS: [[15.6, -9.9], [18.5, -9.9], [21.3, -9.9]] as [number, number][],
+  /** standing distance in front of a back-wall screen (keeps clear of the corner bay) */
+  backStand: 2.0,
 }
 
 export const INTERIORS: Record<InteriorId, InteriorDef> = {
@@ -121,7 +124,7 @@ export function studioBay(i: number) {
     return { screen: [STUDIO.screenX, z] as [number, number], yaw: -Math.PI / 2, stand: [STUDIO.standX, z] as [number, number] }
   }
   const [x, z] = STUDIO.BACK_BAYS[(i - STUDIO.BAY_Z.length) % STUDIO.BACK_BAYS.length]
-  return { screen: [x, z] as [number, number], yaw: 0, stand: [x, z + 2.3] as [number, number] }
+  return { screen: [x, z] as [number, number], yaw: 0, stand: [x, z + STUDIO.backStand] as [number, number] }
 }
 
 // ── furniture layouts (room-local) ─────────────────────────────────────────

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { say } from '@/core/companion'
-import { type Destination, matchCommand, navigateToLocation } from '@/core/navigation'
+import { type Destination, matchCommand, navigateToLocation, navigateToProject } from '@/core/navigation'
+import { matchProject, PROJECTS } from '@/data/projects'
 import { soundManager } from '@/core/sound/SoundManager'
 import { useUIStore } from '@/stores/uiStore'
 import { CompanionGlyph } from './CompanionGlyph'
@@ -8,7 +9,7 @@ import { STORY_STOPS } from '@/data/world'
 import { STOP_ICONS } from './stopIcons'
 
 const QUICK = STORY_STOPS
-const HINTS = ['take me home', 'show my education', 'Naveen', 'show projects', 'how do you design', 'let’s connect']
+const HINTS = ['take me home', 'show my education', 'show projects', 'show TASK', 'how do you design', 'let’s connect']
 
 /**
  * The companion's navigator (not a chatbot): quick destinations plus a text
@@ -35,11 +36,19 @@ export function GuidePanel() {
     setOpen(false)
     navigateToLocation(dest)
   }
+  const goProject = (id: string) => {
+    soundManager.play('click')
+    setOpen(false)
+    void navigateToProject(id)
+  }
   const submit = () => {
+    // a project name wins over the general "projects" stop ("show TASK")
+    const project = matchProject(text)
+    if (project) return goProject(project.id)
     const dest = matchCommand(text)
     if (dest) return go(dest)
     setMiss(true)
-    say('I can take you <b>home</b>, to <b>education</b>, <b>Naveen Solutions</b>, the <b>projects</b>, the <b>Design Journey</b> or the <b>Contact Café</b>.', { ms: 4200, emote: 'think', interrupt: true })
+    say('I can take you <b>home</b>, to <b>education</b>, <b>Naveen Solutions</b>, the <b>projects</b> (or one by name), the <b>Design Journey</b> or the <b>Contact Café</b>.', { ms: 4200, emote: 'think', interrupt: true })
   }
 
   return (
@@ -59,6 +68,15 @@ export function GuidePanel() {
           <button key={q.id} onClick={() => go(q.id)} tabIndex={open ? 0 : -1}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d={STOP_ICONS[q.icon]} /></svg>
             {q.name}
+          </button>
+        ))}
+      </div>
+      <p className="ui-guide__label">Jump to a project</p>
+      <div className="ui-guide__projects">
+        {PROJECTS.map((p) => (
+          <button key={p.id} onClick={() => goProject(p.id)} tabIndex={open ? 0 : -1} style={{ ['--accent' as string]: p.accent }}>
+            <span aria-hidden="true">{p.number}</span>
+            {p.title}
           </button>
         ))}
       </div>

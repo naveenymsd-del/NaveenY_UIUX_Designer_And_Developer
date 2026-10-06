@@ -1,21 +1,16 @@
-import { asset } from '@/utils/basePath'
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Vector3 } from 'three'
 import { navigate } from '@/app/routes'
 import { requestTeleport } from '@/core/runtime'
 import { soundManager } from '@/core/sound/SoundManager'
-import { getProject, isPlaceholder, PROJECTS, type ProjectDef } from '@/data/projects'
+import { getProject, PROJECTS, type ProjectDef } from '@/data/projects'
 import { useGameStore } from '@/stores/gameStore'
-import { Rich } from './Rich'
-
-const TABS = ['Overview', 'Challenge', 'Process', 'UI', 'Prototype', 'Outcome'] as const
-type Tab = (typeof TABS)[number]
 
 /**
  * Case-study presentation. It slides in beside the project's studio screen
- * (the camera frames the screen on the left), reads like an editorial spread
- * and only shows what the project data actually contains — unknown facts are
- * highlighted placeholders.
+ * (the camera frames the screen on the left, the rest of the room dims) and
+ * reads as one editorial page: the title with its prototype link, then
+ * 01 Overview and 02 Challenges.
  */
 export function ProjectPanel() {
   const id = useGameStore((s) => s.activeProjectId)
@@ -25,17 +20,12 @@ export function ProjectPanel() {
   const close = useGameStore((s) => s.closePanels)
   const [shown, setShown] = useState<ProjectDef | null>(null)
   const [visible, setVisible] = useState(false)
-  const [tab, setTab] = useState<Tab>('Overview')
   const closeRef = useRef<HTMLButtonElement>(null)
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   useEffect(() => {
     if (id) {
       setVisible(false)
-      const t0 = setTimeout(() => {
-        setShown(getProject(id))
-        setTab('Overview')
-      }, shown ? 200 : 0)
+      const t0 = setTimeout(() => setShown(getProject(id)), shown ? 200 : 0)
       const t = setTimeout(() => {
         setVisible(true)
         closeRef.current?.focus({ preventScroll: true })
@@ -50,10 +40,11 @@ export function ProjectPanel() {
     return () => clearTimeout(t)
   }, [id])
 
-  if (!shown) return null
+  if (!shown) return <div className="ui-case-scrim" aria-hidden="true" />
   const idx = PROJECTS.findIndex((p) => p.id === shown.id)
   const prev = PROJECTS[(idx - 1 + PROJECTS.length) % PROJECTS.length]
   const next = PROJECTS[(idx + 1) % PROJECTS.length]
+  const many = PROJECTS.length > 1
   const step = (p: ProjectDef) => {
     soundManager.play('click')
     open(p.id)
@@ -69,145 +60,78 @@ export function ProjectPanel() {
     const [x, , z] = shown.position
     requestTeleport(new Vector3(x + Math.sin(shown.yaw) * 3.4, 0.6, z + Math.cos(shown.yaw) * 3.4), shown.yaw + Math.PI)
   }
-  const pick = (t: Tab) => {
-    if (t === tab) return
-    soundManager.play('hover')
-    setTab(t)
-  }
-  const onTabKey = (e: KeyboardEvent) => {
-    const i = TABS.indexOf(tab)
-    let n = i
-    if (e.key === 'ArrowRight') n = (i + 1) % TABS.length
-    else if (e.key === 'ArrowLeft') n = (i - 1 + TABS.length) % TABS.length
-    else if (e.key === 'Home') n = 0
-    else if (e.key === 'End') n = TABS.length - 1
-    else return
-    e.preventDefault()
-    pick(TABS[n])
-    tabRefs.current[n]?.focus()
-  }
-  const cs = shown.caseStudy
-  const where = interior === 'office' ? 'Project Studio · Naveen Solutions' : 'Project pavilion'
+  const inStudio = interior === 'office'
+  const where = inStudio ? 'Project Studio · Naveen Solutions' : 'Project pavilion'
+  const meta = [shown.role, shown.year, shown.tools?.join(' · ')].filter(Boolean)
 
   return (
-    <aside className={`ui-case ${visible ? 'is-visible' : ''}`} role="dialog" aria-labelledby="case-title" style={{ ['--accent' as string]: shown.accent }}>
-      <header className="ui-case__head">
-        <p className="ui-case__kicker">
-          <span className="ui-case__num">{shown.number}</span>
-          {where}
-        </p>
-        <button ref={closeRef} className="ui-case__close" onClick={onClose}>
-          Close project
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
-        </button>
-      </header>
-      <h2 id="case-title" className="ui-case__title">{shown.title}</h2>
-      <p className="ui-case__cat">
-        <Rich text={shown.category} />
-        <span aria-hidden="true"> · </span>
-        <Rich text={shown.role} />
-        {shown.year && <><span aria-hidden="true"> · </span>{shown.year}</>}
-      </p>
-
-      <div className="ui-case__tabs" role="tablist" aria-label={`${shown.title} case study`} onKeyDown={onTabKey}>
-        {TABS.map((t, i) => (
-          <button
-            key={t}
-            ref={(el) => { tabRefs.current[i] = el }}
-            role="tab"
-            id={`case-tab-${t}`}
-            aria-selected={tab === t}
-            aria-controls="case-body"
-            tabIndex={tab === t ? 0 : -1}
-            className={tab === t ? 'is-active' : ''}
-            onClick={() => pick(t)}
-          >
-            {t}
+    <>
+      <div className={`ui-case-scrim ${visible ? 'is-visible' : ''}`} aria-hidden="true" />
+      <aside
+        className={`ui-case ui-case--story ${visible ? 'is-visible' : ''}`}
+        role="dialog"
+        aria-labelledby="case-title"
+        aria-describedby="case-desc"
+        style={{ ['--accent' as string]: shown.accent }}
+      >
+        <header className="ui-case__head">
+          <p className="ui-case__kicker">
+            <span className="ui-case__num">{shown.number}</span>
+            {where}
+          </p>
+          <button ref={closeRef} className="ui-case__close" onClick={onClose} aria-label="Close project">
+            Close
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
           </button>
-        ))}
-      </div>
+        </header>
 
-      <div id="case-body" className="ui-case__body" role="tabpanel" aria-labelledby={`case-tab-${tab}`} key={`${shown.id}-${tab}`}>
-        {tab === 'Overview' && (
-          <>
-            <p className="ui-case__lead"><Rich text={shown.description} /></p>
-            <p><Rich text={cs.overview} /></p>
-            <dl className="ui-case__meta">
-              <div><dt>My role</dt><dd><Rich text={shown.role} /></dd></div>
-              <div><dt>Project type</dt><dd><Rich text={shown.category} /></dd></div>
-              <div><dt>Tools</dt><dd>{shown.tools.length ? shown.tools.join(' · ') : <mark className="ui-placeholder">[ADD TOOLS]</mark>}</dd></div>
-            </dl>
-            <Screens p={shown} />
-          </>
-        )}
-        {tab === 'Challenge' && <p className="ui-case__lead"><Rich text={cs.challenge} /></p>}
-        {tab === 'Process' && (
-          <ol className="ui-case__steps">
-            {cs.process.map((s, i) => <li key={i}><Rich text={s} /></li>)}
-          </ol>
-        )}
-        {tab === 'UI' && (
-          <>
-            <h3>UI design</h3>
-            <p><Rich text={cs.ui} /></p>
-            <h3>Design system</h3>
-            <p><Rich text={cs.designSystem} /></p>
-            <Screens p={shown} />
-          </>
-        )}
-        {tab === 'Prototype' && (
-          <>
-            <p className="ui-case__lead"><Rich text={cs.prototype} /></p>
-            <Links p={shown} />
-          </>
-        )}
-        {tab === 'Outcome' && (
-          <>
-            <p className="ui-case__lead"><Rich text={cs.outcome} /></p>
-            <Links p={shown} />
-          </>
-        )}
-      </div>
+        <div className="ui-case__scroll" key={shown.id} tabIndex={0} aria-label={`${shown.title} case study`}>
+          <div className="ui-case__titlerow">
+            <h2 id="case-title" className="ui-case__title">{shown.title}</h2>
+            <a className="ui-case__proto" href={shown.prototypeUrl} target="_blank" rel="noopener noreferrer" aria-label={`Open ${shown.title} prototype in Figma (opens in a new tab)`}>
+              Open prototype
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg>
+            </a>
+          </div>
+          <p className="ui-case__cat">{shown.category}</p>
+          <p id="case-desc" className="ui-case__lead">{shown.description}</p>
+          {meta.length > 0 && <p className="ui-case__meta-line">{meta.join(' · ')}</p>}
 
-      <footer className="ui-case__foot">
-        <button className="ui-case__step" onClick={() => step(prev)} aria-label={`Previous project: ${prev.title}`}>
-          <span aria-hidden="true">←</span> {prev.title}
-        </button>
-        <span className="ui-case__count">{idx + 1} / {PROJECTS.length}</span>
-        <button className="ui-case__step" onClick={() => step(next)} aria-label={`Next project: ${next.title}`}>
-          {next.title} <span aria-hidden="true">→</span>
-        </button>
-      </footer>
-      {mode === 'projects' && <button className="ui-btn ui-btn--quiet ui-case__walk" onClick={walk}>Walk to this pavilion</button>}
-    </aside>
-  )
-}
+          <section className="ui-case__section" aria-labelledby="case-overview">
+            <h3 id="case-overview"><span>01</span> Overview</h3>
+            {shown.overview.map((para, i) => <p key={i}>{para}</p>)}
+          </section>
 
-function Screens({ p }: { p: ProjectDef }) {
-  if (!p.screens.length)
-    return (
-      <div className="ui-case__screens is-empty" aria-label="Screenshots not added yet">
-        {[0, 1, 2].map((i) => <div key={i} className="ui-case__shot"><mark className="ui-placeholder">[ADD SCREENSHOT]</mark></div>)}
-      </div>
-    )
-  return (
-    <div className="ui-case__screens">
-      {p.screens.map((src, i) => <img key={src} className="ui-case__shot" src={asset(src)} alt={`${p.title} screen ${i + 1}`} loading="lazy" />)}
-    </div>
-  )
-}
+          <section className="ui-case__section" aria-labelledby="case-challenges">
+            <h3 id="case-challenges"><span>02</span> Challenges</h3>
+            <ol className="ui-case__challenges">
+              {shown.challenges.map((c, i) => (
+                <li key={c.title} style={{ ['--i' as string]: i }}>
+                  <span className="ui-case__cnum" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                  <div>
+                    <b>{c.title}</b>
+                    <p>{c.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
 
-function Links({ p }: { p: ProjectDef }) {
-  const links = p.links.filter((l) => !isPlaceholder(l.url))
-  if (!links.length) return <p className="ui-case__note"><mark className="ui-placeholder">[ADD CASE STUDY / PROTOTYPE LINKS]</mark></p>
-  return (
-    <div className="ui-case__links">
-      {links.map((l) => (
-        <a key={l.url} className="ui-btn ui-btn--primary" href={l.url} target="_blank" rel="noreferrer">
-          {l.label}
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg>
-        </a>
-      ))}
-    </div>
+        {many && (
+          <footer className="ui-case__foot">
+            <button className="ui-case__step" onClick={() => step(prev)} aria-label={`Previous project: ${prev.title}`}>
+              <span aria-hidden="true">←</span> {prev.title}
+            </button>
+            <span className="ui-case__count">Project {shown.number} / {String(PROJECTS.length).padStart(2, '0')}</span>
+            <button className="ui-case__step" onClick={() => step(next)} aria-label={`Next project: ${next.title}`}>
+              {next.title} <span aria-hidden="true">→</span>
+            </button>
+          </footer>
+        )}
+        {inStudio && <button className="ui-btn ui-btn--quiet ui-case__walk" onClick={onClose}>← Back to Project Studio</button>}
+        {mode === 'projects' && <button className="ui-btn ui-btn--quiet ui-case__walk" onClick={walk}>Walk to this pavilion</button>}
+      </aside>
+    </>
   )
 }

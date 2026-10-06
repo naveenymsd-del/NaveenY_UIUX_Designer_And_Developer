@@ -400,11 +400,15 @@ function studio(ctx: GenContext, r: InteriorDef, rng: Rng) {
   }
   const [px, , pz] = b.toWorld(tx, 0, tz)
   lightPoolAt(ctx, px, pz, 2.4, 0xffe2b8)
-  // back wall: a pin-up board of process sketches
-  b.box(0xefe9df, [(x0 + x1) / 2 - 0.4, 1.7, -hd + 0.05], [5.6, 1.9, 0.04], { cast: false })
+  // back wall: a pin-up board of process sketches — or, once project bays
+  // continue onto the back wall, a slim strip of sketches above the screens
+  const backUsed = PROJECTS.length > STUDIO.BAY_Z.length
+  if (!backUsed) b.box(0xefe9df, [(x0 + x1) / 2 - 0.4, 1.7, -hd + 0.05], [5.6, 1.9, 0.04], { cast: false })
+  else b.box(0xefe9df, [(x0 + x1) / 2 - 0.3, 3.05, -hd + 0.05], [8.4, 0.62, 0.04], { cast: false })
   for (let i = 0; i < 10; i++) {
     const rect = ctx.decor.add(96, 96, artPainter(900 + i, ['#ffffff', '#1f2328', '#ec7a2c', '#5b6b82', '#d8c9a8']), `studio-sketch-${i % 6}`)
-    painting(ctx, rect, x0 + 1.9 + (i % 5) * 1.05, 2.2 - Math.floor(i / 5) * 0.85, -hd + 0.1, 0, 0.78, 0.6, 0xffffff)
+    if (!backUsed) painting(ctx, rect, x0 + 1.9 + (i % 5) * 1.05, 2.2 - Math.floor(i / 5) * 0.85, -hd + 0.1, 0, 0.78, 0.6, 0xffffff)
+    else painting(ctx, rect, x0 + 1.0 + i * 0.82, 3.05, -hd + 0.1, 0, 0.6, 0.44, 0xffffff)
   }
   plant(b, rng, x1 - 0.8, -hd + 0.8, 1.3)
   plant(b, rng, x0 + 0.9, hd - 0.9, 1.1)

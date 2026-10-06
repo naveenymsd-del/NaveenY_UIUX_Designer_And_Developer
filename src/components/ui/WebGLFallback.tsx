@@ -25,7 +25,10 @@ export function WebGLFallback() {
       <h2>Projects</h2>
       <ul>
         {PROJECTS.map((p) => (
-          <li key={p.id}><b>{p.number} · {p.title}</b> ({p.category}, {p.year}) — {p.description}</li>
+          <li key={p.id}>
+            <b>{p.number} · {p.title}</b> ({p.category}) — {p.description}
+            {" · "}<a href={p.prototypeUrl} target="_blank" rel="noopener noreferrer">Open prototype ↗</a>
+          </li>
         ))}
       </ul>
     </main>

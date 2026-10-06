@@ -8,7 +8,7 @@ import { playerRuntime } from '@/core/runtime'
 import { AI_AREA, ACTIVITY_SPOTS, GROWTH_WALK, GROWTH_YAW, PROCESS_STATIONS } from '@/data/locations'
 import { AI_HUMAN_STEPS, AI_WORKFLOW, CAREER_STAGES, DESIGN_PROCESS, EDUCATION_TIMELINE, PROFILE, TOOLS } from '@/data/portfolioContent'
 import { INTERIORS, roomToWorld, studioBay, type InteriorId } from '@/data/interiors'
-import { isPlaceholder, PROJECTS, type ProjectDef } from '@/data/projects'
+import { PROJECTS, type ProjectDef } from '@/data/projects'
 import { soundManager } from '@/core/sound/SoundManager'
 import { useGameStore } from '@/stores/gameStore'
 import { damp } from '@/utils/movement'
@@ -755,11 +755,16 @@ function screenTexture(p: ProjectDef) {
   while (g.measureText(p.title).width > 470 && size > 40) g.font = `640 ${(size -= 4)}px ${UI_FONT}`
   g.fillText(p.title, 60, 214)
   g.fillStyle = 'rgba(247,244,239,0.7)'
-  g.font = `500 24px ${UI_FONT}`
-  g.fillText(isPlaceholder(p.category) ? 'Case study' : p.category, 64, 262)
+  let cat = 24
+  g.font = `500 ${cat}px ${UI_FONT}`
+  while (g.measureText(p.category).width > 500 && cat > 16) g.font = `500 ${(cat -= 1)}px ${UI_FONT}`
+  g.fillText(p.category, 64, 262)
+  g.fillStyle = p.accent
+  g.font = `650 22px ${UI_FONT}`
+  g.fillText('Explore case study  →', 64, 380)
   g.fillStyle = 'rgba(247,244,239,0.45)'
-  g.font = `600 18px ${UI_FONT}`
-  g.fillText('OVERVIEW · CHALLENGE · PROCESS · UI · PROTOTYPE · OUTCOME', 64, 520)
+  g.font = `600 14px ${UI_FONT}`
+  g.fillText('OVERVIEW · CHALLENGES · PROTOTYPE', 64, 520)
   // right: an abstract product frame in the project accent
   const rr = (x: number, y: number, w: number, h: number, r: number) => {
     g.beginPath()

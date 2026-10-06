@@ -1,7 +1,8 @@
 import { Vector3 } from 'three'
 import { navigate } from '@/app/routes'
-import { INTERIORS, type InteriorId } from '@/data/interiors'
+import { INTERIORS, inStudio, roomToWorld, studioBay, type InteriorId } from '@/data/interiors'
 import { getLocation } from '@/data/locations'
+import { getProject, PROJECTS } from '@/data/projects'
 import { WORLD_STOPS, matchStop, type StopId } from '@/data/world'
 import { useGameStore } from '@/stores/gameStore'
 import { say } from './companion'
@@ -56,6 +57,36 @@ export function navigateToLocation(dest: Destination, opts: { quiet?: boolean } 
     return
   }
   void run(d, opts)
+}
+
+/**
+ * Straight to one project: travel to the Project Studio if needed, open its
+ * case study, and move the player to its bay while the camera frames the
+ * screen — so closing the case study returns you right there.
+ */
+export async function navigateToProject(id: string) {
+  const p = getProject(id)
+  if (!p || busy) return
+  const g = useGameStore.getState()
+  const pos = playerRuntime.position
+  if (g.interior === 'office' && inStudio(pos.x, pos.z)) {
+    say(`Here’s <b>${p.title}</b>.`, { ms: 2200, emote: 'point', interrupt: true })
+  } else {
+    say(`Let’s look at <b>${p.title}</b> in the Project Studio.`, { ms: 2800, emote: 'point', interrupt: true })
+    await run(DESTINATIONS.projects, { quiet: true })
+    const ready = () => {
+      const s = useGameStore.getState()
+      return s.interior === 'office' && !s.establishing && !s.fade && !s.travel
+    }
+    for (let t = 0; t < 12000 && !ready(); t += 100) await wait(100)
+    if (!ready()) return
+  }
+  const bay = studioBay(PROJECTS.indexOf(p))
+  useGameStore.getState().openProject(p.id)
+  await wait(500)
+  const [x, , z] = roomToWorld('office', bay.stand[0], bay.stand[1])
+  const [sx, , sz] = roomToWorld('office', bay.screen[0], bay.screen[1])
+  if (useGameStore.getState().activeProjectId === p.id) requestTeleport(new Vector3(x, 0.6, z), Math.atan2(sx - x, sz - z))
 }
 
 async function run(d: DestDef, opts: { quiet?: boolean }) {

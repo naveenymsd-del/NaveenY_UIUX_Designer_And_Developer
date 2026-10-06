@@ -4,7 +4,7 @@ import { useGameStore } from '@/stores/gameStore'
 import { navigate } from '@/app/routes'
 import { goToProjects } from '@/core/journey'
 
-/** Projects mode: a rail of the five pavilions. Hover previews, click opens. */
+/** Projects mode: a rail of every project pavilion. Hover previews, click opens. */
 export function ProjectRail() {
   const mode = useGameStore((s) => s.mode)
   const phase = useGameStore((s) => s.phase)
@@ -43,7 +43,7 @@ export function ProjectRail() {
               <span className="ui-rail__num">{p.number}</span>
               <span className="ui-rail__text">
                 <b>{p.title}</b>
-                <small>{p.category.startsWith('[') ? 'Case study' : p.category}</small>
+                <small>{p.category}</small>
               </span>
             </button>
           </li>

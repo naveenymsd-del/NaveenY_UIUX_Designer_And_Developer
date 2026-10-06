@@ -1,0 +1,138 @@
+/* ── case study · scrim, title + prototype link, overview & challenges ── */
+.ui-case-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.9s var(--ease-out);
+  /* the screen (framed left) stays clear; the rest of the room recedes */
+  background:
+    radial-gradient(ellipse 38% 46% at 30% 48%, rgba(10, 12, 16, 0) 0%, rgba(10, 12, 16, 0) 55%, rgba(10, 12, 16, 0.32) 100%),
+    linear-gradient(90deg, rgba(10, 12, 16, 0) 40%, rgba(10, 12, 16, 0.3) 100%);
+}
+.ui-case-scrim.is-visible { opacity: 1; }
+
+/* one scrolling editorial page under the header */
+.ui-case__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0 -6px;
+  padding: 0 6px 32px;
+  touch-action: pan-y;
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 32px), transparent);
+}
+.ui-case__scroll:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); border-radius: 10px; }
+
+.ui-case__titlerow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: 20px 0 6px;
+}
+.ui-case--story .ui-case__title { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.ui-case__proto {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px 0 18px;
+  border-radius: 999px;
+  background: var(--ink-1);
+  color: var(--paper-1);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 10px 24px -12px rgba(18, 20, 26, 0.7), inset 0 -2px 0 var(--accent);
+  transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out), background 0.25s;
+}
+.ui-case__proto svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.35s var(--ease-out); }
+.ui-case__proto:hover { background: #262a33; transform: translateY(-1px); box-shadow: 0 14px 28px -12px rgba(18, 20, 26, 0.75), inset 0 -2px 0 var(--accent); }
+.ui-case__proto:hover svg { transform: translate(2px, -2px); }
+.ui-case__proto:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.ui-case--story .ui-case__cat { margin: 0 0 14px; }
+.ui-case--story .ui-case__lead { margin: 0 0 6px; text-wrap: pretty; }
+.ui-case__meta-line { margin: 0; font-size: var(--text-sm); color: var(--ink-3); }
+
+.ui-case__section { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--hair); }
+.ui-case__section h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 12px;
+  font-size: var(--text-2xs);
+  font-weight: 650;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.ui-case__section h3 span { color: var(--accent); font-variant-numeric: tabular-nums; }
+.ui-case__section > p { margin: 0 0 12px; font-size: var(--text-md); line-height: var(--leading-body); color: var(--ink-2); text-wrap: pretty; }
+
+.ui-case__challenges { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.ui-case__challenges li {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--hair);
+}
+.ui-case__challenges li:last-child { border-bottom: 0; }
+.ui-case__cnum { font-family: var(--font-display); font-size: 14px; font-weight: 650; color: var(--accent); font-variant-numeric: tabular-nums; padding-top: 1px; }
+.ui-case__challenges b { display: block; margin-bottom: 4px; font-family: var(--font-display); font-size: 16.5px; font-weight: 600; letter-spacing: var(--track-heading); color: var(--ink-1); }
+.ui-case__challenges p { margin: 0; font-size: var(--text-sm); line-height: 1.55; color: var(--ink-2); text-wrap: pretty; }
+
+/* entrance: title first, then the prototype link, overview, and challenges with a light stagger */
+.ui-case--story.is-visible .ui-case__title { animation: ld-stage 0.7s var(--ease-out) both; }
+.ui-case--story.is-visible .ui-case__proto { animation: ld-stage 0.7s var(--ease-out) 0.08s both; }
+.ui-case--story.is-visible .ui-case__cat,
+.ui-case--story.is-visible .ui-case__lead { animation: ld-stage 0.7s var(--ease-out) 0.12s both; }
+.ui-case--story.is-visible .ui-case__section { animation: ld-stage 0.7s var(--ease-out) 0.2s both; }
+.ui-case--story.is-visible .ui-case__challenges li { animation: ld-stage 0.6s var(--ease-out) both; animation-delay: calc(0.3s + var(--i) * 60ms); }
+
+.ui-case__step:focus-visible,
+.ui-case__close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.ui-case__walk + .ui-case__walk { display: none; }
+
+@media (min-width: 1280px) {
+  .ui-case { width: min(600px, calc(100vw - 32px)); }
+}
+@media (max-width: 900px) {
+  /* the panel covers the lower screen; no need to dim around it */
+  .ui-case-scrim { background: linear-gradient(0deg, rgba(10, 12, 16, 0.28), rgba(10, 12, 16, 0) 60%); }
+}
+@media (max-width: 640px) {
+  .ui-case { height: min(82vh, 760px); }
+  .ui-case__titlerow { margin-top: 12px; }
+  .ui-case__step { max-width: 34%; }
+}
+
+/* guide: jump straight to a project */
+.ui-guide__label { margin: 0 0 6px; font-size: var(--text-2xs); font-weight: 650; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-3); }
+.ui-guide__projects { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.ui-guide__projects button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px 0 8px;
+  border-radius: 999px;
+  background: rgba(22, 24, 29, 0.05);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-1);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.ui-guide__projects button span { font-size: 10px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.ui-guide__projects button:hover { background: #fff; box-shadow: inset 0 0 0 1px var(--accent); }
+.ui-guide__projects button:focus-visible { outline: 2px solid var(--ai); outline-offset: 2px; }

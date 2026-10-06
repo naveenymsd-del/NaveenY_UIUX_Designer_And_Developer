@@ -69,7 +69,7 @@ export const WORLD_STOPS: WorldStop[] = [
     id: 'projects', label: 'PROJECTS', name: 'Projects', line: 'What have I designed?', icon: 'projects', place: 'projects',
     mapAt: [23, 24], arrive: [10.8, 17], yaw: Math.PI / 2, room: { id: 'office', location: 'Naveen', spot: 'studio' }, point: [18, 5, 17],
     hello: 'These are some of the <b>products</b> I’ve worked on.', suggest: 'Want to see what I’ve <b>designed</b>?',
-    words: '\\b(projects?|show projects|work|case ?stud(y|ies)|portfolio|intellistaff|calmscient|ebounti|task|wastebeminerals)\\b',
+    words: '\\b(projects?|show projects|work|case ?stud(y|ies)|portfolio)\\b',
   },
   {
     id: 'designJourney', label: 'DESIGN JOURNEY', name: 'Design Journey', line: 'How do I think and work?', icon: 'design', place: 'park',

@@ -150,12 +150,12 @@ src/
 Projects live in **`src/data/projects.ts`** (`PROJECT_CONTENT`). Each entry automatically gets:
 
 - a screen bay in the Project Studio (it switches on as you approach);
-- an interaction ("Explore IntelliStaff");
+- an interaction ("Explore TASK");
 - a close-up camera;
-- a case-study presentation (Overview · Challenge · Process · UI · Prototype · Outcome);
+- a case-study presentation (01 Overview · 02 Challenges, with an "Open prototype" link next to the title);
 - a pavilion in the `/projects` overview.
 
-Only real facts belong in this file. Unknown fields stay `[ADD …]` and are highlighted in the UI. Put screenshots in `public/projects/<id>/` and list them in `screens`. Add links (case study, prototype, live) to `links`. The studio fits five bays on its east wall and continues onto the back wall. Extend `STUDIO.BAY_Z` / `BACK_BAYS` in `src/data/interiors.ts` for more.
+Only projects with a verified Figma prototype belong in this file (`prototypeUrl`), and Overview and Challenges are written from that prototype. Prototypes waiting for Figma access are listed in `PENDING_PROJECTS` and are not shown. The studio fits five bays on its east wall and continues onto the back wall. Extend `STUDIO.BAY_Z` / `BACK_BAYS` in `src/data/interiors.ts` for more.
 
 ## Colleagues
 
