@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { goToProjects } from '@/core/journey'
+import { navigateToLocation } from '@/core/navigation'
 import { soundManager } from '@/core/sound/SoundManager'
 import { getLocation, type InteractiveDef } from '@/data/locations'
 import { useGameStore } from '@/stores/gameStore'
@@ -46,6 +47,7 @@ export function LocationPanel() {
     soundManager.play('click')
     close()
     if (c.cta.action === 'projects') goToProjects()
+    else if (c.cta.action === 'gallery') navigateToLocation('gallery')
     else {
       useUIStore.getState().setMenuSection('contact')
       useUIStore.getState().setMenuOpen(true)

@@ -34,9 +34,9 @@ const GO_LINES: Record<StopId, string> = {
   start: 'Back to the <b>start</b>.',
   home: 'Let’s go <b>home</b>.',
   education: 'Let’s go back to where the journey <b>started</b>.',
-  NaveenSolutions: 'Let’s head to <b>Naveen Solutions</b>.',
+  nfcSolutions: 'Let’s head to <b>NFC Solutions</b>.',
   projects: 'Sure. Let’s head to the <b>projects</b>.',
-  designJourney: 'Let’s walk the <b>Design Journey</b>.',
+  gallery: 'Let’s visit the <b>Gallery</b>.',
   contactCafe: 'Let’s grab a <b>coffee</b> and talk.',
 }
 

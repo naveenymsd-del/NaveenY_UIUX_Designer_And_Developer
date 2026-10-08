@@ -1,35 +1,74 @@
 /**
  * Projects — the single source of truth for every place a project appears:
- * the Project Studio screens inside Naveen Solutions, the case-study
+ * the Project Studio screens inside NFC Solutions, the case-study
  * presentation, the menu, the AI guide and the /projects overview (street
  * pavilions).
  *
- * Only projects with a verified Figma prototype belong here. Each one is an
- * Overview and a set of Challenges written from the prototype itself, plus
- * the prototype link shown next to the title. Appending an entry creates its
- * studio bay, screen, interaction, pavilion and case study automatically.
+ * Only projects with a verified Figma prototype belong here. Content comes
+ * from Naveen's résumé (names, domains, role) and the case-study frames in
+ * the Figma file each prototype opens (flows, IA, visual language, screens).
+ * Nothing is added that isn't visible in those sources — no metrics, no
+ * outcomes. Appending an entry creates its studio bay, screen, interaction,
+ * pavilion and case study automatically.
  */
-export interface ProjectChallenge {
+export interface CaseItem {
   title: string
-  description: string
+  text: string
+}
+
+export interface CaseUser {
+  name: string
+  /** one line: who they are */
+  who: string
+  needs: string[]
+}
+
+export interface CaseFlow {
+  title: string
+  steps: string[]
+}
+
+export interface CaseScreen {
+  /** path under /public */
+  image: string
+  caption: string
+  alt: string
 }
 
 export interface ProjectContent {
   id: string
+  /** short name shown as the title ("TASK") */
   title: string
-  /** e.g. "Ticket & Project Tracking · Web App" */
+  /** full name ("TASK — Ticketing & Project Management Platform") */
+  fullTitle: string
+  /** domain, e.g. "B2B SaaS · Productivity" */
   category: string
-  /** one line, shown under the title */
-  description: string
-  /** only when confirmed */
-  role?: string
-  year?: string
-  tools?: string[]
-  /** a few short paragraphs */
+  platform: string
+  role: string
+  /** design scope, from the case study */
+  scope: string
+  /** one-sentence project statement */
+  summary: string
   overview: string[]
-  challenges: ProjectChallenge[]
-  /** the exact Figma prototype URL */
-  prototypeUrl: string
+  /** My approach */
+  approach: string[]
+  /** Key user flows (from the prototype) */
+  flows: CaseFlow[]
+  /** Information architecture: top-level sections and what sits under them */
+  ia: CaseItem[]
+  /** UI / design system: the visual language, colours and type from the Figma file */
+  design: { text: string; colors: { name: string; hex: string }[]; type: string; components: string[] }
+  screens: CaseScreen[]
+  /** The challenge */
+  challenge: { headline: string; items: CaseItem[]; question: string }
+  /** UX / product thinking: who it serves and what each role needs */
+  users: CaseUser[]
+  /** Design decisions */
+  decisions: CaseItem[]
+  /** the verified, clickable UI prototype in Figma (the product itself) — omitted when there isn't one */
+  prototypeUrl?: string
+  /** the verified Figma case-study presentation (the story behind the design) */
+  caseStudyUrl: string
   /** extra words the AI guide accepts for this project */
   aliases?: string[]
   /** colour used on the studio screen and in the presentation */
@@ -45,204 +84,359 @@ export interface ProjectDef extends ProjectContent {
   camera: { position: [number, number, number]; target: [number, number, number] }
 }
 
+const I = (title: string, text: string): CaseItem => ({ title, text })
+const FIGMA = 'https://www.figma.com/proto/i852L2XjU3cEM6LpoRVOWN/UI-UX-Web-Designs?page-id=914%3A60467'
+const caseStudy = (node: string, sidebar = true) =>
+  `${FIGMA}&node-id=${node}&viewport=276%2C308%2C0.06&t=YI4dKAPdPrQxEo1a-1&scaling=scale-down-width&content-scaling=fixed&starting-point-node-id=${node.replace('-', '%3A')}${sidebar ? '&show-proto-sidebar=1' : ''}`
+
 export const PROJECT_CONTENT: ProjectContent[] = [
   {
     id: 'task',
     title: 'TASK',
-    category: 'Ticket & Project Tracking · Web App',
-    description: 'A redesign of the ticketing tool NFC Solutions uses to log, assign and track work across its projects.',
+    fullTitle: 'TASK — Ticketing & Project Management Platform',
+    category: 'B2B SaaS · Productivity',
+    platform: 'Web dashboards (desktop-first)',
+    role: 'UI/UX Designer',
+    scope: 'Tickets · milestones · profile & preferences',
+    summary: 'Raise, track and resolve every ticket — in one calm workspace.',
     overview: [
-      'TASK is the internal ticketing and project-tracking tool at NFC Solutions. Team members use it to raise tickets, see what is assigned to them and follow work through to resolution across several company projects.',
-      'The prototype covers two roles. A user signs in to a personal dashboard: open, in-progress, due-soon and resolved counts, a “My Work” ticket table, milestone progress, an activity trend and upcoming deadlines. An administrator gets the same structure at team level, with total, resolved and closed counts and a ticket-status overview.',
-      'From the dashboards the flows go into detail — a ticket list with search, quick filters, saved views, column settings and bulk actions; a ticket page with assignment, dates, tags, notes, activity, related tickets, history, attachments and followers; milestones with progress, burndown and Gantt views; and account and preference settings.',
-      'Several screens exist in the file as an earlier version and a “redesign”, built on a shared component set (buttons, inputs, badges, tables, tabs, sidebar items) and colour, typography and spacing foundations.',
+      'TASK is an enterprise ticketing and project-management platform where teams log issues, collaborate on each ticket, track milestones and follow team workload through centralised dashboards.',
+      'I designed the end-to-end experience — sign-in, personal and admin dashboards, ticket lists and filters, a rich ticket detail, milestones with a timeline, and profile and preference settings — plus the design system behind it.',
     ],
-    challenges: [
-      {
-        title: 'Many ticket attributes in one row',
-        description: 'Every ticket carries an ID, summary, project, status, priority, due date and assignee. Status, priority and due dates are colour-coded badges so a row can be read without opening the ticket.',
-      },
-      {
-        title: 'Many ways to slice the same work',
-        description: 'Assigned, Unassigned, Reported by Me, Resolved, Recently Modified and Followed by Me are views over one table. The ticket list adds search, quick filters, saved views and adjustable columns so a long list can be narrowed without losing your place.',
-      },
-      {
-        title: 'A dense ticket page',
-        description: 'Description, people, dates, estimates, properties, attachments, related tickets, followers and history all live on one ticket. They are split into a main column, tabs (Notes, Activities, Related Tickets, History) and a side panel with quick actions — clone, sub-ticket, move, delete.',
-      },
-      {
-        title: 'Milestone progress at a glance',
-        description: 'A milestone opens on its progress, open and closed ticket counts, timeline and due status, with burndown and Gantt views one tab away for anyone who needs the detail.',
-      },
-      {
-        title: 'Two roles, one structure',
-        description: 'User and administrator dashboards share the same layout and components but differ in scope — personal work versus the whole team’s ticket flow.',
-      },
-      {
-        title: 'Designing the states, not just the screens',
-        description: 'Profile and preferences are designed through editing, unsaved changes, validation errors, save success and reset confirmation, alongside empty states, a delete confirmation and a mobile preferences layout.',
-      },
+    approach: [
+      'Reviewed the ticketing tools and workflows the team already relied on, to keep what worked and fix what slowed people down.',
+      'Mapped two roles — team member and admin/lead — onto one shared structure.',
+      'Organised the product around the life of a ticket, from creation to audit.',
+      'Built a predictable sidebar IA and a reusable component set in Figma.',
+      'Designed the states, not just the screens: empty states, confirmations and success feedback.',
+    ],
+    flows: [
+      { title: 'Ticket lifecycle', steps: ['Create', 'Find', 'Collaborate', 'Link', 'Resolve', 'Audit'] },
+      { title: 'Find & save a view', steps: ['Ticket list', 'Filter panel', 'Save quick filter', 'One-click view'] },
+      { title: 'Plan a milestone', steps: ['Milestone list', 'Progress & dates', 'Timeline + calendar'] },
+    ],
+    ia: [
+      I('Dashboard', 'My open tickets · status overview · activity & deadlines'),
+      I('Tickets', 'View tickets · new ticket · saved filters · ticket detail (5 tabs)'),
+      I('Milestones', 'Milestone list · progress & dates · timeline + calendar'),
+      I('Work', 'Time tracking · repositories · reports · notifications'),
+      I('Profile', 'Account & password · notification preferences · columns & views'),
+    ],
+    design: {
+      text: 'Warm amber marks primary actions and the brand; neutral greys keep dense tables quiet; semantic green, blue and violet carry status and priority.',
+      colors: [
+        { name: 'Task amber', hex: '#F9B418' }, { name: 'Ink', hex: '#111827' }, { name: 'Slate', hex: '#6B7280' },
+        { name: 'Success', hex: '#22C55E' }, { name: 'Info', hex: '#2563EB' }, { name: 'Violet', hex: '#8B5CF6' },
+      ],
+      type: 'Outfit — friendly, modern and readable at dense sizes',
+      components: ['KPI cards', 'Priority & status chips', 'Data tables', 'Filter side panel', 'Multi-select dropdown', 'Tabs', 'Confirmation dialog', 'Empty state'],
+    },
+    screens: [
+      { image: '/projects/task-dashboard.webp', caption: 'Personal dashboard', alt: 'TASK personal dashboard with KPI cards, My Work table, milestones, activity trend and timeline' },
+      { image: '/projects/task-tickets.webp', caption: 'Tickets & filters', alt: 'TASK ticket list with filter side panel and saved quick filters' },
+    ],
+    challenge: {
+      headline: 'Lots of tickets. Little clarity.',
+      items: [
+        I('Lists without hierarchy', 'Long ticket tables made it hard to see what’s urgent, what’s mine and what’s overdue.'),
+        I('Context lives elsewhere', 'Comments, attachments, related tickets and history were scattered or buried.'),
+        I('One-size-fits-all views', 'People couldn’t save filters, choose columns or tune notifications to how they work.'),
+      ],
+      question: 'How might we make every ticket easy to find, understand and act on — for every person on the team?',
+    },
+    users: [
+      { name: 'Team member', who: 'Raises, works on and resolves tickets every day', needs: ['See what’s assigned and what’s due', 'Find any ticket fast with saved filters', 'Keep all context inside the ticket'] },
+      { name: 'Admin / lead', who: 'Manages projects, queues and team workload', needs: ['A live picture of open, in-progress and resolved work', 'Spot overdue milestones early', 'Clear history and accountability'] },
+    ],
+    decisions: [
+      I('Density needs hierarchy', 'KPI cards, consistent colour-coded chips and table rhythm keep data-heavy screens readable.'),
+      I('Context beats navigation', 'Filters open in a side panel and ticket detail uses tabs, so people stay anchored instead of jumping between pages.'),
+      I('Keep power-user speed', 'Bulk select, right-click actions and column control stay — but become visible.'),
+      I('Let people tailor it', 'Saved filters, table columns and notification settings turn one product into personal workspaces.'),
     ],
     prototypeUrl:
       'https://www.figma.com/proto/vUIgk3l5i7TXJwCPXHq7xu/TASK-UI?node-id=152-19286&viewport=1484%2C-2898%2C0.11&t=SplDLtshCgBKTxhy-1&scaling=scale-down-width&content-scaling=fixed&starting-point-node-id=152%3A19286&page-id=0%3A1',
+    caseStudyUrl: caseStudy('1067-1563'),
+    aliases: ['ticketing', 'ticket'],
     accent: '#d9881a',
-  },
-  {
-    id: 'calmscient',
-    title: 'Calmscient',
-    category: 'Mental Health & Wellness · Mobile App',
-    description: 'A mental wellness platform: a mobile app for daily check-ins on mood, sleep, medication and symptoms, with admin dashboards behind it.',
-    role: 'UI/UX Designer, NFC Solutions',
-    year: 'Aug 2024 – Dec 2025',
-    tools: ['Figma'],
-    overview: [
-      'Calmscient is a mental health and wellness platform. Its mobile app gives people a short daily routine for looking after themselves — checking in on mood, sleep and medication, logging symptoms, doing guided exercises and keeping track of their own records.',
-      'I worked on its UX and UI at NFC Solutions from August 2024 to December 2025: user flows for key experiences such as mood tracking and symptom logging, wireframes and high-fidelity UI for the mobile app, and administrative dashboards that follow the same interaction patterns.',
-      'The home screen greets the user by name and leads into one-question check-ins — “How is your mood right now?”, “How many hours did you sleep last night?”, “Did you take your meds this morning?” — alongside a weekly summary, medical records, favourite exercises and a “Need to talk with someone?” shortcut, with journey, exercise and reward sections in the navigation.',
-      'The visual language is deliberately calm: a soft lavender-and-purple palette with a warm coral accent, so the app feels comforting rather than clinical.',
-    ],
-    challenges: [
-      {
-        title: 'Checking in without it feeling like a chore',
-        description: 'Daily tracking only works if it is quick. Each check-in is a single question with a simple answer and a skip option, so mood, sleep or medication can be recorded in a few taps.',
-      },
-      {
-        title: 'A calm, accessible interface',
-        description: 'People may open the app when they are anxious or low. Screens stay uncluttered, the palette is soft and the type readable, so everyday information never feels alarming.',
-      },
-      {
-        title: 'Support within reach',
-        description: 'Alongside tracking, the home screen keeps “Need to talk with someone?” visible, so help is one tap away rather than buried in a menu.',
-      },
-      {
-        title: 'Making progress visible',
-        description: 'A weekly summary, medical records and a journey and rewards section turn individual entries into something a user can look back on and feel encouraged by.',
-      },
-      {
-        title: 'One system for app and admin',
-        description: 'The mobile app and the administrative dashboards share consistent interaction patterns, so the platform behaves predictably for the people using it and the team managing it.',
-      },
-    ],
-    prototypeUrl:
-      'https://www.figma.com/proto/8JRaJprIyCtDy7zfMsOuSs/UI-UX-MOBILE-DESIGNS?node-id=48-5821&viewport=1583%2C-1322%2C0.2&t=xXUuRp9uhQlCeCK1-1&scaling=scale-down&content-scaling=fixed&starting-point-node-id=48%3A5821&show-proto-sidebar=1&page-id=0%3A1',
-    aliases: ['calm scient', 'mental health', 'wellness'],
-    accent: '#6e6bb3',
   },
   {
     id: 'kidpool',
     title: 'KidPool',
-    category: 'School Carpooling · Mobile App',
-    description: 'A mobile app for parents at the same school to ask for and give school rides, with verification and school check-in built into every ride.',
+    fullTitle: 'KidPool — School Carpooling Mobile App',
+    category: 'Community & Safety · School carpooling',
+    platform: 'Mobile app · iOS & Android',
+    role: 'UI/UX Designer',
+    scope: 'Three roles · design system · animated prototype',
+    summary: 'Safe, free school carpooling — built by parents, for parents.',
     overview: [
-      'KidPool is a carpooling app for school families. Verified parents near the same school ask each other for rides and offer seats, and the school is told who is bringing each child and checks them in on arrival.',
-      'The prototype follows one parent, Sarah, through a complete journey: signing up with her phone number, getting verified — photo ID, selfie match, driving record, background check and vehicle details — adding her child and joining her school’s circle of verified parents.',
-      'She then asks for a ride, reviews the request, waits while nearby parents are notified, approves the parent who offers and follows the ride with live tracking until her daughter is checked in at school. The second half reverses the roles: Sarah gives a ride to another family, with a pickup checklist, a school pass for the drop-off line and a ride summary.',
-      'Supporting screens cover ride history, notifications, a weekly schedule, a school community feed, a profile with parental controls, an SOS screen and an animated intro. Sign-up also offers a school-staff role, but the prototype follows the parent experience.',
+      'KidPool lets parents in the same school community share the school run, with verification, live tracking and school check-in built into every ride.',
+      'Every user is a parent: nobody is a “driver” — they’re a Ride Partner helping a neighbour. The experience serves three roles — parents, Ride Partners and school staff — and had to feel as warm as a favour between friends and as safe as a school system.',
     ],
-    challenges: [
-      {
-        title: 'Trust before the first ride',
-        description: 'Parents are handing their children to other adults. Verification is broken into short steps with visible progress (“2 of 4 complete · ~5 min”), explains what is checked and how ID images are handled, and lets parents ask for rides while their background check is still pending.',
-      },
-      {
-        title: 'Every parent plays both roles',
-        description: 'Anyone can ask for a ride and give one. Home shows tomorrow’s ride next to requests from other families, and the giving flow — request, offer, approval, pickup, drive, drop-off — mirrors the asking flow so both feel familiar.',
-      },
-      {
-        title: 'Keeping parents in control',
-        description: 'The requesting parent approves the ride partner before anything is confirmed, seeing their rating, rides given, vehicle and booster seat. Profile controls set who can see requests and limit location sharing to rides only.',
-      },
-      {
-        title: 'Coordinating three parties',
-        description: 'Each ride involves the requesting parent, the driver and the school. The confirmation screen lays out every step — approved, school notified, pickup, check-in — and staff scan the driver’s ride pass at arrival.',
-      },
-      {
-        title: 'What a driver needs at the curb',
-        description: 'Child details (photo, clothing, booster, medical notes), a pickup checklist and a driving mode with voice-only alerts keep the essentials in view without pulling attention from the road.',
-      },
-      {
-        title: 'Planning for emergencies',
-        description: 'An SOS screen puts hold-to-call 911, alerts to both parents, live-location sharing and the child’s medical note on one screen.',
-      },
+    approach: [
+      'Role-based information architecture: one shared onboarding, then three focused journeys.',
+      'Trust before the first ride — a guided verification hub for ID, selfie, driving record, background check and vehicle.',
+      'Parental approval of every Ride Partner before a ride is confirmed.',
+      'Live tracking with a school geofence, and QR-based check-in for staff.',
+      'A token-based design system in Figma variables, and a connected prototype with micro-interactions.',
+    ],
+    flows: [
+      { title: 'Parent', steps: ['Ask for a ride', 'Nearby parents notified', 'Approve partner', 'Live tracking', 'Checked in at school'] },
+      { title: 'Ride Partner', steps: ['Requests inbox', 'Offer help', 'Approved', 'Pickup checklist', 'Drive mode', 'School pass'] },
+      { title: 'School staff', steps: ['Arrivals dashboard', 'Scan pass', 'Partner verified', 'Confirm kids', 'Check-in complete'] },
+    ],
+    ia: [
+      I('Shared', 'Welcome → sign up → role → verification → add kids → join school circle'),
+      I('Parent', 'Home · ask for a ride · live tracking & SOS · my rides · community · profile & parental controls'),
+      I('Ride Partner', 'Requests inbox · request details · pickup checklist · drive mode · school pass'),
+      I('School staff', 'Arrivals dashboard · scan pass · confirm kids · mismatch alert'),
+    ],
+    design: {
+      text: 'Black and electric lime give every screen one obvious action; pill shapes, rounded cards and circular controls stay friendly for one-handed use. Colours, spacing and radius are Figma variables.',
+      colors: [
+        { name: 'Electric lime', hex: '#C7FF2E' }, { name: 'Ink', hex: '#0F0F0F' }, { name: 'Charcoal', hex: '#2E2E2E' },
+        { name: 'Surface', hex: '#F2F2F2' }, { name: 'SOS', hex: '#FF4D3D' },
+      ],
+      type: 'Hanken Grotesk — big, light headlines that feel reassuring',
+      components: ['Status cards', 'Pill buttons', 'Circular controls', 'Bottom sheets', 'Verification steps', 'QR school pass'],
+    },
+    screens: [
+      { image: '/projects/kidpool-ask.webp', caption: 'Ask for a ride', alt: 'KidPool screens: home, ask for a ride, finding parents, approve partner and all set' },
+      { image: '/projects/kidpool-staff.webp', caption: 'School staff check-in', alt: 'KidPool school staff screens: arrivals dashboard, scan result, confirm kids, check-in complete and mismatch alert' },
+    ],
+    challenge: {
+      headline: 'When a parent can’t make the school run, there’s no safe, simple way to ask for help.',
+      items: [
+        I('The last-minute scramble', 'Parents fall back on group chats and favours that may or may not come through.'),
+        I('The trust gap', 'Parents can’t verify who is driving their child, or whether their child actually arrived.'),
+        I('Schools in the dark', 'Teachers don’t know which adult is dropping off which child — no record, no accountability.'),
+      ],
+      question: 'How might we make asking a neighbour for a school ride feel as safe as a school bus and as easy as sending a text?',
+    },
+    users: [
+      { name: 'Requesting parent', who: 'Needs help with the school run', needs: ['Get help on busy mornings', 'Approve exactly who drives their child', 'Know the moment their child is at school'] },
+      { name: 'Ride Partner', who: 'A parent from the same school offering a seat', needs: ['See requests that fit their own route', 'Clear pickup details and a school pass', 'Few distractions while driving'] },
+      { name: 'School staff', who: 'Teachers at the drop-off line', needs: ['Know who is dropping off whom, in advance', 'Verify the adult and the children quickly', 'A record of every check-in'] },
+    ],
+    decisions: [
+      I('“Ride Partner”, not “driver”', 'The language reframes the product around neighbours helping neighbours.'),
+      I('Status as reassurance', 'Verification, approvals and alerts are presented as calm status moments — not warnings.'),
+      I('One obvious action per screen', 'A single lime action keeps safety-sensitive steps easy to follow.'),
+      I('Each role gets what it needs, when it needs it', 'Parent, partner and teacher each see only their part of the ride, at the right moment.'),
     ],
     prototypeUrl:
       'https://www.figma.com/proto/UkougomRKZEjdNS0EC1Twf/CarPooling_For_Student?page-id=80%3A2&node-id=83-4852&starting-point-node-id=83%3A4852&scaling=scale-down&content-scaling=fixed&show-proto-sidebar=1',
+    caseStudyUrl: caseStudy('1066-64859'),
     aliases: ['kid pool', 'carpool', 'carpooling'],
     accent: '#6f9a12',
   },
   {
+    id: 'calmscient',
+    title: 'Calmscient',
+    fullTitle: 'Calmscient — Mental Health & Wellness Application',
+    category: 'Healthcare · Mental health & wellness',
+    platform: 'Mobile app (iOS & Android) + web admin panel',
+    role: 'UI/UX Designer',
+    scope: 'Mobile app · admin panel · Aug 2024 – Dec 2025',
+    summary: 'A gentle companion for managing anxiety and emotional well-being.',
+    overview: [
+      'Calmscient is a mental health and wellness experience for people managing anxiety and emotional well-being. It brings daily check-ins, mood tracking, symptom logging, medications, screenings and guided lessons into one calm, private space.',
+      'I designed the mobile application and the web admin panel — from user flows and wireframes to a soft, accessible visual language — and supported developers with HTML/CSS.',
+    ],
+    approach: [
+      'Shaped flows from research inputs and stakeholder discussions.',
+      'Kept the daily check-in tiny: mood, company, medication and a journal line.',
+      'Simplified sensitive information into readable, uncluttered screens.',
+      'Mobile-first interaction patterns, mirrored consistently in the admin panel.',
+      'Accessible, low-stress typography and gentle confirmations throughout.',
+    ],
+    flows: [
+      { title: 'Daily care loop', steps: ['Check in', 'Track meds', 'Screen', 'Learn', 'Practice', 'Reflect'] },
+      { title: 'Daily check-in', steps: ['Sign in', 'Mood scale', 'Company & meds', 'Journal line', 'Saved'] },
+      { title: 'Medication', steps: ['Medical records', 'Schedule', 'Add medication', 'Time & alarm', 'Added'] },
+    ],
+    ia: [
+      I('Home', 'Daily check-in · medical records · weekly summary · trackers · talk with someone'),
+      I('Discovery', 'Managing anxiety · changing your response to stress · taking control'),
+      I('Exercises', 'Mindfulness · muscle relaxation · movement · breathing'),
+      I('Records & settings', 'Medications & reminders · appointments · screenings · profile'),
+    ],
+    design: {
+      text: 'A lavender primary for calm, a warm coral for feeling and emphasis, rounded cards and illustrations that feel human rather than clinical.',
+      colors: [
+        { name: 'Calm lavender', hex: '#6E6BB3' }, { name: 'Deep indigo', hex: '#2B2866' }, { name: 'Warm coral', hex: '#F48383' },
+        { name: 'Mist', hex: '#F3F1FF' }, { name: 'Graphite', hex: '#424242' },
+      ],
+      type: 'Lexend — designed for effortless, low-stress reading',
+      components: ['Emoji mood scale', 'Dose schedule', 'Screening result', 'Gentle confirmations', 'Lesson cards'],
+    },
+    screens: [
+      { image: '/projects/calmscient-checkin.webp', caption: 'Onboarding & daily check-in', alt: 'Calmscient screens: splash, sign in, daily check-in, saved confirmation and home' },
+      { image: '/projects/calmscient-screenings.webp', caption: 'Screenings & weekly insights', alt: 'Calmscient screens: screenings, results, weekly summary, mood summary and sleep journal' },
+    ],
+    challenge: {
+      headline: 'Emotionally sensitive tasks need a calm, approachable experience.',
+      items: [
+        I('Patterns are easy to miss', 'Mood, sleep and triggers change day to day; without a simple habit they’re easy to forget.'),
+        I('Care lives in many places', 'Medications, appointments, screenings and journals are spread across apps, paper and memory.'),
+        I('Clinical tools can feel cold', 'Questionnaires and trackers can feel stressful — the opposite of what an anxious person needs.'),
+      ],
+      question: 'How might we help people understand their well-being through small, kind daily habits — consistently across app and admin?',
+    },
+    users: [
+      { name: 'People managing anxiety', who: 'Using the mobile app day to day', needs: ['A quick, private way to log how they feel', 'Reminders for medications and appointments', 'Bite-sized help they can use right away'] },
+      { name: 'Care teams', who: 'Using the web admin panel', needs: ['See screenings, mood trends and adherence', 'Share content with patients', 'A consistent experience with the app'] },
+    ],
+    decisions: [
+      I('Tone is a feature', 'Soft colours, kind copy and gentle confirmations help sensitive tasks feel safe to complete.'),
+      I('Make habits tiny', 'The daily check-in stays short — one question at a time, with a skip option.'),
+      I('Help is one tap away', '“Need to talk with someone?” stays visible rather than buried in a menu.'),
+      I('Calm by default', 'Uncluttered screens and readable type, so everyday information never feels alarming.'),
+    ],
+    prototypeUrl:
+      'https://www.figma.com/proto/8JRaJprIyCtDy7zfMsOuSs/UI-UX-MOBILE-DESIGNS?node-id=48-5821&viewport=1583%2C-1322%2C0.2&t=xXUuRp9uhQlCeCK1-1&scaling=scale-down&content-scaling=fixed&starting-point-node-id=48%3A5821&show-proto-sidebar=1&page-id=0%3A1',
+    caseStudyUrl: caseStudy('1066-68557'),
+    aliases: ['calm scient', 'mental health', 'wellness'],
+    accent: '#6e6bb3',
+  },
+  {
     id: 'inta',
     title: 'INTA',
-    category: 'Professional Association · Website',
-    description: 'A website design for the International Trademark Association — the global network of brand owners and IP professionals — covering its events, resources, news and an AI assistant.',
+    fullTitle: 'INTA — International Trademark Association Website',
+    category: 'Association · Legal & IP',
+    platform: 'Responsive website',
+    role: 'UI/UX Designer',
+    scope: 'Main site + Annual Meeting pages · Ask INTA AI assistant',
+    summary: 'The home of the global brand community — events, resources and answers in one place.',
     overview: [
-      'INTA, the International Trademark Association, is a global network of brand owners and intellectual-property professionals. Its website has to serve members and newcomers alike: explaining what the association does, promoting its events and giving practitioners a way into a large library of resources.',
-      'The design covers a splash screen and the Home, About Us, Events, News and Resources pages, plus “Ask INTA”, an AI chat assistant. Home introduces the association’s work — trademark strategy and protection, legal resources and research, education and training, networking, anti-counterfeiting and policy — with a call to schedule a consultation.',
-      'Events presents programmes such as the Annual Meeting, the TMAP Meeting and IP workshops, and Resources and the footer lead to practice guides, webcasts, CLE/CPD, the career centre, the member directory and The Trademark Reporter.',
+      'INTA, the International Trademark Association, is a global network of brand owners and intellectual-property professionals. Its website has to explain what the association does, promote its events and open a large library of resources — to members and newcomers alike.',
+      'I designed the site experience — Home, About Us, Events, News and Resources, plus “Ask INTA”, an AI chat assistant — and the Annual Meeting pages: registration, program and speakers, exhibitors, partners, travel, news, store and FAQs.',
     ],
-    challenges: [
-      {
-        title: 'One site, many kinds of professional',
-        description: 'Trademark administrators, paralegals, young practitioners, attorneys and business professionals all arrive with different needs. Home groups the association’s work into six clear areas so visitors find their interest first.',
-      },
-      {
-        title: 'Events with a lot to say',
-        description: 'Each programme has its own audience, location and registration timing. The Events page gives every event its own summary, so visitors can tell quickly which one is meant for them.',
-      },
-      {
-        title: 'A deep resource library',
-        description: 'Practice guides, webcasts, CLE/CPD, publications, the career centre and the member directory are a lot to navigate. The Resources page and a structured footer give each a direct, predictable path.',
-      },
-      {
-        title: 'Answering questions directly',
-        description: '“Ask INTA” lets visitors ask questions such as how to pay for membership, with suggested topics — about INTA, upcoming events, membership benefits, resources, career development, support — instead of searching page by page.',
-      },
-      {
-        title: 'Credibility for an expert audience',
-        description: 'News, advocacy and policy work are given prominent space, so the site reflects the authority a professional association needs with the people it represents.',
-      },
+    approach: [
+      'Mapped each audience to a clear path before designing any page.',
+      'Separated the main association site from an Annual Meeting microsite.',
+      'Built a small set of page templates — hub, listing, detail, table — to keep many pages consistent.',
+      'Made “Ask INTA” and global search available everywhere, so no visitor hits a dead end.',
+    ],
+    flows: [
+      { title: 'Newcomer', steps: ['Home', 'What INTA does', 'Resources', 'Ask INTA'] },
+      { title: 'Annual Meeting attendee', steps: ['Meeting home', 'Registration & pricing', 'Program & speakers', 'Hotel & travel'] },
+      { title: 'Exhibitor / partner', steps: ['Exhibitor information', 'Deadlines & checklists', 'Partners'] },
+    ],
+    ia: [
+      I('About Us', 'Mission & leadership · policy & advocacy · anti-counterfeiting'),
+      I('Events', 'Annual Meeting · TMAP Meeting · IP workshops'),
+      I('News', 'INTA Daily News · press & media partners · bulletins'),
+      I('Resources', 'Practice guides · webcasts · CLE/CPD · career centre · member directory'),
+      I('Always available', 'Global search · Ask INTA AI assistant · member sign-in'),
+    ],
+    design: {
+      text: 'Navy carries authority, INTA red marks every call to action and generous white space keeps dense, professional content readable.',
+      colors: [
+        { name: 'INTA navy', hex: '#2E4574' }, { name: 'INTA red', hex: '#EF3942' }, { name: 'Ice', hex: '#ECF3F5' },
+        { name: 'Graphite', hex: '#414141' }, { name: 'Rule grey', hex: '#D9D9D9' },
+      ],
+      type: 'An editorial serif with Libre Franklin for clean body text, tables and forms',
+      components: ['Utility bar & navigation', 'Pricing tables', 'Speaker cards', 'Event cards', 'Contact footer'],
+    },
+    screens: [
+      { image: '/projects/inta-annual.webp', caption: 'Annual Meeting home', alt: 'INTA Annual Meeting home page with hero, quick links and editorial cards' },
+      { image: '/projects/inta-program.webp', caption: 'Program, people & search', alt: 'INTA session detail with speaker cards, and search across sessions, people and organisations' },
+    ],
+    challenge: {
+      headline: 'A large organisation, many audiences, one website.',
+      items: [
+        I('A deep content library', 'Practice guides, webcasts, CLE/CPD, a career centre and a member directory are easy to get lost in.'),
+        I('Very different visitors', 'A seasoned practitioner, a newcomer, an exhibitor and a journalist each need a different path.'),
+        I('Event logistics everywhere', 'Registration, programs, exhibitors, hotels, news and FAQs for the Annual Meeting needed one home.'),
+      ],
+      question: 'How might we give every visitor a clear first step — whether they’re joining, learning, exhibiting or attending?',
+    },
+    users: [
+      { name: 'Members & practitioners', who: 'Existing members', needs: ['Find practice guides, CLE/CPD and the directory', 'Register for meetings quickly'] },
+      { name: 'Newcomers & students', who: 'First-time visitors', needs: ['Understand what INTA does', 'Take a clear first step'] },
+      { name: 'Exhibitors & partners', who: 'Event partners and press', needs: ['Clear deadlines and booking paths', 'News and partner details in one place'] },
+    ],
+    decisions: [
+      I('Structure before style', 'Mapping audiences to paths first made a dense association site feel simple.'),
+      I('Ask INTA as a front door', 'An AI assistant answers questions and points visitors to the right page or resource, instead of searching page by page.'),
+      I('Every page has a next step', 'Red calls to action and a “Contact Member Operations” footer on every page.'),
+      I('Templates scale content', 'Hub, listing, detail and table templates keep many pages consistent.'),
     ],
     prototypeUrl:
       'https://www.figma.com/proto/QCaAaghXmnuMOjWVpdXSUB/INTADesign?node-id=17616-105510&viewport=27096%2C-7560%2C0.3&t=AvpwDXISkSBHOWm3-1&scaling=scale-down-width&content-scaling=fixed&starting-point-node-id=17616%3A105510&page-id=0%3A1',
-    aliases: ['trademark', 'international trademark association'],
-    accent: '#1f5e8c',
+    caseStudyUrl: caseStudy('1066-69071'),
+    aliases: ['trademark', 'international trademark association', 'ask inta'],
+    accent: '#2e4574',
   },
   {
-    id: 'spyder',
-    title: 'Spyder',
-    category: 'Accounting Services Website · Design Assignment',
-    description: 'A marketing website for an accounting firm serving startups and growing businesses, designed as a UI/UX assignment for GHC.',
+    id: 'intellistaff',
+    title: 'IntelliStaff',
+    fullTitle: 'IntelliStaff — Staffing Mobile App',
+    category: 'Recruitment / HR Tech · Staffing',
+    platform: 'Mobile app · iOS & Android',
+    role: 'UI/UX Designer',
+    scope: 'Client app · job orders · staff selection · timeslips',
+    summary: 'Order, schedule and approve temporary staff — from your phone.',
     overview: [
-      'Spyder is a website for an accounting and finance firm whose clients are startups and growing businesses. Its job is to explain four services — bookkeeping, tax, CFO services and R&D tax credits — and turn visitors into consultation requests.',
-      'The design is a single long landing page: a hero with the core promise and a “Talk to an Expert” call to action, the kinds of businesses the firm works with, an expandable list of services, three reasons the firm is different, client testimonials, a featured case study, recent articles, a closing consultation banner and a footer with a newsletter sign-up.',
-      'It was completed as a UI/UX designer assignment for GHC.',
+      'IntelliStaff Mobile lets a staffing agency’s clients request temporary workers, choose who they want, follow today’s assignments and approve timeslips — without a phone call.',
+      'I designed the client mobile experience end to end: multi-division sign-in, a guided job-order flow, staff selection, order tracking with ratings, schedules and timeslip approvals.',
     ],
-    challenges: [
-      {
-        title: 'Making a dry service approachable',
-        description: 'Accounting is abstract and text-heavy. The page leans on photography of people, short card copy and a confident blue-and-yellow palette so it reads as a service from people rather than a list of compliance tasks.',
-      },
-      {
-        title: 'Four services without a wall of text',
-        description: 'Bookkeeping, tax, CFO and R&D tax-credit services sit in an expandable list, so visitors scan the names first and open only the one they care about.',
-      },
-      {
-        title: 'Letting visitors find themselves',
-        description: '“Who we work with” cards for startups, retail, manufacturing and professional services come before the service detail, so each kind of business sees it is in the right place.',
-      },
-      {
-        title: 'Building credibility in the right order',
-        description: 'Proof — a regular-customer count, testimonials, a case study and articles — sits between the service explanation and the final call to action, where a visitor is deciding whether to get in touch.',
-      },
-      {
-        title: 'One clear next step',
-        description: '“Talk to an Expert” appears in the navigation, the hero and the closing banner, so the main action is in reach wherever a visitor is ready.',
-      },
+    approach: [
+      'Separated the client and employee entry points from the first screen.',
+      'Broke a long job-order form into guided steps with smart pickers.',
+      'Made staff selection visual — photo, hours worked, rating and favourites.',
+      'Closed every loop with success states, ratings and timeslip approvals.',
+      'Built the screens from reusable components and auto layout in Figma.',
     ],
-    prototypeUrl:
-      'https://www.figma.com/proto/i852L2XjU3cEM6LpoRVOWN/UI-UX-Web-Designs?page-id=0%3A1&node-id=6-6031&viewport=-1230%2C107%2C0.13&t=veHL1rWqirIBKMHR-1&scaling=scale-down&content-scaling=fixed&starting-point-node-id=6%3A6031&show-proto-sidebar=1',
-    aliases: ['ghc', 'accounting'],
-    accent: '#2347b5',
+    flows: [
+      { title: 'Job order', steps: ['Position', 'Reason', 'Location', 'Report to', 'Headcount', 'Dates & schedule', 'Select staff', 'Order created'] },
+      { title: 'After the order', steps: ['Orders', 'Filter', 'Order overview', 'Rate employee'] },
+      { title: 'Timeslips', steps: ['Pending', 'Approve or decline', 'Approved'] },
+    ],
+    ia: [
+      I('Home', 'Today’s assignments · date strip · quick actions'),
+      I('Orders', 'Active · open · past · filters · order overview & rating'),
+      I('+ New order', 'Quick order · order with shifts · order with assignment'),
+      I('Timeslips', 'Pending · approved · billing & reports'),
+      I('Profile', 'Divisions · change password · usage agreement'),
+    ],
+    design: {
+      text: 'A single indigo brand colour carries every action, light lavender surfaces group information and amber is saved for ratings and highlights.',
+      colors: [
+        { name: 'Intelli indigo', hex: '#444EB2' }, { name: 'Night', hex: '#161B52' }, { name: 'Lavender mist', hex: '#EBECFE' },
+        { name: 'Rating amber', hex: '#FFB547' }, { name: 'Charcoal', hex: '#414244' },
+      ],
+      type: 'Poppins — keeps forms legible at small sizes',
+      components: ['Quick-action tiles', 'Staff picker cards', 'Order cards', 'Employee rating', 'Date strip'],
+    },
+    screens: [
+      { image: '/projects/intellistaff-home.webp', caption: 'Sign in & home', alt: 'IntelliStaff screens: splash, choose your app, sign in, divisions and home with today’s assignments' },
+      { image: '/projects/intellistaff-staffing.webp', caption: 'Staffing the order', alt: 'IntelliStaff screens: headcount keypad, dates and schedule, select staff and order created' },
+    ],
+    challenge: {
+      headline: 'Staffing ran on phone calls, emails and guesswork.',
+      items: [
+        I('Slow, error-prone ordering', 'Each request — position, location, dates and supervisor — was phoned or emailed, and details were missed.'),
+        I('No live view of the day', 'Managers couldn’t easily see who was assigned today, where, and for which position.'),
+        I('Approvals & feedback lagged', 'Timeslips piled up, with no quick way to rate a worker after an order.'),
+      ],
+      question: 'How might we let a busy manager book the right temporary worker quickly — from anywhere?',
+    },
+    users: [
+      { name: 'Client managers', who: 'Hiring managers and supervisors across divisions', needs: ['Request staff from anywhere', 'Pick familiar, highly rated workers', 'Track orders, approve timeslips, rate work'] },
+      { name: 'Front desk', who: 'Teams managing day-to-day schedules', needs: ['See today’s assignments at a glance', 'Check an employee’s schedule and location', 'Reach the right supervisor'] },
+    ],
+    decisions: [
+      I('One question per step', 'Breaking the order form into steps suits mobile and keeps details complete.'),
+      I('People pick people', 'Photos, hours and ratings turn “any worker” into “the right worker”.'),
+      I('A home base and a big “+”', 'Clear tabs and one central action open every order type.'),
+      I('Close every loop', 'Success states, ratings and timeslip approvals confirm the job is done.'),
+    ],
+    // no separate UI prototype link has been supplied for IntelliStaff
+    caseStudyUrl: caseStudy('1066-63962', false),
+    aliases: ['intelli staff', 'staffing', 'recruitment'],
+    accent: '#444eb2',
   },
 ]
 
@@ -302,4 +496,3 @@ export function matchProject(text: string): ProjectDef | null {
   }
   return null
 }
-

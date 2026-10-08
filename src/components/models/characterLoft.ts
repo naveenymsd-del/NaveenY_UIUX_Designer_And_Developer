@@ -50,7 +50,9 @@ export function buildLofts(look: CharacterLook, bones: Record<BoneName, Bone>, i
   const open = look.topStyle === 'jacket' || look.topStyle === 'overshirt'
   const belt = !skirt && (look.topStyle === 'shirt' || look.topStyle === 'overshirt' || look.topStyle === 'blouse' || jeans || look.bottomStyle === 'trousers')
   const ease = look.topStyle === 'hoodie' || look.topStyle === 'sweater' ? 0.012 : look.topStyle === 'jacket' || look.topStyle === 'overshirt' ? 0.01 : 0.004
-  const lower = skirt ? top : bottom
+  const lower = bottom
+  // under a skirt the legs wear opaque tights, never bare skin
+  const tights = 0x2b2a2e
   const lofts: Loft[] = []
 
   // ── torso: pelvis → waist → chest → shoulders ─────────────────────────
@@ -127,7 +129,7 @@ export function buildLofts(look: CharacterLook, bones: Record<BoneName, Bone>, i
       rings,
       capBottom: true,
       color: (i) => {
-        if (skirt) return i < 1 ? lower : skin
+        if (skirt) return i < 2 ? lower : tights
         if (shorts) return i <= shortsEnd ? bottom : skin
         return i >= rings.length - 1 ? shade(bottom, -12) : bottom
       },

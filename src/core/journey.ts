@@ -10,6 +10,7 @@ import { playerRuntime, SPAWN_YAW } from './runtime'
 import { soundManager } from './sound/SoundManager'
 import { useDayNight } from './dayNight'
 import { useUIStore } from '@/stores/uiStore'
+import { useVoiceStore } from '@/ai/voiceStore'
 
 /**
  * The visitor journey: how the landing hands over to the world, what counts
@@ -23,11 +24,10 @@ const pt = (id: StopId) => new Vector3(...getStop(id).point)
 export const PLACE_POINTS: Record<Place, Vector3> = {
   home: pt('home'),
   education: pt('education'),
-  career: new Vector3(6, 2, -40),
-  office: pt('NaveenSolutions'),
+  office: pt('nfcSolutions'),
   projects: pt('projects'),
-  park: pt('designJourney'),
-  ai: pt('designJourney'),
+  park: pt('gallery'),
+  ai: pt('gallery'),
   cafe: pt('contactCafe'),
 }
 
@@ -62,13 +62,13 @@ export function beginJourney(kind: 'street' | 'work') {
     g.setPhase('transition')
     return
   }
-  // "View my work": straight to the Project Studio inside Naveen Solutions
+  // "View my work": straight to the Project Studio inside NFC Solutions
   // mark the journey as started first so the street welcome lines don't queue up
   state.started = true
   state.lastDiscovery = performance.now()
   say('Let’s head to the <b>office</b>.', { ms: 2600, emote: 'point', point: PLACE_POINTS.office, interrupt: true })
   g.setPhase('playing')
-  window.setTimeout(() => enterInterior('office', 'Naveen', { spot: 'studio', approachMs: 1900 }), 250)
+  window.setTimeout(() => enterInterior('office', 'nfc', { spot: 'studio', approachMs: 1900 }), 250)
 }
 
 /** Quick travel to the projects from anywhere (menu, street pavilions, CTAs). */
@@ -81,7 +81,7 @@ export function goToProjects() {
   }
   g.closePanels()
   say('Let’s head to the <b>office</b> — the projects live there.', { ms: 3000, emote: 'point', point: PLACE_POINTS.office, interrupt: true })
-  enterInterior('office', g.interior ? undefined : 'Naveen', { spot: 'studio', approachMs: g.interior ? 0 : 900, from: g.interior ?? undefined })
+  enterInterior('office', g.interior ? undefined : 'nfc', { spot: 'studio', approachMs: g.interior ? 0 : 900, from: g.interior ?? undefined })
 }
 
 function discover(place: Place) {
@@ -111,8 +111,7 @@ function suggestNext(delay = 900) {
 const ZONE_LINES: Record<string, string> = {
   home: 'Step inside my <b>home</b> — this is who I am.',
   campus: 'That’s where the story <b>started</b>.',
-  growth: 'Walk this path — it’s how I <b>grew</b>, one step at a time.',
-  Naveen: 'Ready to see where the journey became <b>real</b>?',
+  nfc: 'Ready to see where the journey became <b>real</b>?',
   cafe: 'The <b>Contact Café</b> — the last stop. Come in.',
 }
 
@@ -121,20 +120,18 @@ function onStore(s: ReturnType<typeof useGameStore.getState>, prev: ReturnType<t
   if (s.phase === 'playing' && prev.phase !== 'playing' && !state.started) {
     state.started = true
     state.lastDiscovery = performance.now()
-    say('Hey! Welcome to <b>Naveen’s world</b>. I’m your AI guide.', { ms: 3600, emote: 'wave' })
-    say('Take your time — there’s a lot to explore.', { ms: 3000, emote: 'explain' })
-    say('I can take you to his profile, education, workplace, projects, design process or the <b>Contact Café</b>.', { ms: 4600, emote: 'explain' })
-    say('Where would you like to go?', { ms: 3000, emote: 'think' })
+    // the cinematic intro has already said welcome; this is the invitation to talk
+    say('I’m your AI guide. You can explore normally, or you can just <b>talk to me</b>.', { ms: 4400, emote: 'wave' })
+    say('Ask me about Naveen, ask about a project, or tell me where you’d like to go.', { ms: 4200, emote: 'think' })
     // …and offer the shortcuts once (it's non-blocking; walking closes nothing)
     window.setTimeout(() => {
       const g = useGameStore.getState()
-      if (g.phase === 'playing' && !g.interior && !g.activeLocationId) useUIStore.getState().setGuideOpen(true)
+      if (g.phase === 'playing' && !g.interior && !g.activeLocationId && useVoiceStore.getState().mode === 'off') useUIStore.getState().setGuideOpen(true)
     }, 15500)
   }
   // approaching somewhere for the first time
   if (s.visitedZones.length > prev.visitedZones.length) {
     const id = s.visitedZones[s.visitedZones.length - 1]
-    if (id === 'growth') discover('career')
     const line = ZONE_LINES[id]
     if (line) say(line, { ms: 3400, emote: 'point' })
   }

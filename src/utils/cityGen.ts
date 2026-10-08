@@ -13,8 +13,7 @@ import {
   type PropKind, type PropPlacement, type TreeKind,
 } from './propGen'
 import { createRng } from './rng'
-import { genEntry, genGallery, genGrowthWalk, genNightFurniture, genPark, genPlaza, genStudio } from './specialGen'
-import { GROWTH_WALK, GROWTH_YAW } from '@/data/locations'
+import { genEntry, genGallery, genNightFurniture, genPark, genPlaza, genStudio } from './specialGen'
 import { genEducation, genHome, genOffice } from './landmarkGen'
 import { genInteriors } from './interiorGen'
 import { AtlasBuilder } from './textures'
@@ -337,7 +336,6 @@ export function generateCity(options: { modelBuildingIds?: Set<string>; replaceP
   genPlaza(ctx, PROJECTS)
   genPark(ctx)
   genNightFurniture(ctx)
-  genGrowthWalk(ctx, GROWTH_WALK, GROWTH_YAW)
   genInteriors(ctx)
   cityProps(ctx)
   const walls = boundaries(b)

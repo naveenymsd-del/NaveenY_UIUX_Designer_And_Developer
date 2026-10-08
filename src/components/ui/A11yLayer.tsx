@@ -3,6 +3,7 @@ import { activateLocation } from '@/components/interactions/InteractionManager'
 import { LOCATIONS, getLocation } from '@/data/locations'
 import { PROJECTS } from '@/data/projects'
 import { useGameStore } from '@/stores/gameStore'
+import { PROFILE } from '@/data/portfolioContent'
 
 /**
  * Accessible fallback for everything that lives only in WebGL: a skip-link
@@ -20,7 +21,7 @@ export function A11yLayer() {
     <>
       <nav className="sr-only sr-only-focusable ui-a11y" aria-label="Places and projects (accessible overview)">
         <h2>Mindscape Avenue — overview</h2>
-        <p>The interactive portfolio of Naveen, UI/UX designer. Every place and story can also be opened directly:</p>
+        <p>The interactive portfolio of {PROFILE.fullName}, {PROFILE.role}. Every place and story can also be opened directly:</p>
         <ul>
           {LOCATIONS.filter((l) => l.marker || l.type === 'story').map((l) => (
             <li key={l.id}>

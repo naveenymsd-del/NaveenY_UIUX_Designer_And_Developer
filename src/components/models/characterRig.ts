@@ -96,7 +96,11 @@ function partList(look: CharacterLook): PartSpec[] {
   const skirt = look.bottomStyle === 'skirt'
 
   // ── lower body details (legs themselves are lofted) ──────────────────
-  if (skirt) add('hips', 'cone', bottom, [0.42 * b, 0.46, 0.32], [0, -0.17, 0.005])
+  if (skirt) {
+    // midi skirt: hem below the knee, with a waistband closing the top
+    add('hips', 'cone', bottom, [0.5 * b, 0.74, 0.38], [0, -0.29, 0.004])
+    add('hips', 'cyl', shade(bottom, -8), [0.31 * b, 0.04, 0.215], [0, 0.07, 0.0], undefined, 0)
+  }
   for (const [foot, toe] of [['footL', 'toeL'], ['footR', 'toeR']] as const) {
     // shoe: heel counter + sole on the foot bone, tapered toe box + toe sole on the toe bone
     add(foot, 'box', look.shoes, [0.09, 0.078, 0.15], [0, -0.034, -0.012])

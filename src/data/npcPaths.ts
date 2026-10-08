@@ -28,8 +28,8 @@ export const ROUTES: RouteDef[] = [
   { id: 'plaza-loop', mode: 'loop', points: [[7, -6], [44, -6], [44, -44], [7, -44]] },
   { id: 'plaza-crossing', mode: 'pingpong', points: [[-7, -14], [-7, -25], [7, -25], [11, -25], [12.5, -30]] },
   { id: 'cafe-crossing', mode: 'pingpong', points: [[-7, 33], [-7, 25], [7, 25], [7, 19], [9.4, 17], [13.4, 17]] },
-  { id: 'campus-in', mode: 'pingpong', points: [[-7, -40], [-7, -44.6], [-6.9, -46.4], [-6.9, -55.2], [-3.2, -56.4]] },
-  { id: 'campus-in-east', mode: 'pingpong', points: [[7, -38], [7, -44.6], [6.9, -46.4], [6.9, -55.2], [3.4, -56.6]] },
+  { id: 'campus-in', mode: 'pingpong', points: [[-7, -40], [-7, -44.6], [-6.9, -46.4], [-6.9, -54.4], [-3.2, -56.4]] },
+  { id: 'campus-in-east', mode: 'pingpong', points: [[7, -38], [7, -44.6], [6.9, -46.4], [6.9, -54.4], [3.4, -56.6]] },
   { id: 'office-in', mode: 'pingpong', points: [[7, 8], [7, 12], [9.6, 13.6], [13.4, 16.2]] },
   { id: 'promenade', mode: 'loop', points: [[3.4, 57], [3.4, 88], [-3.4, 88], [-3.4, 57]] },
   { id: 'south-west', mode: 'pingpong', points: [[-9.5, 56], [-52, 56]] },
@@ -91,7 +91,7 @@ export const WANDER_AREAS = [
 export const SIT_HINTS: [number, number][] = [
   [19 + 6.8 * Math.cos(Math.PI / 6), -25 + 6.8 * Math.sin(Math.PI / 6)],
   [19 + 6.8 * Math.cos((7 * Math.PI) / 6), -25 + 6.8 * Math.sin((7 * Math.PI) / 6)],
-  [10.6, 13], [10.6, 21], // Naveen Solutions forecourt benches
+  [10.6, 13], [10.6, 21], // NFC Solutions forecourt benches
   [-11.6, -56.3], [11.6, -56.3], // campus benches
   [-35, 27.6], [-6.4, 72.5],
 ]
@@ -118,7 +118,7 @@ export const STANDERS: StandDef[] = [
   // students chatting outside the campus
   { pos: [-3.4, -54.9], yaw: 1.9, pose: 'talk', pair: 7 },
   { pos: [-2.3, -55.4], yaw: -1.2, pose: 'talk', pair: 6 },
-  // colleagues on the Naveen Solutions forecourt
+  // colleagues on the NFC Solutions forecourt
   { pos: [12.4, 15.0], yaw: 2.2, pose: 'coffee', prop: 'cup' },
   { pos: [12.2, 19.6], yaw: -1.9, pose: 'phone', prop: 'phone' },
   // reading in the Design Park

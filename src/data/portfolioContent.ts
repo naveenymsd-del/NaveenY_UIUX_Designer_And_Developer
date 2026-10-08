@@ -1,15 +1,16 @@
 /**
  * Portfolio content — everything the world "says" about Naveen lives here.
  *
- * Only facts already provided are stated (name, role, 4+ years, Naveen
- * Solutions). Everything else is a clearly marked placeholder in [BRACKETS]
- * to be replaced with real details. Keep entries short: the world shows them
- * on boards, plaques and small cards, not as long pages.
+ * Source of truth: Naveen's résumé. Only facts from the résumé are stated;
+ * anything not in it is left out rather than shown as a placeholder. Keep
+ * entries short: the world shows them on boards, plaques and small cards,
+ * not as long pages. Projects live in data/projects.ts.
  */
+import { PROJECT_CONTENT } from './projects'
+
 export interface ContentItem {
   label: string
   text: string
-  placeholder?: boolean
 }
 
 export interface StoryContent {
@@ -18,262 +19,274 @@ export interface StoryContent {
   body: string
   items?: ContentItem[]
   /** optional call to action handled by the panel */
-  cta?: { label: string; action: 'projects' | 'contact' }
+  cta?: { label: string; action: 'projects' | 'contact' | 'gallery' }
 }
 
-const P = (label: string, text: string): ContentItem => ({ label, text, placeholder: /\[.*\]/.test(text) })
+const P = (label: string, text: string): ContentItem => ({ label, text })
 
 export const PROFILE = {
   name: 'Naveen',
-  role: 'UI/UX Designer',
-  experience: '4+ years experience',
-  company: 'Naveen Solutions',
-  tagline: 'Designing human experiences with technology and AI.',
-  /** the Home introduction (visitor-facing) */
-  intro: 'I’m Naveen, a UI/UX Designer with 4+ years of experience creating intuitive digital experiences across web applications, mobile products, enterprise systems and interactive experiences.',
-  craft: 'I combine user-centered thinking, visual design, prototyping, design systems and technology to turn complex problems into clear, usable experiences.',
-  ai: 'Today, I also use AI as a design partner to explore ideas, accelerate experimentation and expand what I can create — while keeping human judgment at the center of every design decision.',
+  fullName: 'Naveen Y',
+  role: 'UI/UX Designer · Product Designer',
+  specialization: 'Web & Mobile App Design',
+  experience: '4+ years',
+  company: 'NFC Solutions',
+  companyFull: 'NFC Solutions India Pvt. Ltd.',
+  location: 'Hyderabad, India',
+  tagline: 'Designing clear, human digital experiences across web, mobile and enterprise products.',
+  summary:
+    'UI/UX Designer with 4+ years of experience designing user-centered web and mobile applications across enterprise SaaS, recruitment/HR technology, healthcare, and service businesses.',
+  /** shown in the Home "About me" panel */
+  about:
+    'I’m a UI/UX Designer and Product Designer with 4+ years of experience designing digital products across enterprise SaaS, healthcare, recruitment/HR technology and service platforms.',
+  craft:
+    'I work across UX research, information architecture, user flows, wireframing, prototyping, UI design, design systems and developer handoff.',
+  ai: 'AI helps me explore. I make the design decisions.',
 }
 
 /**
- * Contact links. Replace each placeholder with the real value; any entry that
- * is still a [PLACEHOLDER] is shown as "coming soon" instead of a broken link.
+ * Contact. Only real, working values belong here — an empty string hides the
+ * button everywhere. The résumé's LinkedIn ("linkedin.com/in/myProfile") and
+ * portfolio ("portfolio.link") are template text, so they stay empty until
+ * the real URLs are provided. `resume` is a URL to a hosted résumé.
  */
 export const CONTACT = {
-  phone: '[ADD PHONE]',
-  email: '[ADD EMAIL]',
-  linkedin: '[ADD LINKEDIN URL]',
-  resume: '[ADD RESUME URL]',
-  portfolio: '[ADD PORTFOLIO URL]',
+  email: 'naveenyarramallugalla@gmail.com',
+  phone: '+91 70362 82178',
+  linkedin: '',
+  resume: '',
 }
 
-// ── Education ───────────────────────────────────────────────────────────────
-/** the five plaques on the timeline wall — storytelling, not academic claims */
-export const EDUCATION_TIMELINE: ContentItem[] = [
-  P('Learn', 'Fundamentals, technology and creative exploration.'),
-  P('Experiment', 'Small ideas become practical design exercises.'),
-  P('Discover', 'Good design isn’t only about how something looks — it’s about how it works and how people experience it.'),
-  P('Grow', 'Moving from creating screens to understanding problems, users, systems and interactions.'),
-  P('Continue', 'Design is never finished. There is always something new to learn, test and explore.'),
+// ── Experience (résumé) ─────────────────────────────────────────────────────
+export const EXPERIENCE = {
+  title: 'UI/UX Designer',
+  company: PROFILE.companyFull,
+  location: PROFILE.location,
+  dates: 'May 2022 – Present',
+  summary:
+    'End-to-end ownership of UX and UI for enterprise, healthcare and service-industry products from requirements and research through prototyping, design systems and developer handoff.',
+  focus: [
+    'Enterprise SaaS', 'Healthcare', 'Recruitment / HR Tech', 'Service platforms', 'Web applications',
+    'Mobile applications', 'Dashboards', 'Design systems', 'Prototyping', 'Developer collaboration',
+  ],
+}
+
+// ── Education & certification (résumé) ─────────────────────────────────────
+export const EDUCATION: { degree: string; short: string; field: string; institution: string; place: string; years: string; cgpa: string }[] = [
+  { degree: 'Master of Science (M.Sc.)', short: 'M.Sc.', field: 'Computer Science', institution: 'Sri Hari Degree and PG College', place: 'Kadapa', years: '2019–2021', cgpa: '7.8' },
+  { degree: 'Bachelor of Science (B.Sc.)', short: 'B.Sc.', field: 'Computer Science', institution: 'CSSR & SRRM Degree and PG College', place: 'Kadapa', years: '2016–2019', cgpa: '8.1' },
 ]
+
+/** the one certification */
+export const CERTIFICATION = { title: 'Certified UI/UX Designer (CWD)', issuer: 'Tech Mahindra Smart Academy', year: '2021' }
+
+// ── Skills & tools (résumé) ────────────────────────────────────────────────
+export const SKILL_GROUPS: { group: string; short: string; items: string[] }[] = [
+  {
+    group: 'UX Design', short: 'UX',
+    items: ['User Research', 'Stakeholder Interviews', 'Personas', 'Journey Mapping', 'Information Architecture', 'User Flows', 'Task Flows', 'Wireframing', 'Usability Testing', 'Heuristic Evaluation', 'Design Thinking'],
+  },
+  {
+    group: 'UI Design', short: 'UI',
+    items: ['UI Design', 'Visual Design', 'Interaction Design', 'High-Fidelity UI', 'Responsive Design', 'Mobile Design', 'Dashboard Design', 'Typography', 'Grid & Layout', 'Branding'],
+  },
+  {
+    group: 'Systems & Delivery', short: 'Systems',
+    items: ['Design Systems', 'Component Libraries', 'Style Guides', 'Interactive Prototyping', 'Accessibility (WCAG 2.1)', 'Developer Handoff', 'Cross-Functional Collaboration', 'Agile/Scrum'],
+  },
+  {
+    group: 'Tools', short: 'Tools',
+    items: ['Figma', 'Figma Make', 'Adobe XD', 'Photoshop', 'Canva', 'Relume', 'Google Stitch', 'UX Pilot', 'ChatGPT', 'Claude'],
+  },
+  {
+    group: 'Front-end awareness', short: 'Front-end',
+    items: ['HTML5', 'CSS3', 'Responsive Layouts', 'Developer Handoff'],
+  },
+]
+
+export const TOOLS = SKILL_GROUPS.find((g) => g.short === 'Tools')!.items
+export const AI_TOOLS = ['ChatGPT', 'Claude', 'Figma Make', 'UX Pilot']
+
+export const INTERESTS = ['Pencil Art & Sketching', 'Cricket', 'Dance']
+
+// ── AI-assisted design ─────────────────────────────────────────────────────
+export const AI_WORKFLOW: { n: string; title: string; text: string; human?: boolean }[] = [
+  { n: '01', title: 'Explore', text: 'Research directions, references and possibilities.' },
+  { n: '02', title: 'Ideate', text: 'Generate and compare alternative concepts.' },
+  { n: '03', title: 'Prototype', text: 'Rapidly explore interaction and UI directions.' },
+  { n: '04', title: 'Refine', text: 'Challenge assumptions, iterate and improve.' },
+  { n: '05', title: 'Human judgment', text: 'Choose what actually works for the user and product.', human: true },
+]
+
+export const AI_STORY: StoryContent = {
+  kicker: 'AI-assisted design', heading: PROFILE.ai,
+  body: 'AI accelerates exploration. Human judgment drives the final experience.',
+  items: [
+    ...AI_WORKFLOW.map((s) => P(`${s.n} — ${s.title}`, s.text)),
+    P('AI tools', AI_TOOLS.join(' · ')),
+  ],
+}
+
+// ── Gallery ────────────────────────────────────────────────────────────────
+/**
+ * Gallery images (paths under /public). Only real work belongs here: the UI
+ * screens below are exported from the Figma case studies. Pencil art or
+ * photographs can be added with category 'Sketching' / 'Photography' once
+ * real files exist — nothing is shown for a category without images.
+ */
+export interface GalleryItem {
+  id: string
+  image: string
+  caption: string
+  category: 'UI/UX work' | 'Sketching' | 'Photography'
+  /** project id, when the image belongs to a case study */
+  project?: string
+}
+
+// filled from the project screens so the gallery and case studies never disagree
+export const GALLERY: GalleryItem[] = PROJECT_CONTENT.flatMap((p) =>
+  p.screens.map((s, i) => ({ id: `${p.id}-${i}`, image: s.image, caption: `${p.title} · ${s.caption}`, category: 'UI/UX work' as const, project: p.id })),
+)
+
+// ── Education building ─────────────────────────────────────────────────────
+const educationItems = (): ContentItem[] =>
+  EDUCATION.map((e) => P(`${e.short} ${e.field} · ${e.years}`, `${e.institution}, ${e.place} · CGPA ${e.cgpa}`))
 
 export const EDUCATION_STORIES: Record<string, StoryContent> = {
   timeline: {
-    kicker: 'Where it started', heading: 'Where the journey started',
-    body: 'Every designer has a beginning. Before designing products for real users, there was a stage of learning, experimenting, making mistakes and discovering how technology and creativity could come together.',
-    items: EDUCATION_TIMELINE,
-  },
-  classroom: {
-    kicker: 'The classroom board', heading: 'What I learned',
-    body: '[CONFIRM WHICH OF THESE YOU STUDIED — remove any that don’t apply]',
-    items: [
-      P('Design fundamentals', 'Visual hierarchy, layout and typography'),
-      P('UX thinking', 'Designing for people and their goals'),
-      P('Interaction', 'How things respond and feel'),
-      P('Technology & problem solving', 'Understanding how things are built'),
-    ],
-  },
-  book: {
-    kicker: 'My education', heading: 'My education',
-    body: 'The formal part of the story.',
-    items: [
-      P('Qualification', '[ADD DEGREE / DIPLOMA]'),
-      P('Institution', '[ADD INSTITUTION]'),
-      P('Years', '[ADD YEARS]'),
-    ],
+    kicker: 'Education', heading: 'Computer Science',
+    body: 'Master’s and bachelor’s degrees in Computer Science, Kadapa.',
+    items: educationItems(),
   },
   certificates: {
-    kicker: 'Certifications', heading: 'Certificates & courses',
-    body: 'Only real certificates go on this wall.',
-    items: [P('Certificate', '[ADD CERTIFICATION 1]'), P('Certificate', '[ADD CERTIFICATION 2]'), P('Certificate', '[ADD CERTIFICATION 3]')],
-  },
-  growth: {
-    kicker: 'Keep learning', heading: 'Keep learning',
-    body: 'The tools change. The fundamentals continue to evolve.',
-    items: [P('Currently learning', '[ADD WHAT YOU ARE LEARNING NOW]')],
+    kicker: 'Certification', heading: CERTIFICATION.title,
+    body: `${CERTIFICATION.issuer} · ${CERTIFICATION.year}`,
   },
 }
 
-// ── Naveen Solutions (workplace) ───────────────────────────────────────────────
+// ── NFC Solutions (workplace) ──────────────────────────────────────────────
 export const OFFICE_STORIES: Record<string, StoryContent> = {
   reception: {
-    kicker: 'My professional world', heading: 'Naveen Solutions',
-    body: 'This is where design moves from ideas to real products. At Naveen Solutions, I work as part of a collaborative environment where design, product and technology come together to solve real problems and create usable digital experiences.',
-    items: [
-      P('Collaboration', 'Design + Product + Engineering. Great products are rarely created by one person — they grow through conversations, reviews, iterations and collaboration.'),
-      P('Real products', 'Understanding requirements, balancing user needs, working within technical constraints and continuously refining the experience.'),
-    ],
+    kicker: 'My professional world', heading: 'NFC Solutions',
+    body: EXPERIENCE.summary,
+    items: [P(EXPERIENCE.title, `${EXPERIENCE.company} · ${EXPERIENCE.location}`), P('Since', EXPERIENCE.dates)],
   },
   workspace: {
-    kicker: 'My role', heading: 'UI/UX Designer',
-    body: 'I work across the design process — from understanding problems and exploring ideas to creating interfaces, prototypes, systems and interactive experiences.',
-    items: [
-      P('Focus areas', 'UX thinking · UI design · user flows · wireframes · prototypes · design systems · interaction design · responsive design · AI-assisted exploration · collaboration with development'),
-      P('Since', '[ADD START DATE AT Naveen SOLUTIONS]'),
-    ],
+    kicker: 'My role', heading: EXPERIENCE.title,
+    body: `${EXPERIENCE.dates} · ${EXPERIENCE.company}`,
+    items: [P('Focus areas', EXPERIENCE.focus.join(' · '))],
   },
   meeting: {
-    kicker: 'Collaboration', heading: 'Designing together',
-    body: 'Good products come from good conversations: reviews, critiques and shared decisions.',
-    items: [
-      P('With product', 'Framing problems and priorities.'),
-      P('With engineering', 'Designing for what can be built well.'),
-      P('With users', 'Validating ideas before they ship.'),
-    ],
+    kicker: 'Collaboration', heading: 'Designing with product & engineering',
+    body: 'I work on real digital products with product and engineering teams — from requirements and research through prototyping and developer handoff.',
   },
   designWall: {
-    kicker: 'Design practice', heading: 'Designing better digital experiences',
-    body: 'Sketches, flows and prototypes on the wall — the messy middle of good design.',
-    items: [P('Process', 'Explore widely, decide carefully, refine relentlessly.')],
+    kicker: 'Design practice', heading: 'From requirements to UI',
+    body: 'Research, information architecture, user flows, wireframes and prototypes — then design systems and handoff.',
+    cta: { label: 'See the Project Studio', action: 'projects' },
   },
 }
 
 // ── Home / profile ─────────────────────────────────────────────────────────
 export const HOME_STORIES: Record<string, StoryContent> = {
   hello: {
-    kicker: 'Who I am', heading: 'Naveen · UI/UX Designer',
-    body: `${PROFILE.intro} ${PROFILE.craft}`,
-    items: [P('With AI', PROFILE.ai), P('Currently', `${PROFILE.role} at ${PROFILE.company}`), P('Based in', '[ADD LOCATION]')],
+    kicker: 'About me', heading: `Hi, I’m ${PROFILE.name}.`,
+    body: `${PROFILE.about} ${PROFILE.craft}`,
+    items: [P('Role', PROFILE.role), P('Experience', PROFILE.experience), P('Location', PROFILE.location)],
   },
   desk: {
-    kicker: 'How I work', heading: 'Understand deeply, explore widely, decide with the user in mind.',
-    body: 'My approach, in six steps:',
-    items: [
-      P('Understand', 'I start by understanding the problem, people and context.'),
-      P('Explore', 'I explore multiple possibilities instead of jumping immediately to one solution.'),
-      P('Design', 'I turn insights into flows, structures, interfaces and systems.'),
-      P('Prototype', 'I make ideas interactive enough to experience and evaluate.'),
-      P('Test', 'I look for confusion, friction and opportunities to improve.'),
-      P('Refine', 'I iterate until the experience becomes clearer and more useful.'),
-      P('With AI', 'AI helps me explore. I make the design decisions.'),
-    ],
+    kicker: 'Experience', heading: EXPERIENCE.title,
+    body: EXPERIENCE.summary,
+    items: [P(EXPERIENCE.company, `${EXPERIENCE.location} · ${EXPERIENCE.dates}`)],
   },
   laptop: {
-    kicker: 'My design tools', heading: 'Tools I work with',
-    body: 'Design first, with enough code and AI to explore, prototype and collaborate well.',
-    items: [
-      P('Design', 'Figma · Framer'),
-      P('AI', 'Claude · ChatGPT'),
-      P('Code', 'HTML / CSS · JavaScript · React · Three.js'),
-    ],
+    kicker: 'Tools', heading: 'Tools I work with',
+    body: 'Design and prototyping first, with front-end awareness for developer collaboration.',
+    items: [P('Tools', TOOLS.join(' · ')), P('Front-end', 'HTML5 · CSS3')],
   },
-  bookshelf: {
-    kicker: 'Things I learn from', heading: 'The bookshelf',
-    body: '[ADD BOOKS, BLOGS OR PEOPLE THAT SHAPE YOUR THINKING]',
+  skills: {
+    kicker: 'Skills', heading: 'What I work with',
+    body: 'UX, UI, systems and delivery — and the tools behind them.',
+    items: SKILL_GROUPS.map((g) => P(g.group, g.items.join(' · '))),
   },
-  journey: {
-    kicker: 'Career journey', heading: `${PROFILE.experience} in design`,
-    body: '[ADD YOUR CAREER-START STORY]',
-    items: [P('Now', `${PROFILE.role} · ${PROFILE.company}`), P('Before', '[ADD EARLIER EXPERIENCE]')],
+  aiWorkflow: AI_STORY,
+  galleryEntry: {
+    kicker: 'Gallery', heading: 'Selected work & interests',
+    body: 'UI screens from my case studies, and what I enjoy outside product design.',
+    cta: { label: 'Go to the Gallery', action: 'gallery' },
   },
   portfolio: {
-    kicker: 'Selected work', heading: 'Work I’m proud of',
-    body: 'The full case studies live in the Project Studio, inside the Naveen Solutions office.',
+    kicker: 'Selected work', heading: 'Projects',
+    body: 'The case studies live in the Project Studio, inside the NFC Solutions office.',
     cta: { label: 'Go to the Project Studio', action: 'projects' },
   },
   window: {
-    kicker: 'Looking ahead', heading: 'What’s next',
-    body: '[ADD WHAT YOU WANT TO DO NEXT]',
-    items: [P('Interests', '[ADD INTERESTS]')],
+    kicker: 'Outside product design', heading: 'Interests',
+    body: INTERESTS.join(' · '),
   },
   contact: {
     kicker: 'Contact', heading: 'Let’s talk',
-    body: 'Open to conversations about design, products and interactive experiences.',
-    items: [P('Email', CONTACT.email), P('LinkedIn', CONTACT.linkedin)],
+    body: `${PROFILE.fullName} · ${PROFILE.location}`,
+    items: [P('Email', CONTACT.email), P('Phone', CONTACT.phone)],
     cta: { label: 'Contact', action: 'contact' },
   },
-  skills: {
-    kicker: 'Tools & skills', heading: 'What I work with',
-    body: 'Walk along the wall — each tile is a tool or a practice.',
-    items: [
-      P('Figma', 'UI design, prototyping and design systems'),
-      P('Claude', 'AI-assisted exploration, ideation and design workflows'),
-      P('ChatGPT', 'Research, ideation, content exploration and problem solving'),
-      P('Framer', 'Interactive prototypes and motion'),
-      P('HTML / CSS', 'Understanding implementation constraints and collaborating with developers'),
-      P('JavaScript · React', 'Interaction logic, and component thinking that mirrors design systems'),
-      P('Three.js', 'Interactive 3D experiences — like this portfolio'),
-      P('Practice', 'Design systems · UX research · wireframing · prototyping · interaction design · responsive design · AI-assisted design'),
-    ],
-  },
-  approach: {
-    kicker: 'How I work', heading: 'Understand deeply, explore widely, decide with the user in mind.',
-    body: 'The full process is the nine-step Design Journey trail.',
-    items: [P('With AI', 'AI helps me explore. I make the design decisions.')],
-  },
 }
 
-// ── Design Park: process trail, AI workflow, activities ────────────────────
-export const DESIGN_PROCESS: { n: string; title: string; text: string }[] = [
-  { n: '01', title: 'Understand', text: 'Start with people, context and the real problem.' },
-  { n: '02', title: 'Research', text: 'Listen, observe and gather evidence.' },
-  { n: '03', title: 'Explore', text: 'Many ideas before one answer.' },
-  { n: '04', title: 'Ideate', text: 'Sketch widely, then choose with the user in mind.' },
-  { n: '05', title: 'Design', text: 'Flows, layouts and systems that fit.' },
-  { n: '06', title: 'Prototype', text: 'Make it real enough to learn from.' },
-  { n: '07', title: 'Test', text: 'Put it in front of users, early.' },
-  { n: '08', title: 'Refine', text: 'Iterate on what we learned.' },
-  { n: '09', title: 'Final experience', text: 'Ship with care, then keep improving.' },
-]
-
-export const AI_WORKFLOW = ['Human problem', 'AI exploration', 'Ideas & possibilities', 'Human evaluation', 'Design', 'Prototype', 'Test', 'Refine', 'Final experience']
-/** steps where the human decides (highlighted on the AI ring) */
-export const AI_HUMAN_STEPS = new Set(['Human problem', 'Human evaluation', 'Design', 'Final experience'])
-
-export const AI_STORY: StoryContent = {
-  kicker: 'How AI changed my workflow', heading: 'AI is my design partner',
-  body: 'I don’t use AI to replace design thinking. I use it to expand design thinking.',
-  items: [
-    P('How', 'I use AI to explore more possibilities, challenge my first ideas, accelerate repetitive work and experiment with new ways of designing.'),
-    P('But', 'The final decisions still come from understanding people, context, product goals and usability.'),
-    P('AI assists with', 'Research exploration · ideation · variations · content · prototyping · iteration · code collaboration'),
-    P('I stay responsible for', 'Empathy · context · judgment · prioritisation · product thinking · UX decisions · validation'),
-  ],
+// ── Gallery park: interests ─────────────────────────────────────────────────
+export const ACTIVITY_STORIES: Record<'sketching' | 'cricketDance', StoryContent> = {
+  sketching: { kicker: 'Outside product design', heading: 'Pencil Art & Sketching', body: 'One of my interests outside product design.' },
+  cricketDance: { kicker: 'Outside product design', heading: 'Cricket & Dance', body: 'What I enjoy when I’m away from the desk.' },
 }
 
-export const ACTIVITY_STORIES: Record<string, StoryContent> = {
-  learning: { kicker: 'Beyond the screen · Learning', heading: 'Learning', body: 'Staying curious and continuously exploring new ideas, tools and approaches.' },
-  visual: { kicker: 'Beyond the screen · Visual exploration', heading: 'Visual exploration', body: 'Looking at interfaces, products, environments and everyday experiences to understand what makes them work.' },
-  uiux: { kicker: 'Beyond the screen · UI/UX', heading: 'UI/UX', body: 'Creating clear hierarchy, honest interactions and accessible experiences.' },
-  interactive: { kicker: 'Beyond the screen · Interactive design', heading: 'Interactive design', body: 'Exploring spatial and interactive experiences — including this portfolio itself.' },
-}
-
-// ── Tools & skills (Home · skill wall) ─────────────────────────────────────
+// ── AI guide: answers to common questions ──────────────────────────────────
 /**
- * The tools and practices on the Home skill wall. Keep only what you really
- * use; each note is one line. Order = wall order (left → right, top → bottom).
+ * Questions the companion answers before travelling somewhere. `words` is a
+ * lowercase regex source; `go` is a world stop id (data/world.ts).
  */
-export const TOOLS: { name: string; note: string; group: 'tool' | 'practice' | 'code' }[] = [
-  { name: 'Figma', note: 'UI design, prototyping and design systems', group: 'tool' },
-  { name: 'Claude', note: 'AI-assisted exploration, ideation and design workflows', group: 'tool' },
-  { name: 'ChatGPT', note: 'Research, ideation, content exploration and problem solving', group: 'tool' },
-  { name: 'Framer', note: 'Interactive prototypes and motion', group: 'tool' },
-  { name: 'HTML / CSS', note: 'Understanding implementation constraints and collaborating with developers', group: 'code' },
-  { name: 'JavaScript', note: 'Interaction logic behind prototypes', group: 'code' },
-  { name: 'React', note: 'Component thinking that mirrors design systems', group: 'code' },
-  { name: 'Three.js', note: 'Interactive 3D experiences — like this portfolio', group: 'code' },
-  { name: 'Design Systems', note: 'Reusable components and consistent patterns', group: 'practice' },
-  { name: 'UX Research', note: 'Understanding people before designing for them', group: 'practice' },
-  { name: 'Wireframing', note: 'Structure and flow before visuals', group: 'practice' },
-  { name: 'Prototyping', note: 'Making ideas real enough to test', group: 'practice' },
-  { name: 'Interaction Design', note: 'How things respond, move and feel', group: 'practice' },
-  { name: 'Responsive Design', note: 'Layouts that work on every screen', group: 'practice' },
-  { name: 'AI-assisted Design', note: 'AI explores possibilities; human judgment decides', group: 'practice' },
+export const GUIDE_ANSWERS: { words: string; answer: string; go: 'home' | 'education' | 'nfcSolutions' | 'projects' | 'gallery' | 'contactCafe' }[] = [
+  {
+    words: '\\b(how|why)\\b.*\\b(use|uses|using)\\b.*\\bai\\b|\\bai\\b.*\\b(workflow|process|role)\\b|\\bai tools?\\b',
+    answer: `AI helps ${PROFILE.name} explore ideas, research directions, content, prototypes and alternatives faster — with tools like ${AI_TOOLS.join(', ')}. He remains responsible for UX judgment, prioritization and final design decisions.`,
+    go: 'gallery',
+  },
+  {
+    words: '\\b(tools?|software|figma|stack)\\b',
+    answer: `His workflow includes ${TOOLS.slice(0, -1).join(', ')} and ${TOOLS[TOOLS.length - 1]}, with HTML/CSS knowledge for developer collaboration.`,
+    go: 'home',
+  },
+  {
+    words: '\\b(skills?|good at|expertise|speciali[sz]\\w*)\\b',
+    answer: `${PROFILE.name} works across UX research, information architecture, user flows, wireframing, prototyping, UI design, design systems, accessibility and developer handoff.`,
+    go: 'home',
+  },
+  {
+    words: '\\b(stud(y|ied|ies)|education|degrees?|college|qualifications?|certificat\\w*)\\b',
+    answer: `${PROFILE.name} holds an M.Sc. in Computer Science (${EDUCATION[0].years}, ${EDUCATION[0].institution}, ${EDUCATION[0].place}) and a B.Sc. in Computer Science (${EDUCATION[1].years}). He is a ${CERTIFICATION.title}, ${CERTIFICATION.issuer}, ${CERTIFICATION.year}.`,
+    go: 'education',
+  },
+  {
+    words: '\\b(experience|work(s|ed)? at|job|company|employer|career)\\b',
+    answer: `${PROFILE.name} has been a ${EXPERIENCE.title} at ${EXPERIENCE.company}, ${EXPERIENCE.location}, since May 2022 — owning UX and UI for enterprise, healthcare and service-industry products.`,
+    go: 'nfcSolutions',
+  },
+  {
+    words: '\\b(contact|reach|email|phone|call|hire)\\b',
+    answer: `You can email ${PROFILE.name} at ${CONTACT.email} or call ${CONTACT.phone}. Let’s head to the Contact Café.`,
+    go: 'contactCafe',
+  },
+  {
+    words: '\\b(hobb(y|ies)|interests?|free time|sketch\\w*|cricket|dance)\\b',
+    answer: `Outside product design, ${PROFILE.name} enjoys ${INTERESTS.join(', ').replace(/, ([^,]*)$/, ' and $1')}.`,
+    go: 'gallery',
+  },
+  {
+    words: '\\b(what does|who is|who\'?s|tell me about)\\b.*\\b(naveen|he|him)\\b|\\babout (naveen|him)\\b',
+    answer: `${PROFILE.name} is a UI/UX and Product Designer with ${PROFILE.experience} of experience designing web and mobile products across enterprise SaaS, healthcare, recruitment and service platforms.`,
+    go: 'home',
+  },
 ]
 
-// ── Career transformation (the Growth Walk, campus → Naveen Solutions) ───────
-/**
- * Eight stations along the avenue from the Education campus to Naveen Solutions.
- * The stage names follow the journey Naveen described; replace the
- * [ADD …] lines with real specifics (years, first tools, milestones).
- */
-export const CAREER_STAGES: { n: string; title: string; line: string; detail: string }[] = [
-  { n: '01', title: 'Early design', line: 'Simple sketches and first layouts.', detail: '[ADD HOW YOUR DESIGN JOURNEY BEGAN]' },
-  { n: '02', title: 'First UI', line: 'Basic screens — learning what works.', detail: '[ADD YOUR FIRST UI WORK]' },
-  { n: '03', title: 'UX thinking', line: 'Understanding users, not just screens.', detail: '[ADD WHEN UX THINKING CLICKED FOR YOU]' },
-  { n: '04', title: 'Systems', line: 'Components, patterns and design systems.', detail: '[ADD DESIGN SYSTEM EXPERIENCE]' },
-  { n: '05', title: 'Real products', line: 'Designing applications people use.', detail: `[ADD PRODUCT WORK — e.g. at ${PROFILE.company}]` },
-  { n: '06', title: 'Interaction', line: 'Prototypes, motion and interactive experiences.', detail: '[ADD INTERACTION / PROTOTYPING MILESTONES]' },
-  { n: '07', title: 'AI-assisted design', line: 'AI explores possibilities; I make the decisions.', detail: '[ADD HOW AI CHANGED YOUR WORKFLOW]' },
-  { n: '08', title: 'Today', line: 'A professional UI/UX designer.', detail: `${PROFILE.role} · ${PROFILE.experience} · ${PROFILE.company}` },
-]
+export function matchAnswer(text: string) {
+  const t = text.toLowerCase()
+  return GUIDE_ANSWERS.find((a) => new RegExp(a.words).test(t)) ?? null
+}

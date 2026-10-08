@@ -9,7 +9,7 @@ import { tickJourney } from '@/core/journey'
 import { playerRuntime } from '@/core/runtime'
 import { sky } from '@/core/dayNight'
 import type { PointLight } from 'three'
-import { AI_AREA, PROCESS_STATIONS, getLocation } from '@/data/locations'
+import { AI_AREA, PARK_PATH, getLocation } from '@/data/locations'
 import { useGameStore } from '@/stores/gameStore'
 import { useUIStore } from '@/stores/uiStore'
 import { damp, dampAngle } from '@/utils/movement'
@@ -125,9 +125,9 @@ export function AICompanion() {
       } else if (near && (near.type === 'story' || near.type === 'project')) {
         _target.lerp(_proj.set(near.position[0], p.y + 1.7, near.position[2]), 0.35)
       }
-      if (!g.interior && !s.trailHint && Math.hypot(p.x - PROCESS_STATIONS[0][0], p.z - PROCESS_STATIONS[0][1]) < 5) {
+      if (!g.interior && !s.trailHint && Math.hypot(p.x - PARK_PATH[0][0], p.z - PARK_PATH[0][1]) < 5) {
         s.trailHint = true
-        say('Each stone is a step of the <b>design process</b>. Walk the trail.', { emote: 'point' })
+        say('Each easel holds <b>real screens</b> from one of his projects.', { emote: 'point' })
       }
       tickJourney(now)
     }
@@ -163,7 +163,10 @@ export function AICompanion() {
     const bob = Math.sin(s.t * 2.1) * 0.035
     root.current.visible = visible
     root.current.position.set(s.pos.x, s.pos.y + bob + hop, s.pos.z)
-    root.current.scale.setScalar(0.55 + 0.45 * Math.min(1, s.wake * 1.4))
+    // voice guide: a soft breathing pulse while listening, a livelier one while speaking
+    const vs = companion.voice
+    const pulse = vs === 'listening' ? 0.035 * (0.5 + 0.5 * Math.sin(s.t * 3.4)) : vs === 'speaking' ? 0.05 * Math.abs(Math.sin(s.t * 8.5)) : 0
+    root.current.scale.setScalar((0.55 + 0.45 * Math.min(1, s.wake * 1.4)) * (1 + pulse))
 
     // facing: talk to the camera, look at pointed targets, otherwise watch the player
     const talking = now < companion.showUntil
@@ -187,7 +190,7 @@ export function AICompanion() {
     const side = s.vel.x * cy - s.vel.z * sy
     body.current.rotation.x = damp(body.current.rotation.x, Math.max(-0.35, Math.min(0.35, fwd * 0.12)), 6, dt)
     body.current.rotation.z = damp(body.current.rotation.z, Math.max(-0.3, Math.min(0.3, -side * 0.12)) + Math.sin(s.t * 1.3) * 0.04, 6, dt)
-    if (e === 'think') body.current.rotation.z = damp(body.current.rotation.z, 0.16, 4, dt)
+    if (e === 'think' || companion.voice === 'thinking') body.current.rotation.z = damp(body.current.rotation.z, 0.16, 4, dt)
 
     // ── eyes: blink, look, squint-smile ──────────────────────────────────
     if (s.t > s.blinkAt) {
@@ -241,7 +244,7 @@ export function AICompanion() {
     res.shell.emissiveIntensity = 0.18 + sky.lights * 0.46
     glowLight.current.intensity = visible ? sky.lights * 1.3 : 0
     // glow tip breathes; brighter while speaking
-    const glow = 0.75 + Math.sin(s.t * 2.4) * 0.15 + (talking ? 0.35 : 0)
+    const glow = 0.75 + Math.sin(s.t * 2.4) * 0.15 + (talking ? 0.35 : 0) + (vs === 'listening' ? 0.3 : vs === 'thinking' ? 0.2 + Math.sin(s.t * 9) * 0.2 : 0)
     ;(tip.current.material as MeshBasicMaterial).color.setRGB(1.7 * glow, 1.2 * glow, 0.75 * glow)
 
     // soft contact shadow on the floor below

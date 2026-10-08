@@ -76,7 +76,8 @@ export function randomLook(seed: number, overrides: Partial<CharacterLook> = {})
     ? rng.pick(['long', 'bun', 'ponytail', 'curly', 'side'] as const)
     : rng.pick(['short', 'side', 'buzz', 'curly', 'short'] as const)
   const topStyle: TopStyle = rng.pick(feminine ? ['blouse', 'tee', 'sweater', 'jacket', 'shirt'] as const : ['tee', 'shirt', 'jacket', 'hoodie', 'sweater'] as const)
-  const bottomStyle: BottomStyle = feminine && rng.chance(0.3) ? 'skirt' : rng.chance(0.12) ? 'shorts' : rng.chance(0.5) ? 'jeans' : 'trousers'
+  // always complete clothing: trousers, jeans or a midi skirt over opaque tights — never shorts
+  const bottomStyle: BottomStyle = feminine && rng.chance(0.25) ? 'skirt' : rng.chance(0.5) ? 'jeans' : 'trousers'
   return {
     skin: rng.pick(SKIN_TONES),
     hair: rng.pick(HAIR_COLORS),

@@ -18,7 +18,7 @@ const clamp01 = (t: number) => Math.min(1, Math.max(0, t))
 /** windows in these buildings are more often lit (someone is home, people work late) */
 const ZONES: [string, number][] = [
   ['home', 0.95],
-  ['Naveen-office', 0.88],
+  ['nfc-office', 0.88],
   ['education', 0.4],
   ['library', 0.3],
 ]

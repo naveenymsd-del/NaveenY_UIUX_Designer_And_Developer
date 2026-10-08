@@ -5,8 +5,9 @@ import {
   MeshStandardMaterial, PlaneGeometry, SRGBColorSpace, TorusGeometry,
 } from 'three'
 import { playerRuntime } from '@/core/runtime'
-import { AI_AREA, ACTIVITY_SPOTS, GROWTH_WALK, GROWTH_YAW, PROCESS_STATIONS } from '@/data/locations'
-import { AI_HUMAN_STEPS, AI_WORKFLOW, CAREER_STAGES, DESIGN_PROCESS, EDUCATION_TIMELINE, PROFILE, TOOLS } from '@/data/portfolioContent'
+import { AI_AREA, ACTIVITY_SPOTS, GALLERY_EASELS } from '@/data/locations'
+import { AI_WORKFLOW, CERTIFICATION, EDUCATION, GALLERY, PROFILE, SKILL_GROUPS, TOOLS } from '@/data/portfolioContent'
+import { asset } from '@/utils/basePath'
 import { INTERIORS, roomToWorld, studioBay, type InteriorId } from '@/data/interiors'
 import { PROJECTS, type ProjectDef } from '@/data/projects'
 import { soundManager } from '@/core/sound/SoundManager'
@@ -102,44 +103,66 @@ function distTo(x: number, z: number) {
 }
 const easeTo = (v: number, t: number, dt: number, l = 5) => damp(v, t, l, dt)
 
-// ── Design Park ─────────────────────────────────────────────────────────────
-function ProcessBoard({ index }: { index: number }) {
-  const [x, z] = PROCESS_STATIONS[index]
-  const step = DESIGN_PROCESS[index]
+// ── Gallery park ────────────────────────────────────────────────────────────
+/** a texture of a real image from /public, cropped to the given aspect (cover) */
+const imageCache = new Map<string, CanvasTexture>()
+function imageTexture(src: string, w: number, h: number) {
+  const key = `${src}-${w}x${h}`
+  const hit = imageCache.get(key)
+  if (hit) return hit
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const g = c.getContext('2d')!
+  g.fillStyle = '#f2efe9'
+  g.fillRect(0, 0, w, h)
+  const t = new CanvasTexture(c)
+  t.colorSpace = SRGBColorSpace
+  t.anisotropy = 4
+  const img = new Image()
+  img.onload = () => {
+    // top-aligned cover crop: the case-study frames lead with the UI
+    const s = Math.max(w / img.width, h / img.height)
+    g.drawImage(img, (w - img.width * s) / 2, 0, img.width * s, img.height * s)
+    t.needsUpdate = true
+  }
+  img.src = asset(src)
+  imageCache.set(key, t)
+  return t
+}
+
+/** One easel per project on the path: its first UI screen, title underneath. */
+function Easel({ index }: { index: number }) {
+  const e = GALLERY_EASELS[index]
+  const [x, z] = e.at
+  const p = PROJECTS.find((q) => q.id === e.project)!
   const board = useRef<Group>(null!)
   const glow = useRef<Mesh>(null!)
   const st = useRef({ a: 0 })
-  const tex = useMemo(
-    () => textTexture({
-      w: 320, h: 220, bg: '#f4efe4', border: '#6f9a4c',
-      lines: [
-        { text: step.n, size: 34, weight: 800, color: '#6f9a4c', gap: 0 },
-        { text: step.title.toUpperCase(), size: 40, weight: 800, color: '#2c3a2a', gap: 10 },
-        { text: step.text, size: 22, weight: 500, color: '#4b5646' },
-      ],
-    }),
-    [step],
+  const shot = useMemo(() => textMat(imageTexture(GALLERY[e.index].image, 480, 300)), [e.index])
+  const label = useMemo(
+    () => textMat(textTexture({ w: 480, h: 72, bg: '#1f2328', pad: 18, lines: [{ text: `${p.title.toUpperCase()}  ·  ${p.category}`, size: 22, weight: 700, color: '#f7f4ef' }] })),
+    [p],
   )
-  const glowMat = useMemo(() => new MeshBasicMaterial({ color: new Color('#b8d98c'), transparent: true, opacity: 0, depthWrite: false }), [])
-  // face the path direction toward the next station
-  const next = PROCESS_STATIONS[Math.min(index + 1, PROCESS_STATIONS.length - 1)]
-  const prev = PROCESS_STATIONS[Math.max(index - 1, 0)]
-  const yaw = Math.atan2(next[0] - prev[0], next[1] - prev[1]) + Math.PI / 2
+  const glowMat = useMemo(() => new MeshBasicMaterial({ color: new Color(p.accent), transparent: true, opacity: 0, depthWrite: false }), [p])
   useFrame((_, dt) => {
-    const d = distTo(x, z)
     const s = st.current
-    s.a = easeTo(s.a, d < 3.6 ? 1 : 0, dt, 4)
-    board.current.position.y = 0.95 + s.a * 0.35
-    board.current.rotation.x = -0.35 + s.a * 0.3
-    glowMat.opacity = s.a * 0.55
+    s.a = easeTo(s.a, distTo(x, z) < 3.6 ? 1 : 0, dt, 4)
+    board.current.position.y = 1.25 + s.a * 0.12
+    glowMat.opacity = s.a * 0.45
     glow.current.scale.setScalar(1 + s.a * 0.15)
   })
   return (
-    <group position={[x, 0.25, z]} rotation-y={yaw}>
-      <mesh geometry={G.cyl} material={mat('#8a6a4c')} position={[0, 0.55, -0.02]} scale={[0.08, 1.1, 0.08]} castShadow />
-      <group ref={board}>
-        <mesh geometry={G.box} material={mat('#6e5140')} scale={[1.14, 0.8, 0.05]} position={[0, 0, -0.03]} castShadow />
-        <mesh geometry={G.plane} material={textMat(tex)} scale={[1.06, 0.72, 1]} />
+    // easels face south-east, toward the park entrance
+    <group position={[x, 0.25, z]} rotation-y={0.5}>
+      {[-0.42, 0.42].map((dx) => (
+        <mesh key={dx} geometry={G.cyl} material={mat('#8a6a4c')} position={[dx, 0.75, -0.05]} rotation-z={dx > 0 ? -0.08 : 0.08} scale={[0.05, 1.5, 0.05]} castShadow />
+      ))}
+      <mesh geometry={G.cyl} material={mat('#8a6a4c')} position={[0, 0.7, -0.4]} rotation-x={0.4} scale={[0.04, 1.4, 0.04]} />
+      <group ref={board} rotation-x={-0.12}>
+        <mesh geometry={G.box} material={mat('#2b2e34', 0.5)} scale={[1.28, 0.96, 0.04]} position={[0, -0.04, -0.03]} castShadow />
+        <mesh geometry={G.plane} material={shot} position={[0, 0.06, 0]} scale={[1.2, 0.75, 1]} />
+        <mesh geometry={G.plane} material={label} position={[0, -0.41, 0]} scale={[1.2, 0.18, 1]} />
       </group>
       <mesh ref={glow} geometry={G.cyl} material={glowMat} position={[0, 0.05, 0]} scale={[1.55, 0.02, 1.55]} />
     </group>
@@ -150,13 +173,13 @@ function AIRing() {
   const panels = useRef<(Mesh | null)[]>([])
   const st = useRef({ inside: 0, t: 0 })
   const texes = useMemo(
-    () => AI_WORKFLOW.map((label, i) => {
-      const human = AI_HUMAN_STEPS.has(label)
+    () => AI_WORKFLOW.map((step) => {
+      const human = !!step.human
       return textTexture({
-        w: 256, h: 150, bg: human ? '#f7f4ef' : '#fff5ec', border: human ? '#2b2e34' : '#ec7a2c', align: 'center', pad: 18,
+        w: 256, h: 150, bg: human ? '#f7f4ef' : '#fff5ec', border: human ? '#2b2e34' : '#ec7a2c', align: 'center', pad: 16,
         lines: [
-          { text: String(i + 1).padStart(2, '0'), size: 24, weight: 700, color: '#ec7a2c', gap: 2 },
-          { text: label.toUpperCase(), size: label.length > 17 ? 16 : label.length > 13 ? 20 : 25, weight: 700, color: '#1f2328', gap: 4 },
+          { text: step.n, size: 22, weight: 700, color: '#ec7a2c', gap: 0 },
+          { text: step.title.toUpperCase(), size: step.title.length > 12 ? 20 : 25, weight: 700, color: '#1f2328', gap: 4 },
           { text: human ? 'HUMAN DECIDES' : 'AI ASSISTS', size: 15, weight: 650, color: human ? '#2b2e34' : '#b85a1c' },
         ],
       })
@@ -219,7 +242,7 @@ function ActivityObjects() {
     if (distTo(L.visual.pos[0], L.visual.pos[2]) < 2.6) s.flashT += dt
     flash.current.opacity = s.flashT > 0 && s.flashT % 3.2 < 0.12 ? 0.95 : 0
   })
-  const screenTex = useMemo(() => textTexture({ w: 256, h: 160, bg: '#f4f5f7', pad: 16, lines: [{ text: 'Wireframes → UI', size: 22, weight: 800, color: '#2f4a8a', gap: 6 }, { text: 'Hierarchy · spacing · states', size: 16, weight: 600, color: '#5d6b82' }] }), [])
+  const screenTex = useMemo(() => textTexture({ w: 256, h: 160, bg: '#f4f5f7', pad: 16, lines: [{ text: 'Wireframes → UI', size: 22, weight: 800, color: '#2f4a8a', gap: 6 }, { text: 'Flows · hierarchy · states', size: 16, weight: 600, color: '#5d6b82' }] }), [])
   return (
     <>
       {/* learning: a book on the bench */}
@@ -266,43 +289,59 @@ function useRoomPos(room: InteriorId, x: number, z: number, y = 0) {
   return useMemo(() => roomToWorld(room, x, z, y), [room, x, z, y])
 }
 
+/** Education · west wall: the two degrees from the résumé, lifting toward you as you approach. */
 function Timeline() {
   const plaques = useRef<(Group | null)[]>([])
   const base = useRoomPos('education', -11.9, 0, 0)
-  const texes = useMemo(
-    () => EDUCATION_TIMELINE.map((it, i) => textTexture({
-      w: 300, h: 260, bg: '#faf6ef', border: '#4f6b58', pad: 20,
-      lines: [
-        { text: `STEP ${i + 1}`, size: 22, weight: 800, color: '#4f6b58', gap: 2 },
-        { text: it.label.toUpperCase(), size: 28, weight: 800, color: '#24262c', gap: 10 },
-        { text: it.text, size: 19, weight: 500, color: it.placeholder ? '#8a5a22' : '#4b4f57' },
-      ],
-    })),
-    [],
-  )
-  const zs = [-5.6, -2.8, 0, 2.8, 5.6]
+  const texes = useMemo(() => EDUCATION.map((e, i) => degreeTexture(e, i)), [])
+  // first degree on the left as you face the wall
+  const zs = [1.9, -1.9]
   useFrame((_, dt) => {
     const p = playerRuntime.position
     zs.forEach((z, i) => {
       const g = plaques.current[i]
       if (!g) return
       const d = Math.hypot(p.x - (base[0] + 1.6), p.z - (base[2] + z))
-      const on = d < 2.4 ? 1 : 0
-      g.position.z = easeTo(g.position.z, 0.06 + on * 0.12, dt, 6)
-      g.scale.setScalar(easeTo(g.scale.x, 1 + on * 0.08, dt, 6))
+      const on = d < 2.6 ? 1 : 0
+      g.position.z = easeTo(g.position.z, 0.06 + on * 0.1, dt, 6)
+      g.scale.setScalar(easeTo(g.scale.x, 1 + on * 0.05, dt, 6))
     })
   })
   return (
     <group position={base} rotation-y={Math.PI / 2}>
       {zs.map((z, i) => (
-        <group key={i} position={[-z, 1.75, 0.06]} ref={(g) => { plaques.current[i] = g }}>
-          <mesh geometry={G.box} material={mat('#4f6b58')} position={[0, 0, -0.03]} scale={[1.36, 1.2, 0.04]} />
-          <mesh geometry={G.plane} material={textMat(texes[i])} scale={[1.28, 1.11, 1]} />
-          <mesh geometry={G.cyl} material={mat('#c49a4e', 0.4)} position={[0, 0.8, -0.02]} rotation-x={Math.PI / 2} scale={[0.14, 0.04, 0.14]} />
+        <group key={i} position={[-z, 1.7, 0.06]} ref={(g) => { plaques.current[i] = g }}>
+          <mesh geometry={G.box} material={mat('#4f6b58')} position={[0, 0, -0.03]} scale={[2.66, 1.66, 0.04]} />
+          <mesh geometry={G.plane} material={textMat(texes[i])} scale={[2.56, 1.56, 1]} />
         </group>
       ))}
     </group>
   )
+}
+
+function degreeTexture(e: (typeof EDUCATION)[number], i: number) {
+  return textTexture({
+    w: 640, h: 390, bg: '#faf6ef', border: '#4f6b58', pad: 34,
+    lines: [
+      { text: `0${i + 1} · ${e.years}`, size: 24, weight: 800, color: '#4f6b58', gap: 10 },
+      { text: e.degree, size: 40, weight: 800, color: '#24262c', gap: 2 },
+      { text: e.field, size: 32, weight: 600, color: '#24262c', gap: 18 },
+      { text: `${e.institution} · ${e.place}`, size: 24, weight: 500, color: '#4b4f57', gap: 10 },
+      { text: `CGPA ${e.cgpa}`, size: 26, weight: 700, color: '#b06a4c' },
+    ],
+  })
+}
+
+function certificateTexture() {
+  return textTexture({
+    w: 560, h: 400, bg: '#fbf7ee', border: '#c49a4e', align: 'center', pad: 40,
+    lines: [
+      { text: 'CERTIFICATION', size: 24, weight: 800, color: '#8a5a22', gap: 22 },
+      { text: CERTIFICATION.title, size: 36, weight: 800, color: '#24262c', gap: 16 },
+      { text: CERTIFICATION.issuer, size: 26, weight: 600, color: '#4b4f57', gap: 10 },
+      { text: CERTIFICATION.year, size: 26, weight: 700, color: '#6e5140' },
+    ],
+  })
 }
 
 function Chalkboard() {
@@ -313,9 +352,9 @@ function Chalkboard() {
     const t = textTexture({
       w: 640, h: 200, bg: '#2f3f38', pad: 22,
       lines: [
-        { text: 'DESIGN FOUNDATIONS', size: 34, weight: 800, color: '#f1efe6', gap: 8 },
-        { text: 'Hierarchy · Typography · Colour · Layout · Usability', size: 24, weight: 500, color: '#dfe6d8', gap: 6 },
-        { text: '[ADD WHAT YOU STUDIED]', size: 22, weight: 500, color: '#e3c28a' },
+        { text: 'COMPUTER SCIENCE', size: 34, weight: 800, color: '#f1efe6', gap: 8 },
+        { text: EDUCATION.map((e) => `${e.short} ${e.years}`).join('  ·  '), size: 26, weight: 500, color: '#dfe6d8', gap: 6 },
+        { text: `${CERTIFICATION.title} · ${CERTIFICATION.year}`, size: 22, weight: 500, color: '#e3c28a' },
       ],
     })
     return t
@@ -352,28 +391,23 @@ function OpenBook({ room, x, z, y, color = '#7a3f3a' }: { room: InteriorId; x: n
   )
 }
 
+/** Education · the one certificate, framed in the middle of its wall. */
 function Certificates() {
-  const frames = useRef<(Group | null)[]>([])
+  const frame = useRef<Group>(null!)
   const base = useRoomPos('education', 11.92, 1.4, 0)
-  const tex = useMemo(() => textTexture({ w: 256, h: 190, bg: '#fbf7ee', border: '#c49a4e', align: 'center', pad: 26, lines: [{ text: 'CERTIFICATE', size: 26, weight: 800, color: '#6e5140', gap: 12 }, { text: '[ADD CERTIFICATION]', size: 18, weight: 600, color: '#8a5a22' }] }), [])
+  const tex = useMemo(certificateTexture, [])
   useFrame((_, dt) => {
     const p = playerRuntime.position
-    ;[-1.6, 0, 1.6].forEach((dz, i) => {
-      const g = frames.current[i]
-      if (!g) return
-      const on = Math.hypot(p.x - (base[0] - 1.8), p.z - (base[2] + dz)) < 2 ? 1 : 0
-      g.scale.setScalar(easeTo(g.scale.x, 1 + on * 0.12, dt, 6))
-      g.position.z = easeTo(g.position.z, 0.05 + on * 0.12, dt, 6)
-    })
+    const on = Math.hypot(p.x - (base[0] - 1.8), p.z - base[2]) < 2.4 ? 1 : 0
+    frame.current.scale.setScalar(easeTo(frame.current.scale.x, 1 + on * 0.06, dt, 6))
+    frame.current.position.z = easeTo(frame.current.position.z, 0.05 + on * 0.1, dt, 6)
   })
   return (
     <group position={base} rotation-y={-Math.PI / 2}>
-      {[-1.6, 0, 1.6].map((dz, i) => (
-        <group key={i} position={[dz, 1.75, 0.05]} ref={(g) => { frames.current[i] = g }}>
-          <mesh geometry={G.box} material={mat('#6e5140')} position={[0, 0, -0.03]} scale={[1.12, 0.86, 0.04]} />
-          <mesh geometry={G.plane} material={textMat(tex)} scale={[1.02, 0.76, 1]} />
-        </group>
-      ))}
+      <group position={[0, 1.75, 0.05]} ref={frame}>
+        <mesh geometry={G.box} material={mat('#6e5140')} position={[0, 0, -0.03]} scale={[1.72, 1.26, 0.05]} />
+        <mesh geometry={G.plane} material={textMat(tex)} scale={[1.6, 1.14, 1]} />
+      </group>
     </group>
   )
 }
@@ -402,18 +436,29 @@ function HomeProps() {
   const curtainL = useRef<Mesh>(null!)
   const curtainR = useRef<Mesh>(null!)
   const book = useRef<Mesh>(null!)
-  const frames = useRef<(Group | null)[]>([])
+  const aiBoard = useRef<Group>(null!)
+  const gallery = useRef<Group>(null!)
   const st = useRef({ lid: 0, cur: 0, book: 0 })
   const hw = INTERIORS.home.width / 2
   const hd = INTERIORS.home.depth / 2
   const laptop = useRoomPos('home', 1.1, -hd + 0.8, 0.79)
   const win = useRoomPos('home', -4.8, -hd + 0.1, 1.9)
   const shelf = useRoomPos('home', -hw + 0.3, -0.4, 1.4)
-  const journey = useRoomPos('home', hw - 0.08, -2.2, 1.7)
+  const aiWall = useRoomPos('home', hw - 0.08, -2.2, 1.75)
+  const galleryPos = useRoomPos('home', 6.8, -hd + 0.09, 1.72)
   const hello = useRoomPos('home', 1.4, 3.9, 0.8)
-  const helloTex = useMemo(() => textTexture({ w: 300, h: 220, bg: '#faf6ef', border: '#b06a4c', align: 'center', pad: 26, lines: [{ text: 'HELLO!', size: 34, weight: 800, color: '#b06a4c', gap: 6 }, { text: `I’m ${PROFILE.name}`, size: 30, weight: 700, color: '#24262c', gap: 4 }, { text: `${PROFILE.role} · ${PROFILE.experience}`, size: 18, weight: 600, color: '#5c4535' }] }), [])
-  const screenTex = useMemo(() => textTexture({ w: 256, h: 160, bg: '#1f2430', pad: 16, lines: [{ text: 'MY DESIGN TOOLS', size: 20, weight: 800, color: '#ffffff', gap: 8 }, { text: '[ADD YOUR TOOLS]', size: 18, weight: 600, color: '#e3c28a' }] }), [])
-  const journeyTex = useMemo(() => ['Now · ' + PROFILE.company, '[ADD EARLIER ROLE]', '[ADD FIRST STEP]'].map((t, i) => textTexture({ w: 220, h: 160, bg: '#faf6ef', border: '#5c4535', align: 'center', pad: 22, lines: [{ text: `0${3 - i}`, size: 26, weight: 800, color: '#b06a4c', gap: 6 }, { text: t, size: 18, weight: 600, color: /\[/.test(t) ? '#8a5a22' : '#24262c' }] })), [])
+  const helloTex = useMemo(() => textTexture({ w: 300, h: 220, bg: '#faf6ef', border: '#b06a4c', align: 'center', pad: 24, lines: [{ text: 'HELLO!', size: 34, weight: 800, color: '#b06a4c', gap: 6 }, { text: `I’m ${PROFILE.fullName}`, size: 30, weight: 700, color: '#24262c', gap: 4 }, { text: PROFILE.role, size: 17, weight: 600, color: '#5c4535', gap: 2 }, { text: `${PROFILE.experience} · ${PROFILE.location}`, size: 15, weight: 500, color: '#7a6250' }] }), [])
+  const screenTex = useMemo(() => textTexture({ w: 256, h: 160, bg: '#1f2430', pad: 16, lines: [{ text: 'MY DESIGN TOOLS', size: 20, weight: 800, color: '#ffffff', gap: 8 }, { text: TOOLS.slice(0, 4).join(' · '), size: 17, weight: 600, color: '#e3c28a' }] }), [])
+  const aiTex = useMemo(aiWorkflowTexture, [])
+  const galleryTex = useMemo(() => textTexture({
+    w: 480, h: 340, bg: '#1f2328', align: 'center', pad: 34,
+    lines: [
+      { text: 'GALLERY', size: 22, weight: 800, color: '#e3c28a', gap: 16 },
+      { text: 'Selected UI work', size: 38, weight: 800, color: '#f7f4ef', gap: 4 },
+      { text: '& interests', size: 38, weight: 800, color: '#f7f4ef', gap: 18 },
+      { text: 'In the park  →', size: 20, weight: 600, color: '#c9ccd2' },
+    ],
+  }), [])
   useFrame((_, dt) => {
     const s = st.current
     s.lid = easeTo(s.lid, distTo(laptop[0], laptop[2] + 1.6) < 2.2 ? 1 : 0, dt, 3)
@@ -424,12 +469,10 @@ function HomeProps() {
     curtainR.current.position.x = win[0] + 0.55 + s.cur * 0.55
     s.book = easeTo(s.book, distTo(shelf[0] + 1.3, shelf[2]) < 2.3 ? 1 : 0, dt, 4)
     book.current.position.x = shelf[0] + s.book * 0.2
-    const p = playerRuntime.position
-    frames.current.forEach((g, i) => {
-      if (!g) return
-      const on = Math.hypot(p.x - (journey[0] - 1.6), p.z - (journey[2] + (i - 1) * 1.1)) < 1.6 ? 1 : 0
-      g.scale.setScalar(easeTo(g.scale.x, 1 + on * 0.12, dt, 6))
-    })
+    const onAi = distTo(aiWall[0] - 1.6, aiWall[2]) < 2.2 ? 1 : 0
+    aiBoard.current.scale.setScalar(easeTo(aiBoard.current.scale.x, 1 + onAi * 0.04, dt, 6))
+    const onGallery = distTo(galleryPos[0], galleryPos[2] + 2) < 2.2 ? 1 : 0
+    gallery.current.scale.setScalar(easeTo(gallery.current.scale.x, 1 + onGallery * 0.06, dt, 6))
   })
   return (
     <>
@@ -445,13 +488,17 @@ function HomeProps() {
       <mesh ref={curtainL} geometry={G.box} material={mat('#ece2d2', 0.95)} position={[win[0] - 0.55, win[1], win[2] + 0.12]} scale={[1.0, 1.9, 0.03]} />
       <mesh ref={curtainR} geometry={G.box} material={mat('#ece2d2', 0.95)} position={[win[0] + 0.55, win[1], win[2] + 0.12]} scale={[1.0, 1.9, 0.03]} />
       <mesh ref={book} geometry={G.box} material={mat('#2f4a8a')} position={[shelf[0], shelf[1], shelf[2]]} scale={[0.26, 0.3, 0.07]} />
-      <group position={journey} rotation-y={-Math.PI / 2}>
-        {journeyTex.map((t, i) => (
-          <group key={i} position={[(i - 1) * 1.1, 0, 0.04]} ref={(g) => { frames.current[i] = g }}>
-            <mesh geometry={G.box} material={mat('#2a2626')} position={[0, 0, -0.02]} scale={[0.92, 0.7, 0.03]} />
-            <mesh geometry={G.plane} material={textMat(t)} scale={[0.86, 0.63, 1]} />
-          </group>
-        ))}
+      {/* AI-assisted design: five steps, the last one human */}
+      <group position={aiWall} rotation-y={-Math.PI / 2}>
+        <group ref={aiBoard} position={[0, 0, 0.04]}>
+          <mesh geometry={G.box} material={mat('#2a2626')} position={[0, 0, -0.02]} scale={[3.06, 1.16, 0.03]} />
+          <mesh geometry={G.plane} material={textMat(aiTex)} scale={[3.0, 1.1, 1]} />
+        </group>
+      </group>
+      {/* Gallery entry */}
+      <group position={galleryPos} ref={gallery}>
+        <mesh geometry={G.box} material={mat('#6e5140')} position={[0, 0, -0.02]} scale={[1.5, 1.1, 0.03]} />
+        <mesh geometry={G.plane} material={textMat(galleryTex)} scale={[1.4, 1.0, 1]} />
       </group>
       <group position={hello} rotation-y={Math.PI + 0.35}>
         <mesh geometry={G.box} material={mat('#6e5140')} position={[0, 0.2, -0.03]} rotation-x={-0.25} scale={[0.66, 0.5, 0.03]} />
@@ -461,260 +508,100 @@ function HomeProps() {
   )
 }
 
-/** one board of the Growth Walk: the drawing matures from pencil sketch to polished product */
-function stageArt(i: number) {
-  const st = CAREER_STAGES[i]
+/** Home · the AI-assisted design board: headline, then the five steps in a row */
+function aiWorkflowTexture() {
+  const W = 1200
+  const H = 440
   const c = document.createElement('canvas')
-  c.width = 512
-  c.height = 380
+  c.width = W
+  c.height = H
   const g = c.getContext('2d')!
-  const dark = i >= 5
-  g.fillStyle = i === 0 ? '#f3eee2' : dark ? '#1c1f25' : '#f7f4ef'
-  g.fillRect(0, 0, 512, 380)
-  const ink = dark ? '#f3efe7' : '#1f2328'
-  const soft = dark ? 'rgba(243,239,231,0.55)' : 'rgba(31,35,40,0.45)'
-  const accent = '#ec7a2c'
-  const rr = (x: number, y: number, w: number, h: number, r: number, fill: string) => {
-    g.fillStyle = fill
+  g.fillStyle = '#faf6ef'
+  g.fillRect(0, 0, W, H)
+  g.textBaseline = 'top'
+  g.fillStyle = '#ec7a2c'
+  g.font = `800 22px ${UI_FONT}`
+  g.fillText('AI-ASSISTED DESIGN', 48, 40)
+  g.fillStyle = '#24262c'
+  g.font = `800 42px ${UI_FONT}`
+  g.fillText(PROFILE.ai, 48, 76)
+  const cw = (W - 96 - 4 * 16) / 5
+  AI_WORKFLOW.forEach((st, i) => {
+    const x = 48 + i * (cw + 16)
+    g.fillStyle = st.human ? '#24262c' : '#ffffff'
     g.beginPath()
-    g.roundRect(x, y, w, h, r)
+    g.roundRect(x, 160, cw, 200, 16)
     g.fill()
-  }
-  // a fixed wobble so the sketch never changes between visits
-  let seed = 11 + i
-  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
-  // header
-  g.fillStyle = accent
-  g.font = `700 22px ${UI_FONT}`
-  g.fillText(st.n, 28, 44)
-  g.fillStyle = ink
-  g.font = `640 30px ${UI_FONT}`
-  g.fillText(st.title.toUpperCase(), 68, 44)
-  const X = 28
-  const Y = 70
-  g.lineCap = 'round'
-  g.lineJoin = 'round'
-  switch (i) {
-    case 0: {
-      // pencil sketch: wobbly frames and scribbles
-      g.strokeStyle = 'rgba(60,60,60,0.7)'
-      g.lineWidth = 2
-      const wob = (x: number, y: number, w: number, h: number) => {
-        g.beginPath()
-        g.moveTo(x + rnd() * 3, y)
-        g.lineTo(x + w, y + rnd() * 4)
-        g.lineTo(x + w - rnd() * 3, y + h)
-        g.lineTo(x, y + h - rnd() * 4)
-        g.closePath()
-        g.stroke()
-      }
-      wob(X + 20, Y + 20, 200, 220)
-      wob(X + 250, Y + 20, 180, 100)
-      wob(X + 250, Y + 140, 180, 100)
-      for (let k = 0; k < 5; k++) {
-        g.beginPath()
-        g.moveTo(X + 40, Y + 60 + k * 30)
-        g.bezierCurveTo(X + 90, Y + 50 + k * 30, X + 130, Y + 75 + k * 30, X + 190, Y + 60 + k * 30)
-        g.stroke()
-      }
-      break
+    g.fillStyle = '#ec7a2c'
+    g.font = `800 22px ${UI_FONT}`
+    g.fillText(st.n, x + 18, 180)
+    g.fillStyle = st.human ? '#ffffff' : '#24262c'
+    g.font = `800 ${st.title.length > 10 ? 22 : 26}px ${UI_FONT}`
+    g.fillText(st.title, x + 18, 214)
+    g.fillStyle = st.human ? '#d8d4cc' : '#5c5f66'
+    g.font = `500 17px ${UI_FONT}`
+    let y = 256
+    let line = ''
+    for (const w of st.text.split(' ')) {
+      const t = line ? `${line} ${w}` : w
+      if (g.measureText(t).width > cw - 36 && line) {
+        g.fillText(line, x + 18, y)
+        y += 22
+        line = w
+      } else line = t
     }
-    case 1: {
-      // first UI: plain grey boxes
-      rr(X + 20, Y + 10, 440, 36, 2, '#c9c6bf')
-      rr(X + 20, Y + 60, 140, 180, 2, '#d8d5ce')
-      for (let k = 0; k < 4; k++) rr(X + 180, Y + 60 + k * 46, 280, 34, 2, '#e1ded7')
-      break
-    }
-    case 2: {
-      // UX thinking: a person, a journey, insight points
-      g.fillStyle = ink
-      g.beginPath()
-      g.arc(X + 70, Y + 80, 26, 0, Math.PI * 2)
-      g.fill()
-      rr(X + 38, Y + 112, 64, 70, 30, ink)
-      g.strokeStyle = accent
-      g.lineWidth = 4
-      g.setLineDash([10, 10])
-      g.beginPath()
-      g.moveTo(X + 130, Y + 130)
-      g.bezierCurveTo(X + 220, Y + 40, X + 300, Y + 220, X + 440, Y + 110)
-      g.stroke()
-      g.setLineDash([])
-      for (const [px, py] of [[X + 200, Y + 90], [X + 300, Y + 160], [X + 420, Y + 115]]) {
-        g.fillStyle = '#f7f4ef'
-        g.beginPath()
-        g.arc(px, py, 12, 0, Math.PI * 2)
-        g.fill()
-        g.strokeStyle = ink
-        g.lineWidth = 3
-        g.stroke()
-      }
-      break
-    }
-    case 3: {
-      // systems: a tidy component sheet on a grid
-      const cols = ['#25365a', '#ec7a2c', '#9cb88a', '#d8c9a8']
-      cols.forEach((col, k) => rr(X + 20 + k * 60, Y + 10, 48, 48, 10, col))
-      rr(X + 20, Y + 80, 150, 40, 20, '#25365a')
-      rr(X + 185, Y + 80, 150, 40, 20, 'rgba(37,54,90,0.12)')
-      rr(X + 20, Y + 140, 315, 40, 8, 'rgba(31,35,40,0.08)')
-      rr(X + 20, Y + 195, 96, 40, 8, 'rgba(31,35,40,0.08)')
-      rr(X + 128, Y + 195, 96, 40, 8, 'rgba(31,35,40,0.08)')
-      rr(X + 236, Y + 195, 99, 40, 8, 'rgba(31,35,40,0.08)')
-      g.strokeStyle = soft
-      g.lineWidth = 1
-      for (let gx = X + 360; gx < X + 460; gx += 16) {
-        g.beginPath()
-        g.moveTo(gx, Y + 10)
-        g.lineTo(gx, Y + 235)
-        g.stroke()
-      }
-      break
-    }
-    case 4: {
-      // real product: a polished app screen
-      rr(X + 20, Y + 5, 440, 240, 16, '#ffffff')
-      rr(X + 20, Y + 5, 440, 44, 16, '#25365a')
-      rr(X + 40, Y + 66, 190, 110, 12, 'rgba(236,122,44,0.16)')
-      rr(X + 250, Y + 66, 190, 50, 12, 'rgba(31,35,40,0.07)')
-      rr(X + 250, Y + 126, 190, 50, 12, 'rgba(31,35,40,0.07)')
-      rr(X + 40, Y + 192, 400, 36, 10, '#ec7a2c')
-      break
-    }
-    case 5: {
-      // interaction: a phone with motion arcs
-      rr(X + 150, Y, 150, 250, 26, '#f3efe7')
-      rr(X + 165, Y + 30, 120, 70, 12, accent)
-      rr(X + 165, Y + 112, 120, 30, 8, 'rgba(31,35,40,0.14)')
-      rr(X + 165, Y + 150, 120, 30, 8, 'rgba(31,35,40,0.14)')
-      g.strokeStyle = accent
-      g.lineWidth = 3
-      for (const r of [40, 62, 84]) {
-        g.globalAlpha = 1 - r / 110
-        g.beginPath()
-        g.arc(X + 340, Y + 70, r, -0.8, 0.8)
-        g.stroke()
-      }
-      g.globalAlpha = 1
-      break
-    }
-    case 6: {
-      // AI-assisted: variations fanned out, one chosen by a human
-      for (let k = 0; k < 5; k++) {
-        g.save()
-        g.translate(X + 230, Y + 250)
-        g.rotate((k - 2) * 0.22)
-        rr(-60, -210, 120, 160, 12, k === 2 ? '#f3efe7' : 'rgba(243,239,231,0.18)')
-        g.restore()
-      }
-      g.fillStyle = accent
-      g.beginPath()
-      for (let k = 0; k < 8; k++) {
-        const a = (k / 8) * Math.PI * 2
-        const r = k % 2 ? 10 : 28
-        g.lineTo(X + 400 + Math.cos(a) * r, Y + 50 + Math.sin(a) * r)
-      }
-      g.fill()
-      break
-    }
-    default: {
-      // today: the signature
-      g.fillStyle = ink
-      g.font = `640 64px ${UI_FONT}`
-      g.fillText(PROFILE.name, X + 12, Y + 110)
-      g.fillStyle = accent
-      g.fillRect(X + 14, Y + 132, 60, 4)
-      g.fillStyle = soft
-      g.font = `600 22px ${UI_FONT}`
-      g.fillText(PROFILE.role.toUpperCase(), X + 14, Y + 176)
-      g.fillText(PROFILE.experience.toUpperCase(), X + 14, Y + 208)
-    }
-  }
-  g.fillStyle = soft
-  g.font = `500 21px ${UI_FONT}`
-  g.fillText(st.line, 28, 352)
+    g.fillText(line, x + 18, y)
+  })
+  g.fillStyle = '#7a6250'
+  g.font = `600 19px ${UI_FONT}`
+  g.fillText('AI accelerates exploration. Human judgment drives the final experience.', 48, 386)
   const t = new CanvasTexture(c)
   t.colorSpace = SRGBColorSpace
-  t.anisotropy = 4
+  t.anisotropy = 8
   return t
 }
 
-/** Growth Walk boards: they brighten and turn slightly toward you as you walk up. */
-function GrowthWalk() {
-  const boards = useRef<(Group | null)[]>([])
-  const mats = useMemo(() => CAREER_STAGES.map((_, i) => new MeshBasicMaterial({ map: stageArt(i), color: new Color(0.86, 0.86, 0.86) })), [])
-  useFrame((_, dt) => {
-    GROWTH_WALK.forEach(([x, z], i) => {
-      const b = boards.current[i]
-      if (!b) return
-      const near = distTo(x, z) < 3.6 ? 1 : 0
-      mats[i].color.setScalar(easeTo(mats[i].color.r, 0.86 + near * 0.16, dt, 4))
-      b.rotation.x = easeTo(b.rotation.x, -near * 0.06, dt, 4)
-      b.position.y = easeTo(b.position.y, 1.2 + near * 0.04, dt, 4)
-    })
-  })
-  return (
-    <>
-      {GROWTH_WALK.map(([x, z], i) => (
-        <group key={i} position={[x, 0.15, z]} rotation-y={GROWTH_YAW}>
-          <group ref={(g) => { boards.current[i] = g }} position={[0, 1.2, i >= 5 ? 0.0 : 0.09]}>
-            <mesh geometry={G.plane} material={mats[i]} scale={[1.22, 0.9, 1]} />
-          </group>
-        </group>
-      ))}
-    </>
-  )
-}
-
 /**
- * Home · skill wall: one tile per tool / practice (TOOLS). The wall brightens
- * as you approach and the column you stand in front of steps forward.
+ * Home · skill wall: one column per résumé group (UX, UI, Systems, Tools,
+ * Front-end), a header tile on top. The wall brightens as you approach and
+ * the column you stand in front of steps forward.
  */
+const SKILL_COL = 0.62
+const SKILL_ROW = 0.16
 function SkillWall() {
   const hw = INTERIORS.home.width / 2
   const origin = useRoomPos('home', -hw + 0.12, 3.9, 0)
-  const tiles = useRef<(Mesh | null)[]>([])
-  const res = useMemo(() => {
-    const dot = { tool: '#ec7a2c', code: '#7fa3d6', practice: '#9cb88a' }
-    return TOOLS.map((t) => {
-      const tex = textTexture({
-        w: 256, h: 120, bg: '#1f2328', align: 'center', pad: 14,
-        lines: [
-          { text: t.name.toUpperCase(), size: t.name.length > 14 ? 22 : 26, weight: 700, color: '#f7f4ef', gap: 6 },
-          { text: t.group === 'tool' ? 'TOOL' : t.group === 'code' ? 'CODE' : 'PRACTICE', size: 14, weight: 700, color: dot[t.group] },
-        ],
-      })
-      return new MeshBasicMaterial({ map: tex, color: new Color(0.8, 0.8, 0.8) })
-    })
-  }, [])
+  const cols = useRef<(Group | null)[]>([])
+  const res = useMemo(() => SKILL_GROUPS.map((grp) => {
+    const head = new MeshBasicMaterial({ map: textTexture({ w: 256, h: 64, bg: '#ec7a2c', align: 'center', pad: 16, lines: [{ text: grp.short.toUpperCase(), size: 26, weight: 800, color: '#1f2328' }] }), color: new Color(0.8, 0.8, 0.8) })
+    const items = grp.items.map((name) => new MeshBasicMaterial({
+      map: textTexture({ w: 256, h: 60, bg: '#1f2328', align: 'center', pad: 18, lines: [{ text: name, size: name.length > 24 ? 15 : name.length > 18 ? 18 : 21, weight: 650, color: '#f7f4ef' }] }),
+      color: new Color(0.8, 0.8, 0.8),
+    }))
+    return { head, items }
+  }), [])
   useFrame((_, dt) => {
     const p = playerRuntime.position
-    const d = Math.hypot(p.x - origin[0], p.z - origin[2])
-    const near = d < 3.4
-    TOOLS.forEach((_, i) => {
-      const m = tiles.current[i]
-      if (!m) return
-      const col = i % 4
-      const tz = origin[2] + (col - 1.5) * 0.72
-      const focus = near && Math.abs(p.z - tz) < 0.45 ? 1 : 0
-      const mat = res[i]
+    const near = Math.hypot(p.x - origin[0], p.z - origin[2]) < 3.4
+    res.forEach((r, c) => {
+      const tz = origin[2] + (c - (SKILL_GROUPS.length - 1) / 2) * SKILL_COL
+      const focus = near && Math.abs(p.z - tz) < SKILL_COL / 2 ? 1 : 0
       const want = near ? 1 + focus * 0.18 : 0.8
-      mat.color.setScalar(easeTo(mat.color.r, want, dt, 5))
-      m.position.z = easeTo(m.position.z, focus * 0.05, dt, 6)
+      for (const m of [r.head, ...r.items]) m.color.setScalar(easeTo(m.color.r, want, dt, 5))
+      const g = cols.current[c]
+      if (g) g.position.z = easeTo(g.position.z, focus * 0.05, dt, 6)
     })
   })
   return (
     <group position={origin} rotation-y={Math.PI / 2}>
-      {TOOLS.map((t, i) => {
-        const col = i % 4
-        const row = Math.floor(i / 4)
-        return (
-          <group key={t.name} position={[(col - 1.5) * 0.72, 2.1 - row * 0.38, 0]}>
-            <mesh ref={(m) => { tiles.current[i] = m }} geometry={G.plane} material={res[i]} scale={[0.66, 0.31, 1]} />
-          </group>
-        )
-      })}
+      {res.map((r, c) => (
+        <group key={SKILL_GROUPS[c].group} position={[(c - (SKILL_GROUPS.length - 1) / 2) * SKILL_COL, 0, 0]} ref={(g) => { cols.current[c] = g }}>
+          <mesh geometry={G.plane} material={r.head} position={[0, 2.42, 0]} scale={[0.58, 0.145, 1]} />
+          {r.items.map((m, i) => (
+            <mesh key={i} geometry={G.plane} material={m} position={[0, 2.26 - i * SKILL_ROW, 0]} scale={[0.58, 0.136, 1]} />
+          ))}
+        </group>
+      ))}
     </group>
   )
 }
@@ -765,25 +652,33 @@ function screenTexture(p: ProjectDef) {
   g.fillStyle = 'rgba(247,244,239,0.45)'
   g.font = `600 14px ${UI_FONT}`
   g.fillText('OVERVIEW · CHALLENGES · PROTOTYPE', 64, 520)
-  // right: an abstract product frame in the project accent
-  const rr = (x: number, y: number, w: number, h: number, r: number) => {
+  // right: the project's first real UI screen (from its Figma case study), drawn once loaded
+  const card = (fill: string) => {
+    g.fillStyle = fill
     g.beginPath()
-    g.roundRect(x, y, w, h, r)
+    g.roundRect(580, 70, 400, 452, 20)
     g.fill()
   }
-  g.fillStyle = 'rgba(247,244,239,0.94)'
-  rr(600, 70, 360, 440, 22)
-  g.fillStyle = p.accent
-  rr(624, 96, 312, 64, 12)
-  g.fillStyle = 'rgba(17,19,23,0.1)'
-  for (let i = 0; i < 3; i++) rr(624, 180 + i * 72, 312, 56, 10)
-  g.fillStyle = p.accent + '88'
-  rr(624, 400, 148, 84, 10)
-  g.fillStyle = 'rgba(17,19,23,0.16)'
-  rr(788, 400, 148, 84, 10)
+  card('rgba(247,244,239,0.94)')
   const t = new CanvasTexture(c)
   t.colorSpace = SRGBColorSpace
   t.anisotropy = 4
+  const shot = p.screens[0]
+  if (shot) {
+    const img = new Image()
+    img.onload = () => {
+      g.save()
+      g.beginPath()
+      g.roundRect(580, 70, 400, 452, 20)
+      g.clip()
+      card('#f4f2ee')
+      const s = Math.max(400 / img.width, 452 / img.height)
+      g.drawImage(img, 580 + (400 - img.width * s) / 2, 70, img.width * s, img.height * s)
+      g.restore()
+      t.needsUpdate = true
+    }
+    img.src = asset(shot.image)
+  }
   return t
 }
 
@@ -834,10 +729,9 @@ export function StoryProps() {
     <>
       {!interior && (
         <>
-          {PROCESS_STATIONS.map((_, i) => <ProcessBoard key={i} index={i} />)}
+          {GALLERY_EASELS.map((_, i) => <Easel key={i} index={i} />)}
           <AIRing />
           <ActivityObjects />
-          <GrowthWalk />
         </>
       )}
       {interior === 'education' && (

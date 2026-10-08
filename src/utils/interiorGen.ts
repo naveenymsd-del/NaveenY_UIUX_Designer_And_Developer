@@ -128,7 +128,7 @@ function education(ctx: GenContext, r: InteriorDef) {
   // timeline band on the west wall (plaques are animated StoryProps)
   b.box(wood, [-hw + 0.05, 1.75, 0], [0.06, 1.15, 14], { cast: false })
   b.push(-hw + 0.09, 2.75, 0, Math.PI / 2)
-  addSign(ctx, 'MY LEARNING JOURNEY', { bg: '#f1e9dc', fg: '#3f5e4c', shape: 'rect', weight: 800 }, [0, 0, 0], 5, 0.42)
+  addSign(ctx, 'EDUCATION', { bg: '#f1e9dc', fg: '#3f5e4c', shape: 'rect', weight: 800 }, [0, 0, 0], 3.2, 0.42)
   b.pop()
   // chalkboard + teacher desk
   b.box(wood, [6, 1.85, -hd + 0.06], [6.5, 2.2, 0.08], { cast: false })
@@ -156,7 +156,7 @@ function education(ctx: GenContext, r: InteriorDef) {
   chair(b, -6, -4.1, Math.PI, 0x4f6b58)
   // certificates wall label + lockers + plants + clock
   b.push(hw - 0.09, 2.85, 1.4, -Math.PI / 2)
-  addSign(ctx, 'CERTIFICATES', { bg: '#f1e9dc', fg: '#3f5e4c', shape: 'rect', weight: 800 }, [0, 0, 0], 2.6, 0.32)
+  addSign(ctx, 'CERTIFICATION', { bg: '#f1e9dc', fg: '#3f5e4c', shape: 'rect', weight: 800 }, [0, 0, 0], 2.8, 0.32)
   b.pop()
   for (let i = 0; i < 6; i++) {
     const x = -11 + i * 0.8
@@ -164,7 +164,7 @@ function education(ctx: GenContext, r: InteriorDef) {
     b.box(0x5c7658, [x + 0.25, 1.2, hd - 0.56], [0.04, 0.12, 0.02], { cast: false })
   }
   b.collider([-9, 0.95, hd - 0.3], [4.8, 1.9, 0.5])
-  // notice board (story: growth)
+  // notice board
   b.box(0x9c7a58, [7.8, 1.65, hd - 0.06], [2.2, 1.2, 0.06], { cast: false })
   for (let i = 0; i < 6; i++) b.box(rng.pick([0xf6f1e8, 0xe3d2a2, 0xbcd0d8, 0xe8c9bd]), [7.1 + (i % 3) * 0.7, 1.9 - Math.floor(i / 3) * 0.5, hd - 0.1], [0.46, 0.36, 0.01], { rot: [0, 0, rng.range(-0.1, 0.1)], cast: false })
   plant(b, rng, -hw + 0.8, hd - 1.2)
@@ -199,7 +199,7 @@ function office(ctx: GenContext, r: InteriorDef) {
   chair(b, -6.2, 5.2, 0, graphite, true)
   b.push(-hw + 0.08, 0, 5.5, Math.PI / 2)
   for (let i = 0; i < 24; i++) b.box(oak, [-3 + i * 0.26, 1.7, 0.02], [0.18, 3.4, 0.05], { cast: false })
-  addSign(ctx, 'Naveen SOLUTIONS', { bg: '#2e3035', fg: '#ffffff', shape: 'rect', weight: 700 }, [0, 2.2, 0.08], 4.2, 0.62)
+  addSign(ctx, 'NFC SOLUTIONS', { bg: '#2e3035', fg: '#ffffff', shape: 'rect', weight: 700 }, [0, 2.2, 0.08], 4.2, 0.62)
   b.pop()
   plant(b, rng, -hw + 0.8, 8.8, 1.3)
   plant(b, rng, -hw + 0.8, 2.2, 1.1)
@@ -458,7 +458,7 @@ function cafe(ctx: GenContext, r: InteriorDef) {
   b.add('cyl8', 0x2b2e34, [tx, 0.37, tz], [0.08, 0.72, 0.08], { cast: false })
   b.add('cyl', 0x2b2e34, [tx, 0.02, tz], [0.5, 0.03, 0.5], { cast: false })
   b.cylCollider([tx, 0, tz], 0.5, 0.78)
-  chair(b, tx, tz + CAFE_TABLE.Naveen, 0, walnut)
+  chair(b, tx, tz + CAFE_TABLE.naveen, 0, walnut)
   chair(b, tx, tz + CAFE_TABLE.visitor, Math.PI, walnut)
   // two coffees and a little plant on the table
   for (const dz of [-0.2, 0.22]) {
@@ -536,7 +536,7 @@ function home(ctx: GenContext, r: InteriorDef) {
   windowView(ctx, 3.6, 1.9, -hd + 0.02, 0, 1.6, 1.4, 83, r.palette.trim)
   // bookshelf on the west wall
   shelfUnit(b, rng, -hw + 0.24, -0.4, Math.PI / 2, 3.2, 2.4)
-  // journey + portfolio walls (east): frames
+  // education + portfolio walls (east): frames
   const palettes = [['#f6f1e8', '#2f4a8a', '#c27a60'], ['#1f2430', '#c49a4e', '#8fa2bd'], ['#e8e2d6', '#3f7f78', '#b06a4c']]
   for (let i = 0; i < 4; i++) {
     const rect = ctx.decor.add(128, 128, artPainter(710 + i, ['#ffffff', ...palettes[i % 3]]), `homeart-${i}`)
@@ -546,23 +546,19 @@ function home(ctx: GenContext, r: InteriorDef) {
   addSign(ctx, 'SELECTED WORK', { bg: '#f3ece1', fg: '#5c4535', shape: 'rect', weight: 800 }, [0, 0, 0], 2.2, 0.3)
   b.pop()
   b.push(hw - 0.09, 2.65, -2.2, -Math.PI / 2)
-  addSign(ctx, 'MY JOURNEY', { bg: '#f3ece1', fg: '#5c4535', shape: 'rect', weight: 800 }, [0, 0, 0], 2.0, 0.3)
+  addSign(ctx, 'AI-ASSISTED DESIGN', { bg: '#f3ece1', fg: '#5c4535', shape: 'rect', weight: 800 }, [0, 0, 0], 2.8, 0.3)
   b.pop()
   // skills board on the west wall, by the entrance
   // (the tool tiles themselves are live StoryProps so they can respond to the visitor)
-  b.box(0x2e3035, [-hw + 0.06, 1.55, 3.9], [0.05, 1.7, 3.0], { cast: false })
-  b.box(0xb48a62, [-hw + 0.09, 0.66, 3.9], [0.14, 0.04, 3.1], { cast: false })
-  b.push(-hw + 0.1, 2.62, 3.9, Math.PI / 2)
-  addSign(ctx, 'SKILLS', { bg: '#2e3035', fg: '#f7f4ef', shape: 'rect', weight: 700 }, [0, 0, 0.01], 0.9, 0.18)
+  b.box(0x2e3035, [-hw + 0.06, 1.55, 3.9], [0.05, 2.0, 3.3], { cast: false })
+  b.box(0xb48a62, [-hw + 0.09, 0.53, 3.9], [0.14, 0.04, 3.4], { cast: false })
+  b.push(-hw + 0.1, 2.8, 3.9, Math.PI / 2)
+  addSign(ctx, 'SKILLS & TOOLS', { bg: '#2e3035', fg: '#f7f4ef', shape: 'rect', weight: 700 }, [0, 0, 0.01], 1.7, 0.2)
   b.pop()
-  // design-approach sketch board on the north wall
+  // gallery entry board on the north wall (the card itself is a StoryProp)
   b.box(0xefe9df, [6.8, 1.75, -hd + 0.05], [2.2, 1.4, 0.04], { cast: false })
-  for (let i = 0; i < 6; i++) {
-    const rect = ctx.decor.add(96, 96, artPainter(760 + i, ['#ffffff', '#1f2328', '#b06a4c', '#5b6b82', '#d8c9a8']), `home-sketch-${i % 4}`)
-    painting(ctx, rect, 6.1 + (i % 3) * 0.7, 2.05 - Math.floor(i / 3) * 0.62, -hd + 0.09, 0, 0.56, 0.44, 0xffffff)
-  }
   b.push(6.8, 2.62, -hd + 0.08)
-  addSign(ctx, 'HOW I DESIGN', { bg: '#efe9df', fg: '#5c4535', shape: 'rect', weight: 800 }, [0, 0, 0], 1.6, 0.22)
+  addSign(ctx, 'GALLERY', { bg: '#efe9df', fg: '#5c4535', shape: 'rect', weight: 800 }, [0, 0, 0], 1.6, 0.22)
   b.pop()
   // contact pinboard by the door
   b.box(0x9c7a58, [-4.6, 1.6, hd - 0.06], [1.4, 1.0, 0.05], { cast: false })

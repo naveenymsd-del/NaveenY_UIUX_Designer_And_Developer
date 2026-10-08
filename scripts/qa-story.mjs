@@ -1,6 +1,6 @@
 // The two required flows, end to end:
 // A) airplane intro → city → AI → Naveen walks in → Start exploring
-// B) story path via the "Next stop" chip: Home → Education → Naveen → Projects → Design Park → Contact
+// B) story path via the "Next stop" chip: Home → Education → NFC → Projects → Design Park → Contact
 import { chromium } from 'playwright-core'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const mode = process.argv[2] || 'day'

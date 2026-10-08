@@ -1,4 +1,4 @@
-// Menu (journey, about, AI workflow, contact, feedback), minimap, the Lookout thank-you + feedback, mobile hero.
+// Menu (journey, about, AI workflow, contact, feedback), minimap, menu travel, mobile hero.
 import { chromium } from 'playwright-core'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const b = await chromium.launch({ executablePath: process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe', args: ['--use-angle=d3d11'] })
@@ -22,30 +22,14 @@ await p.getByRole('button', { name: 'Open menu' }).click()
 await sleep(900)
 await p.screenshot({ path: 'qa-screens/111-menu-journey.png' })
 for (const [label, file] of [['About', 'about'], ['AI Workflow', 'workflow'], ['Contact', 'contact'], ['Feedback', 'feedback']]) {
-  await p.locator('.ui-menu__item', { hasText: label }).first().click()
+  await p.locator('.ui-menu__item', { has: p.locator('.ui-menu__label', { hasText: new RegExp(`^${label}$`) }) }).click()
   await sleep(600)
   await p.screenshot({ path: `qa-screens/112-menu-${file}.png` })
 }
 await p.getByRole('button', { name: 'Close menu' }).click()
 await sleep(700)
-// the Lookout
-await p.evaluate(() => window.__teleport(-13.9, 38.6, Math.PI * 0.75))
-await sleep(1600)
-await p.keyboard.press('KeyE')
-await sleep(2600)
-await p.screenshot({ path: 'qa-screens/113-lookout-thanks.png' })
-await p.getByRole('button', { name: 'Leave feedback' }).click()
-await sleep(400)
-await p.locator('.ui-final').getByText('Loved the experience').click()
-await p.locator('.ui-final textarea').fill('QA: lovely walk.')
-await p.locator('.ui-final').getByRole('button', { name: 'Send feedback' }).click()
-await sleep(700)
-await p.screenshot({ path: 'qa-screens/114-lookout-feedback.png' })
-const saved = await p.evaluate(() => localStorage.getItem('mindscape:feedback'))
-console.log('feedback stored locally:', !!saved)
+// (the journey now ends at the Contact Café — thank-you and feedback are covered by qa-cafe.mjs)
 // menu travel into the projects
-await p.locator('.ui-final').getByRole('button', { name: 'Keep exploring' }).first().click()
-await sleep(600)
 await p.getByRole('button', { name: 'Open menu' }).click()
 await sleep(700)
 await p.locator('.ui-menu__item', { hasText: 'Projects' }).first().click()

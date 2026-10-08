@@ -1,4 +1,4 @@
-// "View my work" → Naveen Solutions Project Studio → open a project → tabs → close → back outside.
+// "View my work" → NFC Solutions Project Studio → open a project → tabs → close → back outside.
 import { chromium } from 'playwright-core'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const vp = process.argv[2] ? process.argv[2].split('x').map(Number) : [1440, 900]
@@ -28,7 +28,10 @@ await p.screenshot({ path: 'qa-screens/103-studio-bay.png' })
 await p.keyboard.press('KeyE')
 await sleep(2200)
 await p.screenshot({ path: 'qa-screens/104-case-overview.png' })
-await p.locator('.ui-case__challenges').scrollIntoViewIfNeeded()
+// the case study is tabbed: Overview | Challenges
+await p.getByRole('tab', { name: 'Challenges' }).click()
+await sleep(600)
+await p.locator('.ui-case__challenges').first().scrollIntoViewIfNeeded()
 await sleep(700)
 await p.screenshot({ path: 'qa-screens/105-case-process.png' })
 await p.getByRole('button', { name: /Next project/ }).click()

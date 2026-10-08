@@ -1,6 +1,6 @@
 # Naveen — interactive 3D portfolio (Mindscape Avenue)
 
-A playable portfolio neighbourhood for the browser. It opens with a cinematic flight: the city emerges from a morning haze, the orange AI companion wakes, and the camera glides under the welcome arch to the avatar. From there you walk the street in third person. The places are the **Education** campus, **My Home** (profile), the **Design Park** (design process, AI workflow and activities), and the **Naveen Solutions** office, where colleagues work and the **Project Studio** holds the projects. The journey ends at **The Lookout**, with thanks, contact links and feedback. Everything is original, procedural geometry. You can swap any piece for your own GLB or audio without touching gameplay code.
+A playable portfolio neighbourhood for the browser. It opens with a cinematic flight: the city emerges from a morning haze, the orange AI companion wakes, and the camera glides under the welcome arch to the avatar. From there you walk the street in third person. The places are the **Education** campus, **My Home** (profile), the **Gallery** park (UI screens from the case studies on easels, the AI-assisted design area and interests), and the **NFC Solutions** office, where colleagues work and the **Project Studio** holds the projects. The journey ends at the **Contact Café**, with thanks, contact links and feedback. Everything is original, procedural geometry. You can swap any piece for your own GLB or audio without touching gameplay code.
 
 ```bash
 npm install
@@ -30,9 +30,9 @@ npm run preview    # serve the production build
 - START
 - 01 Home
 - 02 Education
-- 03 Naveen Solutions
+- 03 NFC Solutions
 - 04 Projects (the Project Studio inside the office)
-- 05 Design Journey
+- 05 Gallery
 - 06 Contact Café
 
 Each stop sets:
@@ -56,32 +56,27 @@ The **Contact Café** (on the promenade, west of the start) is the ending:
 
 1. Press E to sit at the window table. Naveen sits across from you and asks how it went.
 2. Leave a review, or skip.
-3. The contact details appear (phone, email, LinkedIn and resume, from `CONTACT` in `src/data/portfolioContent.ts`).
+3. The contact details appear (Email Me and Call, plus LinkedIn and View Resume once their URLs are set, from `CONTACT` in `src/data/portfolioContent.ts`).
 
 ## Story, guide and navigation
 
-The world tells one story in ten chapters, each arriving as you reach its place:
+The world tells one story in chapters, each arriving as you reach its place:
 - 01 Who I am (Home)
 - 02 Where I started (campus)
-- 03 What I learned (classroom)
-- 04 How I grew (the Growth Walk)
-- 05 Real products (Naveen Solutions)
-- 06 My professional world (the office)
-- 07 How I design (Design Park)
-- 08 How I use AI (AI area)
-- 09 What I build today (Project Studio)
-- 10 Let's connect (The Lookout)
+- 04 Where I work (NFC Solutions)
+- 05 What I build (Project Studio)
+- 06 Work, AI & interests (Gallery)
+- 09 Let's talk (Contact Café)
 
 **Content lives in `src/data/portfolioContent.ts`:**
-- `TOOLS` is the Home skill wall.
-- `CAREER_STAGES` holds the eight Growth Walk boards.
-- Education, office and home stories, and `CONTACT`.
-
-Growth Walk positions are `GROWTH_WALK` in `src/data/locations.ts`.
+- `SKILL_GROUPS` makes the Home skill wall (one column per group).
+- `PROFILE`, `EXPERIENCE`, `EDUCATION`, `CERTIFICATION`, `INTERESTS`, `AI_WORKFLOW`, `GALLERY`, `CONTACT`.
+- `GUIDE_ANSWERS`: questions the companion answers ("What tools does he use?") before travelling.
+- Education, office and home stories.
 
 **The guide:** click the orange companion, or the guide button in the header, to open *Where would you like to go?*
-- Quick links: Home · Education · Design · Projects · Contact.
-- A text box understood locally, with no API: "projects", "college", "design process", "AI", "career", "resume"… The rules are `COMMANDS` in `src/core/navigation.ts`.
+- Quick links: Home · Education · NFC Solutions · Projects · Gallery · Contact Café, plus one button per project.
+- A text box understood locally, with no API. A project name opens that case study; a question ("Where did Naveen study?", "How does he use AI?") gets an answer from `GUIDE_ANSWERS` and then travels; otherwise the stop words in `src/data/world.ts` pick a destination.
 - Travel uses `navigateToLocation(dest)`. The camera lifts into a ~2 s aerial glide, the player is moved while the camera is high, rooms are entered with the usual fade, and a soft ring marks the arrival point. Destinations are `DESTINATIONS` in the same file.
 
 **Greetings:** people you pass occasionally say hello. Lines depend on the time of day and the place, and colleagues say "Hey Naveen!". A 42 % roll, a 50 s per-person cooldown and a 5 s global quiet period keep it natural. The lines are `LINES` in `src/components/npc/NPCManager.tsx`.
@@ -90,12 +85,74 @@ Growth Walk positions are `GROWTH_WALK` in `src/data/locations.ts`.
 
 **Opening:** a light aircraft tows a cloth banner, *WELCOME TO MY PORTFOLIO*, across the sky, then the camera tips down into the city. It is about 15 s, uses the same world at any time of day, and can be skipped with Skip intro or Esc. It isn't forced again in the same browser session. The timing is `INTRO` / `PLANE` in `src/core/intro.ts` and the model is `components/effects/IntroPlane.tsx`.
 
+## AI guide: talk to the portfolio
+
+The orange companion is also a conversational guide. Visitors can explore
+normally, or talk (or type) to it. They can ask about Naveen, his experience
+or a project, or tell it where to go. It then **walks** them there through the
+world. It never teleports.
+
+**It works with no API key, no server and no payment.** Out of the box (no
+`VITE_*` variables) the guide uses **browser voice**: the browser's own speech
+recognition and speech synthesis, with the guide's built-in brain. That is
+turn-by-turn voice, not live speech-to-speech, and the UI says so ("Browser
+voice"). Two optional extras plug into the same interfaces later:
+
+| Mode | Needs | Cost |
+|---|---|---|
+| **Browser voice + built-in brain** (default) | nothing | free |
+| Free cloud text brain for open questions the built-in brain can't answer | the Worker in `server/` deployed on a free Cloudflare account (Workers AI binding) + `VITE_GUIDE_ENDPOINT` | free (Workers AI's 10,000 neurons/day; when used up it stops, nothing is charged) |
+| Claude text brain | the Worker + `ANTHROPIC_API_KEY` secret | paid API |
+| Live speech-to-speech ("Live voice") | the Worker + `OPENAI_API_KEY` secret + `VITE_VOICE_SESSION_ENDPOINT` | paid API |
+
+**How it fits together** (`src/ai/`, all event-driven, nothing in the render loop):
+
+| Layer | File | What it does |
+|---|---|---|
+| Voice (realtime, optional) | `voice/realtime.ts` | `RealtimeVoice`: speech-to-speech over WebRTC (OpenAI Realtime, `gpt-realtime-2.1`), selected only when `VITE_VOICE_SESSION_ENDPOINT` is set to a real endpoint; otherwise never loaded into the conversation. The browser asks the Worker for a 10-minute session key, never the real API key. Semantic turn detection, interruption (speaking over the guide cuts it off), echo cancellation and noise suppression on the mic, live transcripts both ways. The model can only call the same closed set of world tools. |
+| Voice (browser, default) | `voice/types.ts`, `voice/browser.ts` | `BrowserVoice`, behind the same `VoiceProvider` interface (`connect`, `disconnect`, `startListening`, `stopListening`, `interrupt`, `sendText`, `isConnected` + events). Web Speech recognition where supported, synthesis everywhere it exists. Desktop: barge-in by voice (its own voice echoing back is ignored). Phones: the mic pauses while the guide speaks (speaker next to the mic) and a tap interrupts. "Stop listening" / "mute" pause the mic; a tap resumes. Speech is unlocked inside the first tap for Safari/iOS. |
+| Knowledge | `knowledge.ts` | Reads `src/data/*` (no new facts): place descriptions, project aliases for misheard names, a small glossary, and `knowledgeText()` for the server brain. |
+| Brain | `brain/local.ts` | Built-in and instant. Intent understanding (not exact commands), fuzzy project names ("Intelli staff", "calm scient"), memory and references ("he", "there", "that one", "the previous one", "the mobile one", "the second one"), interruptions ("wait", "actually…", "take me somewhere else"), time-of-day greetings, answer depth ("what is" short, "explain" medium, "explain everything" long), and answers grounded only in the data, in the third person. Honest when it doesn't know; never invents metrics. |
+| Portfolio knowledge | `portfolioKnowledge.ts`, `guidePrompt.ts` | What the guide knows about this website itself (stack, world, day/night, AI guide, privacy). `guidePrompt.ts` holds the one set of instructions and tools shared by the realtime voice and the text endpoint, so both behave the same. |
+| Tours | `tour.ts` | "Give me a tour" (Home → Education → NFC Solutions → Project Studio → each project → Gallery → Contact) and "Show me all the projects". Walks to each stop, introduces it, then waits. Visitors can say next, skip, go back, pause, continue or stop, and ask questions mid-tour ("Want to continue the tour?" follows). Tour state is kept apart from conversation and navigation. |
+| Brain (optional) | `brain/remote.ts` + `server/` | When `VITE_GUIDE_ENDPOINT` is set, only questions the built-in brain has no answer for go to the Worker (Workers AI for free, or Claude with a key). Navigation, tours and context always stay with the built-in brain. See `server/README.md`. |
+| Actions | `actions.ts` | The only way the guide changes the world: `navigate`, `navigateProject`, `showSection`, `openPrototype`, `stop`, `goBack`, `help`. Validated against known places and project ids; the UI prototype and the case-study prototype open only from the project's own `prototypeUrl` / `caseStudyUrl`. |
+| Walking | `autoWalk.ts` | A small waypoint graph on the pedestrians' sidewalk network plus room aisles. The character walks with the normal controller (collision, walk/jog animation, turning); rooms are entered and left through their doors. Any WASD, arrow or joystick input takes over ("Got it — you're driving."). |
+| Orchestration | `guide.ts`, `conversation.ts`, `voiceStore.ts`, `worldState.ts` | Each turn: transcript → brain → speech + bubble + transcript → actions. Session-only memory. Separate stores for voice/UI state, conversation and world. |
+| UI | `components/ui/VoiceDock.tsx`, `styles/voice.css` | Orb with state (listening, thinking, speaking, walking), the latest exchange, one contextual hint, a text box, and the voice control, labelled with the mode in use ("Browser voice" or "Live voice"). |
+
+**Consent and privacy.** The microphone is never turned on automatically. The
+first tap explains: "Voice mode uses your microphone so I can hear you. Your
+portfolio session doesn't store your voice recordings." The visitor then
+chooses "Turn on voice" or "Type instead". In browser voice the dialog also
+says that the browser does the transcription (Chrome and Edge use their online
+speech service) and that it is turn by turn, not live speech-to-speech.
+Turning voice off stops listening (and, in live voice, ends the session and
+releases every microphone track); so does hiding the tab. No audio is recorded
+or stored, and conversations are kept only in memory for the session. **No API
+key is ever in the browser or the repository.** Optional keys live only as
+Worker secrets; the browser gets at most a short-lived realtime session key.
+
+**Fallbacks.** Live voice (if configured) → browser voice + guide brain → text →
+manual exploring. No session endpoint, or it fails: browser voice, and the guide
+says so. No speech recognition (e.g. Firefox): typing, with answers still read
+aloud. Microphone
+blocked: an explanation and typing. No server endpoint, or it's slow: the
+built-in brain. No speech synthesis, or sound switched off: text only. The
+world keeps working either way.
+
+**Touching the 3D code.** `Player.tsx` follows `playerRuntime.autoWalk`, and
+`GameCamera.tsx` keeps settling behind the player during a guided walk unless
+the visitor just moved the camera. `AICompanion.tsx` adds a subtle
+listening/speaking pulse, and `ProjectPanel.tsx` listens for "show the
+challenge". Nothing else in the world changed.
+
 ## Visitor flow
 
 1. **Loading** shows a dark skyline whose windows switch on as the world builds, with staged messages ("Preparing the people…") and "Ready.".
 2. **Intro** is a cinematic flight (about 16 s, with **Skip intro** or Esc) that ends on the hero: name, one line, **Start exploring** / **View my work**.
 3. **Start exploring** puts you on the street. The companion greets you in two or three short lines and suggests where to begin.
-4. **View my work** takes you straight to the Project Studio inside Naveen Solutions.
+4. **View my work** takes you straight to the Project Studio inside NFC Solutions.
 5. As you explore, the companion speaks only at meaningful moments: arriving somewhere, opening a project, and one rare nudge after a long quiet spell.
 
 ## Routes and modes
@@ -152,10 +209,11 @@ Projects live in **`src/data/projects.ts`** (`PROJECT_CONTENT`). Each entry auto
 - a screen bay in the Project Studio (it switches on as you approach);
 - an interaction ("Explore TASK");
 - a close-up camera;
-- a case-study presentation (01 Overview · 02 Challenges, with an "Open prototype" link next to the title);
+- a case-study presentation: the title with **View prototype** beside it (opens Figma in a new tab), role · platform · domain, and two tabs — **Overview** (project overview, my approach, key user flows, information architecture, UI & design system, key screens) and **Challenges** (the challenge, UX & product thinking, design decisions);
+- an easel in the Gallery park showing its screens;
 - a pavilion in the `/projects` overview.
 
-Only projects with a verified Figma prototype belong in this file (`prototypeUrl`), and Overview and Challenges are written from that prototype. The studio fits five bays on its east wall and continues onto the back wall. Extend `STUDIO.BAY_Z` / `BACK_BAYS` in `src/data/interiors.ts` for more.
+Only projects with a verified Figma prototype belong in this file (`prototypeUrl`). The case-study content is written from the résumé and the case-study frames in that Figma file; key screens are exported from it into `public/projects/`. No metrics or outcomes are added. The studio fits five bays on its east wall and continues onto the back wall. Extend `STUDIO.BAY_Z` / `BACK_BAYS` in `src/data/interiors.ts` for more.
 
 ## Colleagues
 
@@ -193,16 +251,16 @@ The same world is shown at every hour; only the light changes. One time value (0
 
 ## Portfolio content and placeholders
 
-All personal text lives in **`src/data/portfolioContent.ts`**. Nothing in it is invented. Anything that needs a real fact is a `[BRACKETED PLACEHOLDER]`. These placeholders render highlighted in the panels until you replace them. Search the file for `[` to find them:
+All personal text lives in **`src/data/portfolioContent.ts`**, taken from the résumé. Nothing in it is invented, and there are no placeholders: anything not confirmed is simply left out.
 
-- `PROFILE`: name, role, tagline
-- `CONTACT`: email, LinkedIn, resume, portfolio links (any placeholder shows as "coming soon", never as a broken link)
-- `EDUCATION_TIMELINE` / `EDUCATION_STORIES`: degree, institution, years, certificates
-- `OFFICE_STORIES`: role, responsibilities and team at Naveen Solutions
-- `HOME_STORIES`: about me, personal journey, interests
-- `DESIGN_PROCESS` (steps 01–09), `AI_WORKFLOW`, `ACTIVITY_STORIES`: the Design Park texts
+- `PROFILE`: name, role, summary
+- `CONTACT`: email and phone; `linkedin` and `resume` stay empty (their buttons hidden) until real URLs are added
+- `EXPERIENCE`, `EDUCATION`, `CERTIFICATION` (the one certificate), `SKILL_GROUPS`, `INTERESTS`
+- `GALLERY`: built from the project screens; add sketches or photos (`category: 'Sketching' | 'Photography'`) once real files exist
+- `EDUCATION_STORIES`, `OFFICE_STORIES`, `HOME_STORIES`: the panels in each room
+- `AI_WORKFLOW` (five steps, the last one human), `ACTIVITY_STORIES` (interests): the Gallery park texts
 
-The Naveen Solutions building uses text signage only. To use the official logo, add it and reference it in `landmarkGen.genOffice` / `interiorGen`, keeping its aspect ratio.
+The NFC Solutions building uses text signage only. To use the official logo, add it and reference it in `landmarkGen.genOffice` / `interiorGen`, keeping its aspect ratio.
 
 ### Interiors
 
@@ -275,6 +333,14 @@ node scripts/qa-intro.mjs        # loading → each beat of the cinematic → he
 node scripts/qa-studio.mjs       # View my work → Project Studio → case study → colleague name → back outside
 node scripts/qa-journey.mjs      # menu sections, the Lookout thank-you + feedback, mobile hero
 node scripts/qa-closeup.mjs      # avatar + companion close-ups (debug camera: window.__shot)
+node scripts/qa-guide-brain.mjs  # AI guide brain, no browser: ~76 visitor phrasings (intent, memory, references, interruptions, greetings, tours, grounding, honesty); --print shows answers
+node scripts/qa-browser-voice.mjs # default free voice, no endpoints: consent, spoken turns, pronouns, barge-in, echo, "stop listening", tour by voice (pause/continue/explain), takeover, voice off, Firefox-like and no-speech fallbacks, phone half-duplex
+node scripts/qa-worker.mjs       # the optional Worker offline: 501 with no keys, free Workers AI text brain (grounded, text only), quota → fallback, origin/size/rate guards
+node scripts/qa-realtime.mjs     # optional live voice with a fake WebRTC peer (starts its own dev server with a test endpoint): session key flow, transcripts, tool calls, interruption, mic released, fallback
+node scripts/qa-tour.mjs         # guided tours in the browser: walked (no teleport), questions mid-tour, next / skip / stop, project tour
+node scripts/qa-voice.mjs        # AI guide end to end: consent, conversation, guided walk (no teleport), project, Challenges, prototype, takeover, stop, phone
+node scripts/qa-projects.mjs     # every Project Studio bay, tabs, verified prototype links, guide commands
+node scripts/qa-content.mjs      # résumé content in every place, gallery, café, no placeholders
 ```
 
 Known third-party notice: Rapier's WASM loader logs `using deprecated parameters for the initialization function` once at startup. It comes from the library, not from this code, and is harmless.

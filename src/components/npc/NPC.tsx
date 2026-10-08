@@ -19,7 +19,7 @@ export interface NPCHandle {
 export function NPC({ agent }: { agent: Agent }) {
   const group = useRef<Group>(null!)
   const body = useRef<RapierRigidBody>(null)
-  const lastBody = useRef({ x: NaN, z: NaN })
+  const lastBody = useRef<{ x: number; z: number; rb: RapierRigidBody | null }>({ x: NaN, z: NaN, rb: null })
 
   useEffect(() => {
     agent.handle = {
@@ -30,10 +30,13 @@ export function NPC({ agent }: { agent: Agent }) {
         g.rotation.y = yaw
         const rb = body.current
         const lb = lastBody.current
-        if (rb && (Math.abs(lb.x - pos.x) > 0.01 || Math.abs(lb.z - pos.z) > 0.01)) {
+        // a remounted body (StrictMode, seat changes) starts at its spawn point:
+        // always push the first transform to a new body or its capsule stays behind
+        if (rb && (rb !== lb.rb || Math.abs(lb.x - pos.x) > 0.01 || Math.abs(lb.z - pos.z) > 0.01)) {
           rb.setNextKinematicTranslation({ x: pos.x, y: pos.y, z: pos.z })
           lb.x = pos.x
           lb.z = pos.z
+          lb.rb = rb
         }
       },
       setVisible: (v) => {

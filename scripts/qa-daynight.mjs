@@ -17,7 +17,7 @@ await p.getByRole('button', { name: 'Start exploring' }).click()
 await sleep(4500)
 const places = [
   ['avenue', 0, 60, Math.PI],
-  ['Naveen', 4.5, 22, Math.PI * 0.62],
+  ['nfc', 4.5, 22, Math.PI * 0.62],
   ['park', -25.5, 38, Math.PI],
   ['home', -3, -21, -Math.PI * 0.62],
   ['campus', 0, -44, Math.PI],

@@ -1,7 +1,7 @@
 import { PALETTE } from '@/data/palette'
 import { ARCH_Z, FOUNTAIN_POS, KIOSK_POS, PARK_CENTER, SIDEWALK_Y, facingYaw, type BuildingDef } from '@/data/cityLayout'
 import type { ProjectDef } from '@/data/projects'
-import { ACTIVITY_SPOTS, PROCESS_STATIONS } from '@/data/locations'
+import { ACTIVITY_SPOTS, PARK_PATH } from '@/data/locations'
 import {
   addSign, lighten, lightPoolAt, type GenContext,
 } from './buildingGen'
@@ -475,10 +475,10 @@ export function genPark(ctx: GenContext) {
     hedge(b, rng, len)
     b.pop()
   }
-  // ── Design Journey trail: stepping stones linking the nine process boards
-  for (let i = 0; i < PROCESS_STATIONS.length - 1; i++) {
-    const [ax, az] = PROCESS_STATIONS[i]
-    const [bx, bz] = PROCESS_STATIONS[i + 1]
+  // ── Gallery path: stepping stones linking the project easels
+  for (let i = 0; i < PARK_PATH.length - 1; i++) {
+    const [ax, az] = PARK_PATH[i]
+    const [bx, bz] = PARK_PATH[i + 1]
     const len = Math.hypot(bx - ax, bz - az)
     const n = Math.floor(len / 0.85)
     for (let k = 1; k < n; k++) {
@@ -488,11 +488,11 @@ export function genPark(ctx: GenContext) {
       b.add('cyl8', rng.pick([0xd6cfc2, 0xcfc6b8, 0xdcd5c9]), [ax + (bx - ax) * t + jx, lawnY + 0.015, az + (bz - az) * t + jz], [0.62, 0.05, 0.52], { rot: [0, rng.range(0, 3), 0], cast: false })
     }
   }
-  for (const [x, z] of PROCESS_STATIONS) b.add('cyl', 0xcfc6b8, [x, lawnY + 0.03, z], [1.5, 0.06, 1.5], { cast: false })
+  for (const [x, z] of PARK_PATH) b.add('cyl', 0xcfc6b8, [x, lawnY + 0.03, z], [1.5, 0.06, 1.5], { cast: false })
   // trail sign at the start + pointer toward the Project District at the end
   b.push(-23.1, lawnY, 22.6, Math.PI / 2 + 0.5)
   b.add('cyl8', 0x6e5140, [0, 1.1, 0], [0.1, 2.2, 0.1])
-  addSign(ctx, 'DESIGN JOURNEY', { bg: '#f4efe4', fg: '#3f5e4c', shape: 'rect', weight: 800 }, [0, 2.0, 0.06], 1.5, 0.36, 0x6e5140)
+  addSign(ctx, 'GALLERY', { bg: '#f4efe4', fg: '#3f5e4c', shape: 'rect', weight: 800 }, [0, 2.0, 0.06], 1.5, 0.36, 0x6e5140)
   b.cylCollider([0, 0, 0], 0.12, 2.2)
   b.pop()
   b.push(-9.8, lawnY, 8.9, Math.PI * 0.75)
@@ -543,36 +543,3 @@ export function genNightFurniture(ctx: GenContext) {
   }
 }
 
-/**
- * Growth Walk stands (the animated boards are StoryProps). The furniture
- * itself matures along the path: a wooden easel, then a steel frame, then a
- * dark, lit gallery stand — the world gets more refined as the career does.
- */
-export function genGrowthWalk(ctx: GenContext, stations: [number, number][], yaw: number) {
-  const { b } = ctx
-  stations.forEach(([x, z], i) => {
-    const tier = i < 2 ? 0 : i < 5 ? 1 : 2
-    b.push(x, SIDEWALK_Y, z, yaw)
-    if (tier === 0) {
-      // wooden easel
-      for (const sx of [-0.45, 0.45]) b.box(PALETTE.walnut, [sx, 0.95, 0.05], [0.06, 1.9, 0.06], { rot: [0.1, 0, 0] })
-      b.box(PALETTE.walnut, [0, 0.8, 0.03], [1.1, 0.05, 0.12])
-      b.box(PALETTE.walnut, [0, 0.9, -0.35], [0.05, 1.7, 0.05], { rot: [-0.3, 0, 0] })
-    } else if (tier === 1) {
-      // brushed steel frame on a plinth
-      b.box(0xcfd3d8, [0, 0.12, 0], [1.2, 0.24, 0.5])
-      for (const sx of [-0.62, 0.62]) b.box(0x8f969e, [sx, 1.1, 0], [0.05, 1.9, 0.05], { mat: 'metal' })
-      b.box(0x8f969e, [0, 2.03, 0], [1.3, 0.05, 0.05], { mat: 'metal' })
-    } else {
-      // dark gallery stand with a warm lit edge
-      b.box(0x22252c, [0, 0.14, 0], [1.3, 0.28, 0.55])
-      b.box(0x2b2e34, [0, 1.12, -0.06], [1.46, 1.3, 0.08])
-      b.box(0xffe0b8, [0, 1.8, 0.0], [1.3, 0.025, 0.02], { mat: 'emissive', cast: false })
-    }
-    // a small number plate at the foot
-    b.box(tier === 2 ? 0x2b2e34 : 0xe9e2d6, [0.52, 0.3, 0.27], [0.22, 0.14, 0.02], { cast: false })
-    b.collider([0, 0.9, 0], [1.3, 1.8, 0.45])
-    b.pop()
-    lightPoolAt(ctx, x + 1.1, z - 0.3, 1.3, 0xffd9a6)
-  })
-}

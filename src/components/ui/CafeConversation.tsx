@@ -75,7 +75,7 @@ export function CafeConversation() {
           <h2 id="cafe-title" className="sr-only">A conversation with {PROFILE.name}</h2>
           <ol className="ui-cafe__chat" aria-live="polite">
             {lines >= 1 && <li>Thanks for taking the time to explore my portfolio.</li>}
-            {lines >= 2 && <li>I hope the journey gave you a better idea of who I am, what I design and how I use technology and AI to expand my design process.</li>}
+            {lines >= 2 && <li>I hope the journey gave you a better idea of who I am, what I design and how I work.</li>}
             {lines >= 3 && <li><b>How was the journey?</b></li>}
           </ol>
           <div className={`ui-cafe__reply ${lines >= 3 ? 'is-ready' : ''}`}>
@@ -107,8 +107,8 @@ export function CafeConversation() {
         <>
           <h2 id="cafe-title">Let’s talk.</h2>
           {sent && <p className="ui-cafe__thanks">{sent === 'sent' ? 'Thank you — your note is on its way.' : 'Thank you — your note was saved (delivery isn’t connected yet).'}</p>}
+          <p className="ui-cafe__who"><b>{PROFILE.fullName}</b> · {PROFILE.role} · {PROFILE.location}</p>
           <p className="ui-cafe__asks">Have an idea? Want to discuss a product? Want to talk about UI/UX? Just want to say hello?</p>
-          <p className="ui-cafe__lead">Let’s connect.</p>
           <ContactLinks />
           <button className="ui-btn ui-btn--primary ui-cafe__next" onClick={finish}>Finish the journey</button>
         </>
@@ -118,9 +118,9 @@ export function CafeConversation() {
           <h2 id="cafe-title">Thank you for visiting.</h2>
           <p className="ui-cafe__story">You didn’t just visit my portfolio. <b>You explored it.</b> You walked through my story, my work, my process and the way I think about design.</p>
           <div className="ui-cafe__signature">
-            <b>{PROFILE.name.toUpperCase()}</b>
-            <span>UI/UX Designer</span>
-            <small>Designing human experiences with technology &amp; AI</small>
+            <b>{PROFILE.fullName.toUpperCase()}</b>
+            <span>{PROFILE.role}</span>
+            <small>{PROFILE.experience} · {PROFILE.location}</small>
           </div>
           <p className="ui-cafe__lead">Let’s build what’s next.</p>
           <button className="ui-cafe__done" onClick={() => { soundManager.play('close'); close() }}>Stand up and keep exploring</button>

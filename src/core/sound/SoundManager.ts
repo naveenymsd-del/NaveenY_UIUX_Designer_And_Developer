@@ -42,6 +42,11 @@ class SoundManager {
   private layers: Partial<Record<Layer, GainNode>> = {}
   private scape: Soundscape = 'street'
 
+  /** false while the visitor has sound switched off */
+  get isEnabled() {
+    return this.enabled
+  }
+
   get unlocked() {
     return !!this.ctx && this.ctx.state === 'running'
   }

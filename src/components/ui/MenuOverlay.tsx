@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { navigateToLocation } from '@/core/navigation'
 import { STORY_STOPS, type StopId } from '@/data/world'
 import { soundManager } from '@/core/sound/SoundManager'
-import { AI_HUMAN_STEPS, AI_WORKFLOW, PROFILE } from '@/data/portfolioContent'
+import { AI_WORKFLOW, PROFILE } from '@/data/portfolioContent'
 import { type Place, useGameStore } from '@/stores/gameStore'
 import { type MenuSection, useUIStore } from '@/stores/uiStore'
 import { ContactLinks } from './ContactLinks'
@@ -97,9 +97,11 @@ export function MenuOverlay() {
           {section === 'about' && (
             <div className="ui-menu__section">
               <p className="ui-kicker">About</p>
-              <h2>{PROFILE.name}, {PROFILE.role}.</h2>
-              <p className="ui-menu__lead">{PROFILE.tagline}</p>
-              <p>{PROFILE.experience}, currently at {PROFILE.company}. This neighbourhood is my portfolio as a place: my education on the campus, my story at home, my projects inside the Naveen Solutions office, my process on the Design Journey — and a coffee at the Contact Café.</p>
+              <h2>{PROFILE.fullName}</h2>
+              <p className="ui-menu__lead">{PROFILE.role}</p>
+              <p>{PROFILE.tagline}</p>
+              <p>{PROFILE.summary} Based in {PROFILE.location}, at {PROFILE.companyFull} since May 2022.</p>
+              <p>This neighbourhood is my portfolio as a place: my profile at home, my education on the campus, my projects in the Project Studio at NFC Solutions, a gallery in the park — and a coffee at the Contact Café.</p>
               <button className="ui-btn ui-btn--quiet" onClick={() => { setOpen(false); navigateToLocation('home') }} tabIndex={tab}>Visit my home ↗</button>
             </div>
           )}
@@ -108,17 +110,17 @@ export function MenuOverlay() {
               <p className="ui-kicker">AI Workflow</p>
               <h2>AI helps me explore. I make the design decisions.</h2>
               <ol className="ui-flow">
-                {AI_WORKFLOW.map((s) => <li key={s} className={AI_HUMAN_STEPS.has(s) ? 'is-human' : ''}>{s}</li>)}
+                {AI_WORKFLOW.map((s) => <li key={s.n} className={s.human ? 'is-human' : ''}>{s.title}</li>)}
               </ol>
-              <p className="ui-menu__note">AI is a design partner, not a replacement for human thinking.</p>
-              <button className="ui-btn ui-btn--quiet" onClick={() => { setOpen(false); navigateToLocation('designJourney') }} tabIndex={tab}>Visit the AI area ↗</button>
+              <p className="ui-menu__note">AI accelerates exploration. Human judgment drives the final experience.</p>
+              <button className="ui-btn ui-btn--quiet" onClick={() => { setOpen(false); navigateToLocation('gallery') }} tabIndex={tab}>Visit the Gallery ↗</button>
             </div>
           )}
           {section === 'contact' && (
             <div className="ui-menu__section">
               <p className="ui-kicker">Contact</p>
               <h2>Let’s talk.</h2>
-              <p>Open to conversations about design, products and interactive experiences.</p>
+              <p>{PROFILE.fullName} · {PROFILE.role} · {PROFILE.location}</p>
               <ContactLinks tabbable={open} />
             </div>
           )}

@@ -525,7 +525,7 @@ export function interiorPainter(kind: InteriorKind, seed: number): DrawFn {
       ctx.fillRect(w * 0.2, h * 0.3, w * 0.24, h * 0.07)
       ctx.fillStyle = '#ffffff'
       ctx.font = `700 ${h * 0.045}px ${UI_FONT}`
-      ctx.fillText('Naveen SOLUTIONS', w * 0.215, h * 0.345)
+      ctx.fillText('NFC SOLUTIONS', w * 0.215, h * 0.345)
       ctx.fillStyle = '#e9e4dc'
       ctx.fillRect(w * 0.5, h * 0.58, w * 0.3, h * 0.14)
       ctx.fillStyle = '#a0785a'

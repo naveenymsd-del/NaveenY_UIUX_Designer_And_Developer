@@ -171,7 +171,7 @@ export function NPCManager() {
         Object.assign(over, {
           topStyle: b ? r.pick(['blouse', 'shirt', 'sweater', 'jacket'] as const) : r.pick(['shirt', 'shirt', 'sweater', 'jacket'] as const),
           hairStyle: b ? r.pick(['long', 'bun', 'ponytail', 'side'] as const) : r.pick(['short', 'side', 'short', 'buzz', 'curly'] as const),
-          bottomStyle: b && r.chance(0.35) ? 'skirt' : 'trousers',
+          bottomStyle: b && r.chance(0.3) ? 'skirt' : 'trousers',
           top: r.pick(OFFICE_TOPS), topAccent: r.pick([0xf3f0ea, 0xe8e2d6, 0x3c3c40]), bottom: r.pick(OFFICE_BOTTOMS), shoes: r.pick(OFFICE_SHOES),
           accessory: r.chance(0.4) ? 'lanyard' : r.chance(0.25) ? 'glasses' : 'none',
           longSleeves: r.chance(0.75),
@@ -577,7 +577,19 @@ function update(a: Agent, dt: number, all: Agent[]) {
   const px = pp.x - a.pos.x
   const pz = pp.z - a.pos.z
   const pd = Math.hypot(px, pz)
-  if (pd < 1.6 && (px * _to.x + pz * _to.z) / (pd || 1) > 0.35) speedScale = 0
+  // the player is right ahead: wait for them — or, when the AI guide is walking them through, step aside
+  // (a guided walk heading straight at a stopped pedestrian would otherwise stand nose to nose with them)
+  let dodge = 0
+  const facing = (px * _to.x + pz * _to.z) / (pd || 1)
+  if (playerRuntime.autoWalk) {
+    // step clear of the player's line before walking on, so neither stands nose to nose
+    // (stopping at the edge of the wait radius left people parked in the only gap)
+    const cross = px * -_to.z + pz * _to.x
+    if (pd < 2.6 && facing > 0.2 && Math.abs(cross) < 1.3) {
+      speedScale = 0.2
+      dodge = cross > 0 ? -1 : 1
+    }
+  } else if (pd < 1.6 && facing > 0.35) speedScale = 0
   let sideStep = 0
   for (const o of all) {
     if (o === a || o.lod === 2) continue
@@ -595,13 +607,13 @@ function update(a: Agent, dt: number, all: Agent[]) {
 
   const target = a.speed * speedScale
   anim.speed += (target - anim.speed) * Math.min(1, dt * 5)
-  const vx = _to.x * anim.speed + -_to.z * sideStep * 0.4 * speedScale
-  const vz = _to.z * anim.speed + _to.x * sideStep * 0.4 * speedScale
+  const vx = _to.x * anim.speed + -_to.z * (sideStep * 0.4 * speedScale + dodge * 0.9)
+  const vz = _to.z * anim.speed + _to.x * (sideStep * 0.4 * speedScale + dodge * 0.9)
   a.pos.x += vx * dt
   a.pos.z += vz * dt
   if (anim.speed > 0.05) a.yaw = dampAngle(a.yaw, Math.atan2(_to.x, _to.z), 7, dt, 5)
   anim.phase += ((Math.hypot(vx, vz) * dt) / anim.walkStride) * Math.PI * 2
-  anim.state = anim.speed > 0.1 ? 'walk' : 'idle'
+  anim.state = anim.speed > 0.1 || dodge ? 'walk' : 'idle'
   anim.grounded = true
 }
 

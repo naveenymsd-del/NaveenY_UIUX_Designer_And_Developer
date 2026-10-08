@@ -11,6 +11,7 @@ import { MenuOverlay } from '@/components/ui/MenuOverlay'
 import { Minimap } from '@/components/ui/Minimap'
 import { MobileControls } from '@/components/ui/MobileJoystick'
 import { ProjectPanel } from '@/components/ui/ProjectPanel'
+import { GalleryViewer } from '@/components/ui/GalleryViewer'
 import { ProjectRail } from '@/components/ui/ProjectRail'
 import { TipsOverlay } from '@/components/ui/TipsOverlay'
 import { TopNavigation } from '@/components/ui/TopNavigation'
@@ -23,6 +24,8 @@ import { GuidePanel } from '@/components/ui/GuidePanel'
 import { GreetBubble } from '@/components/ui/GreetBubble'
 import { JourneyChip } from '@/components/ui/JourneyChip'
 import { NameTag } from '@/components/ui/NameTag'
+import { VoiceDock } from '@/components/ui/VoiceDock'
+import { initGuide } from '@/ai/guide'
 import { initJourney } from '@/core/journey'
 import { useDayNight } from '@/core/dayNight'
 import { useKeyboardControls } from '@/hooks/useKeyboardControls'
@@ -45,12 +48,13 @@ export function App() {
 
   useEffect(() => initRouter(), [])
   useEffect(() => initJourney(), [])
+  useEffect(() => initGuide(), [])
 
   useEffect(() => {
     const setLoading = useGameStore.getState().setLoading
     const fonts = Promise.all([
-      document.fonts.load('640 48px "Bricolage Grotesque Variable"', 'Naveen'),
-      document.fonts.load('800 48px "Bricolage Grotesque Variable"', 'Naveen SOLUTIONS'),
+      document.fonts.load('640 48px "Bricolage Grotesque Variable"', 'NAVEEN'),
+      document.fonts.load('800 48px "Bricolage Grotesque Variable"', 'NFC SOLUTIONS'),
       document.fonts.load('500 24px "Instrument Sans Variable"'),
     ])
       .then(() => document.fonts.ready)
@@ -76,6 +80,7 @@ export function App() {
         <TipsOverlay />
         <LocationPanel />
         <ProjectPanel />
+        <GalleryViewer />
         <CafeConversation />
         <GuidePanel />
         <NameTag />
@@ -83,6 +88,7 @@ export function App() {
         <JourneyChip />
         <ProjectRail />
         <CompanionBubble />
+        <VoiceDock />
         <FadeOverlay />
         <IntroOverlay />
         <MenuOverlay />

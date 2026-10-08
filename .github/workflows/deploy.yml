@@ -1,5 +1,5 @@
 # Builds the portfolio and publishes it to GitHub Pages on every push to main.
-# Live at https://Naveenymsd-del.github.io/NaveenY_UIUX_Designer_And_Developer/
+# Live at https://naveenymsd-del.github.io/NaveenY_UIUX_Designer_And_Developer/
 name: Deploy to GitHub Pages
 
 on:
@@ -29,6 +29,9 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
+          # optional: the AI guide's server endpoint (a public URL — a repository *variable*, not a secret). Unset = built-in guide only.
+          VITE_GUIDE_ENDPOINT: ${{ vars.VITE_GUIDE_ENDPOINT }}
+          VITE_VOICE_SESSION_ENDPOINT: ${{ vars.VITE_VOICE_SESSION_ENDPOINT }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

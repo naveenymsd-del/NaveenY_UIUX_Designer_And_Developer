@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { say } from '@/core/companion'
 import { type Destination, matchCommand, navigateToLocation, navigateToProject } from '@/core/navigation'
 import { matchProject, PROJECTS } from '@/data/projects'
+import { matchAnswer } from '@/data/portfolioContent'
 import { soundManager } from '@/core/sound/SoundManager'
 import { useUIStore } from '@/stores/uiStore'
 import { CompanionGlyph } from './CompanionGlyph'
@@ -9,7 +10,7 @@ import { STORY_STOPS } from '@/data/world'
 import { STOP_ICONS } from './stopIcons'
 
 const QUICK = STORY_STOPS
-const HINTS = ['take me home', 'show my education', 'show projects', 'show TASK', 'how do you design', 'let’s connect']
+const HINTS = ['What does Naveen do?', 'Show me KidPool', 'What tools does he use?', 'How does he use AI?', 'Where did he study?', 'How can I contact him?']
 
 /**
  * The companion's navigator (not a chatbot): quick destinations plus a text
@@ -41,14 +42,23 @@ export function GuidePanel() {
     setOpen(false)
     void navigateToProject(id)
   }
-  const submit = () => {
+  const submit = (q = text) => {
     // a project name wins over the general "projects" stop ("show TASK")
-    const project = matchProject(text)
+    const project = matchProject(q)
     if (project) return goProject(project.id)
-    const dest = matchCommand(text)
+    // a question gets an answer first, then the companion takes you there
+    const answer = matchAnswer(q)
+    if (answer) {
+      soundManager.play('click')
+      setOpen(false)
+      say(answer.answer, { ms: 9000, emote: 'explain', interrupt: true })
+      window.setTimeout(() => navigateToLocation(answer.go, { quiet: true }), 2400)
+      return
+    }
+    const dest = matchCommand(q)
     if (dest) return go(dest)
     setMiss(true)
-    say('I can take you <b>home</b>, to <b>education</b>, <b>Naveen Solutions</b>, the <b>projects</b> (or one by name), the <b>Design Journey</b> or the <b>Contact Café</b>.', { ms: 4200, emote: 'think', interrupt: true })
+    say('I can take you <b>home</b>, to <b>education</b>, <b>NFC Solutions</b>, the <b>projects</b> (or one by name), the <b>Gallery</b> or the <b>Contact Café</b> — or ask what he does, his tools, how he uses AI, where he studied or how to reach him.', { ms: 7000, emote: 'think', interrupt: true })
   }
 
   return (
@@ -97,7 +107,7 @@ export function GuidePanel() {
       <p className={`ui-guide__hint ${miss ? 'is-miss' : ''}`}>
         {miss ? 'Try: ' : 'e.g. '}
         {HINTS.map((h, i) => (
-          <button key={h} className="ui-guide__chip" onClick={() => { setText(h); const d = matchCommand(h); if (d) go(d) }} tabIndex={open ? 0 : -1}>{h}{i < HINTS.length - 1 ? '' : ''}</button>
+          <button key={h} className="ui-guide__chip" onClick={() => submit(h)} tabIndex={open ? 0 : -1}>{h}{i < HINTS.length - 1 ? '' : ''}</button>
         ))}
       </p>
     </div>

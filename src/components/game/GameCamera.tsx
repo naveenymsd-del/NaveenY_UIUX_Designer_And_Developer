@@ -117,7 +117,9 @@ export function GameCamera() {
     if (game.phase === 'playing' && speed > 1.2 && sinceInput > 1.4) {
       const behind = Math.atan2(-v.x, -v.z)
       const diff = Math.abs(wrapAngle(behind - cameraRuntime.targetYaw))
-      if (diff < 1.25) cameraRuntime.targetYaw = dampAngle(cameraRuntime.targetYaw, behind, 0.9 * clamp(speed / 5, 0.3, 1), dt)
+      // during a guided walk the route turns corners, so the camera keeps settling behind (unless the visitor just moved it)
+      const guided = !!playerRuntime.autoWalk && sinceInput > 3
+      if (diff < 1.25 || guided) cameraRuntime.targetYaw = dampAngle(cameraRuntime.targetYaw, behind, (guided ? 1.6 : 0.9) * clamp(speed / 5, 0.3, 1), dt)
     }
     cameraRuntime.yaw = dampAngle(cameraRuntime.yaw, cameraRuntime.targetYaw, 14, dt)
     cameraRuntime.pitch = damp(cameraRuntime.pitch, cameraRuntime.targetPitch, 14, dt)

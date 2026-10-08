@@ -6,6 +6,7 @@ import { SoundButton } from './SoundButton'
 import { DayNightToggle } from './DayNightToggle'
 import { useDayNight } from '@/core/dayNight'
 import { WorldStatus } from './WorldStatus'
+import { PROFILE } from '@/data/portfolioContent'
 
 /**
  * Landing, layered over the opening flight. While the camera travels only a
@@ -37,14 +38,14 @@ export function IntroOverlay() {
   return (
     <div className={`ui-intro ${leaving ? 'is-leaving' : ''} ${hero ? 'is-hero' : ''}`}>
       <div className={`ui-intro__credit ${credit ? 'is-visible' : ''}`} aria-hidden={!credit}>
-        <span className="ui-intro__credit-name">Naveen</span>
-        <span className="ui-intro__credit-role">UI/UX Designer</span>
+        <span className="ui-intro__credit-name">{PROFILE.name}</span>
+        <span className="ui-intro__credit-role">{PROFILE.role}</span>
       </div>
 
       <section className="ui-intro__hero" aria-hidden={!hero} aria-labelledby="intro-title">
-        <p className="ui-intro__eyebrow">UI/UX Designer · Interactive portfolio</p>
-        <h1 id="intro-title" className="ui-intro__title">Naveen</h1>
-        <p className="ui-intro__subtitle">Designing human experiences with technology and&nbsp;AI.</p>
+        <p className="ui-intro__eyebrow">{PROFILE.role}</p>
+        <h1 id="intro-title" className="ui-intro__title">{PROFILE.name}</h1>
+        <p className="ui-intro__subtitle">{PROFILE.tagline}</p>
         <p className="ui-intro__welcome">{night ? 'Welcome. Ready to explore?' : 'Welcome. Take your time exploring my world.'}</p>
         <div className="ui-intro__actions">
           <button className="ui-btn ui-btn--primary ui-btn--lg" onClick={() => beginJourney('street')} tabIndex={hero ? 0 : -1} autoFocus={hero}>

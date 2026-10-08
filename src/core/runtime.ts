@@ -48,6 +48,40 @@ export function createAnim(overrides: Partial<CharacterAnim> = {}): CharacterAni
   }
 }
 
+export type AutoWalkResult = 'arrived' | 'manual' | 'stuck' | 'cancelled'
+
+/**
+ * A guided walk: the player controller steers through `points` (world x, z)
+ * with the normal physics, animation and turning. Owned by src/ai/autoWalk.ts.
+ */
+export interface AutoWalk {
+  points: [number, number][]
+  /** index of the waypoint being walked to */
+  i: number
+  /** allowed to jog on long stretches */
+  run: boolean
+  /** face this yaw after arriving */
+  face?: number
+  onAdvance?: (i: number) => void
+  done: (result: AutoWalkResult) => void
+  /** controller bookkeeping (stuck detection and side-steps) */
+  checkAt: number
+  checkX: number
+  checkZ: number
+  stuck: number
+  sideUntil: number
+  side: number
+  /** side-step direction away from whatever we are snagged on (0, 0 = plain left/right) */
+  escX: number
+  escZ: number
+  /** giving way to traffic: step back to (backX, backZ) until backUntil, then wait until holdUntil */
+  holdUntil: number
+  backUntil: number
+  backX: number
+  backZ: number
+  yields: number
+}
+
 export const SPAWN = new Vector3(0, 0.16, 72.5)
 export const SPAWN_YAW = Math.PI // facing north (-z)
 /** during the intro the avatar faces the hero camera; it turns up the avenue on start */
@@ -67,6 +101,8 @@ export const playerRuntime = {
   walkTo: null as null | { x: number; z: number; face?: number },
   /** seated on a chair (café conversation): sit pose, body lifted to seat height */
   seated: false,
+  /** guided walk along a route (the AI guide); any manual input takes over */
+  autoWalk: null as AutoWalk | null,
   onFootstep: new Set<(run: boolean) => void>(),
   onJump: new Set<() => void>(),
   onLand: new Set<(impact: number) => void>(),

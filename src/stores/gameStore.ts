@@ -5,7 +5,7 @@ import type { InteriorId } from '@/data/interiors'
 export type Phase = 'loading' | 'intro' | 'transition' | 'playing'
 export type Mode = 'street' | 'projects'
 /** the journey's milestones (drives companion guidance and the menu's progress) */
-export type Place = 'education' | 'home' | 'career' | 'office' | 'park' | 'ai' | 'projects' | 'cafe'
+export type Place = 'education' | 'home' | 'office' | 'park' | 'ai' | 'projects' | 'cafe'
 
 export interface LoadingState {
   worldReady: boolean

@@ -25,7 +25,7 @@ console.log('guide quick links:', await p.evaluate(() => [...document.querySelec
 await p.screenshot({ path: 'qa-screens/192-guide.png' })
 await p.getByRole('button', { name: 'Close guide' }).click()
 // typed commands
-for (const cmd of ['take me home', 'show my education', 'Naveen', 'show projects', 'how do you design', "let's connect"]) {
+for (const cmd of ['take me home', 'show my education', 'NFC', 'show projects', 'how do you design', "let's connect"]) {
   await p.getByRole('button', { name: /Open your guide/ }).click()
   await sleep(400)
   await p.locator('.ui-guide__ask input').fill(cmd)

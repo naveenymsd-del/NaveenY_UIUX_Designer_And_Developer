@@ -3,7 +3,8 @@ import { CapsuleCollider, RigidBody, useRapier, type RapierCollider, type Rapier
 import { useEffect, useRef } from 'react'
 import { type Group, Vector3 } from 'three'
 import { input, moveVector } from '@/core/input'
-import { cameraRuntime, INTRO_FACING, playerRuntime, SPAWN } from '@/core/runtime'
+import { agentPositions, cameraRuntime, INTRO_FACING, playerRuntime, SPAWN, vehiclePositions } from '@/core/runtime'
+import { STANDERS } from '@/data/npcPaths'
 import { WORLD_BOUNDS } from '@/data/cityLayout'
 import { insideInterior } from '@/data/interiors'
 import { controlsEnabled, useGameStore } from '@/stores/gameStore'
@@ -28,7 +29,7 @@ export function Player() {
   const body = useRef<RapierRigidBody>(null)
   const collider = useRef<RapierCollider>(null)
   const visual = useRef<Group>(null!)
-  const { world } = useRapier()
+  const { world, rapier } = useRapier()
 
   // Created in an effect (not useMemo) so StrictMode's mount/unmount/remount
   // never leaves us holding a freed WASM controller.
@@ -104,6 +105,161 @@ export function Player() {
     let dx = fx * mv.y + rx * mv.x
     let dz = fz * mv.y + rz * mv.x
     let scripted = 0
+    // ── guided walk (AI guide): steer along the route; any manual input takes over ──
+    let autoSpeed = 0
+    const aw = rt.autoWalk
+    if (aw && enabled) {
+      if (mv.magnitude > 0) {
+        rt.autoWalk = null
+        aw.done('manual')
+      } else {
+        const [tx, tz] = aw.points[aw.i]
+        const wx = tx - rt.position.x
+        const wz = tz - rt.position.z
+        const wd = Math.hypot(wx, wz)
+        const last = aw.i === aw.points.length - 1
+        if (wd < (last ? 0.3 : 0.95)) {
+          if (last) {
+            rt.autoWalk = null
+            if (aw.face !== undefined) rt.faceYaw = aw.face
+            aw.done('arrived')
+          } else {
+            aw.i++
+            aw.onAdvance?.(aw.i)
+          }
+        } else if (s.time < aw.holdUntil) {
+          // giving way to a car: step back toward the curb, then wait for it to pass
+          if (s.time < aw.backUntil) {
+            const bx = aw.backX - rt.position.x
+            const bz = aw.backZ - rt.position.z
+            const bl = Math.hypot(bx, bz)
+            if (bl > 0.2) {
+              dx = bx / bl
+              dz = bz / bl
+              autoSpeed = MOVE.walkSpeed * 0.8
+            }
+          }
+          aw.checkAt = s.time + 0.8
+          aw.checkX = rt.position.x
+          aw.checkZ = rt.position.z
+        } else {
+          // distance still to go along the route decides walk vs. jog; ease in on the final mark
+          let remaining = wd
+          for (let k = aw.i; k < aw.points.length - 1; k++) remaining += Math.hypot(aw.points[k + 1][0] - aw.points[k][0], aw.points[k + 1][1] - aw.points[k][1])
+          autoSpeed = aw.run && remaining > 14 ? MOVE.runSpeed * 0.9 : MOVE.walkSpeed
+          if (last) autoSpeed *= Math.min(1, 0.35 + wd / 1.6)
+          dx = wx / wd
+          dz = wz / wd
+          // walk around people on the way: passers-by, and the groups standing on the sidewalks
+          let px = 0
+          let pz = 0
+          const avoid = (ox: number, oz: number) => {
+            const rx = ox - rt.position.x
+            const rz = oz - rt.position.z
+            const d = Math.hypot(rx, rz)
+            if (d > 2.4 || d < 0.01) return
+            const along = rx * dx + rz * dz
+            if (along < 0.15 * d) return // only what's ahead
+            // push away from the side the person is on (the part of r across our heading)
+            const cx = rx - along * dx
+            const cz = rz - along * dz
+            const cl = Math.hypot(cx, cz) || 1
+            const w = ((2.4 - d) / 2.4) * (along / d)
+            px -= (cx / cl) * w
+            pz -= (cz / cl) * w
+          }
+          if (!game.interior) {
+            for (const [id, a] of agentPositions) if (id !== 'player') avoid(a.x, a.z)
+            for (const st of STANDERS) avoid(st.pos[0], st.pos[1])
+          }
+          dx += px * 1.8
+          dz += pz * 1.8
+          // stuck on furniture or a lamp post: side-step left, then right, then give up
+          if (s.time > aw.checkAt) {
+            const moved = Math.hypot(rt.position.x - aw.checkX, rt.position.z - aw.checkZ)
+            aw.stuck = moved < 0.3 ? aw.stuck + 1 : 0
+            aw.checkAt = s.time + 0.8
+            aw.checkX = rt.position.x
+            aw.checkZ = rt.position.z
+            // a car is what's in the way (it stops for us, we can't pass it): back off and let it go
+            let car = Infinity
+            for (const v of vehiclePositions.values()) car = Math.min(car, Math.hypot(v.x - rt.position.x, v.z - rt.position.z))
+            if (aw.stuck > 0 && car < 5 && aw.yields < 6) {
+              aw.yields++
+              aw.stuck = 0
+              // back to the curb we came from (the previous waypoint is on the sidewalk), not into the next lane
+              const [bx, bz] = aw.i > 0 ? aw.points[aw.i - 1] : [rt.position.x - dx * 2.6, rt.position.z - dz * 2.6]
+              aw.backX = bx
+              aw.backZ = bz
+              aw.backUntil = s.time + 3.2
+              aw.holdUntil = s.time + 5.0
+            }
+            if (aw.stuck >= 3 && !last && aw.stuck % 3 === 0) {
+              // something is in the way of this waypoint (a passer-by, a bench): aim for the next one
+              aw.i++
+            }
+            if (aw.stuck >= 9) {
+              if (import.meta.env.DEV) {
+                const near = (m: Map<string, { x: number; z: number }>) => Math.min(Infinity, ...[...m.entries()].filter(([k]) => k !== 'player').map(([, v]) => Math.hypot(v.x - rt.position.x, v.z - rt.position.z)))
+                // what's physically in the way: cast toward the waypoint and report the shape hit
+                const hit = world.castRay(new rapier.Ray({ x: rt.position.x, y: rt.position.y + 0.9, z: rt.position.z }, { x: wx / wd, y: 0, z: wz / wd }), 3, true, undefined, undefined, col)
+                const hc = hit?.collider
+                const what = hc ? `${hc.shapeType()} at ${hc.translation().x.toFixed(1)}, ${hc.translation().z.toFixed(1)} (${hit!.timeOfImpact.toFixed(2)} m, ${hc.parent()?.isKinematic() ? 'kinematic' : 'fixed'})` : 'nothing within 3 m'
+                const close: string[] = []
+                world.forEachCollider((c) => {
+                  if (c.handle === col.handle) return
+                  const t = c.translation()
+                  const d = Math.hypot(t.x - rt.position.x, t.z - rt.position.z)
+                  if (d < 1.6) close.push(`shape ${c.shapeType()} @${t.x.toFixed(2)},${t.y.toFixed(2)},${t.z.toFixed(2)} ${c.parent()?.isKinematic() ? 'kinematic' : 'fixed'} d=${d.toFixed(2)}`)
+                })
+                console.info(`[guide] colliders within 1.6 m: ${close.join(' | ') || 'none'}`)
+                console.info(`[guide] walk blocked near ${rt.position.x.toFixed(1)}, ${rt.position.z.toFixed(1)} → ${tx}, ${tz} · hit ${what} · nearest car ${near(vehiclePositions).toFixed(1)} m · nearest walker ${near(agentPositions).toFixed(1)} m`)
+              }
+              rt.autoWalk = null
+              aw.done('stuck')
+            } else if (aw.stuck > 0) {
+              aw.side = aw.stuck % 2 ? 1 : -1
+              aw.sideUntil = s.time + 0.8
+              // snagged on something thin (a pole, a counter's corner): slide along it and away from it,
+              // on the side that keeps us closest to the route
+              aw.escX = 0
+              aw.escZ = 0
+              if (col) {
+                const at = { x: rt.position.x, y: rt.position.y + 0.9, z: rt.position.z }
+                const pr = world.projectPoint(at, true, rapier.QueryFilterFlags.EXCLUDE_SENSORS, undefined, col)
+                if (pr) {
+                  const nx = at.x - pr.point.x
+                  const nz = at.z - pr.point.z
+                  const nl = Math.hypot(nx, nz)
+                  if (nl > 0.01 && nl < 0.9) {
+                    const ux = nx / nl
+                    const uz = nz / nl
+                    let sx = -uz
+                    let sz = ux
+                    const toward = sx * wx + sz * wz
+                    if (Math.abs(toward) > 0.05 * wd ? toward < 0 : aw.side < 0) {
+                      sx = -sx
+                      sz = -sz
+                    }
+                    aw.escX = sx + ux * 0.7
+                    aw.escZ = sz + uz * 0.7
+                  }
+                }
+              }
+            }
+          }
+          if (s.time < aw.sideUntil) {
+            if (aw.escX || aw.escZ) {
+              dx = aw.escX
+              dz = aw.escZ
+            } else {
+              dx += -dz * aw.side * 0.9
+              dz += (wx / wd) * aw.side * 0.9
+            }
+          }
+        }
+      }
+    }
     if (rt.walkTo && !enabled) {
       // a calm walk-in to a mark (the intro); stops cleanly on arrival
       const wx = rt.walkTo.x - rt.position.x
@@ -126,13 +282,13 @@ export function Player() {
     }
     const usingStick = input.stick.x !== 0 || input.stick.y !== 0
     const sprint = enabled && (input.sprint || (usingStick && mv.magnitude > 0.92))
-    const targetSpeed = scripted ? scripted * MOVE.walkSpeed * 0.62 : mv.magnitude * (sprint ? MOVE.runSpeed : MOVE.walkSpeed)
+    const targetSpeed = autoSpeed || (scripted ? scripted * MOVE.walkSpeed * 0.62 : mv.magnitude * (sprint ? MOVE.runSpeed : MOVE.walkSpeed))
     const tvx = dx * targetSpeed
     const tvz = dz * targetSpeed
 
     // ── horizontal acceleration / deceleration ──────────────────────────
     const accelerating = targetSpeed > Math.hypot(s.vx, s.vz) - 0.01
-    const k = s.grounded ? (mv.magnitude > 0 ? (accelerating ? MOVE.groundAccel : MOVE.groundDecel) : MOVE.groundDecel) : MOVE.airAccel
+    const k = s.grounded ? (mv.magnitude > 0 || autoSpeed > 0 ? (accelerating ? MOVE.groundAccel : MOVE.groundDecel) : MOVE.groundDecel) : MOVE.airAccel
     const blend = 1 - Math.exp(-k * dt)
     s.vx += (tvx - s.vx) * blend
     s.vz += (tvz - s.vz) * blend
@@ -195,7 +351,7 @@ export function Player() {
     // ── facing: smooth, speed-limited turning toward the travel direction ──
     const hs = Math.hypot(s.vx, s.vz)
     const prevYaw = rt.yaw
-    if (hs > 0.25 && (mv.magnitude > 0 || scripted > 0)) {
+    if (hs > 0.25 && (mv.magnitude > 0 || scripted > 0 || autoSpeed > 0)) {
       rt.yaw = dampAngle(rt.yaw, Math.atan2(s.vx, s.vz), MOVE.turnLambda, dt, MOVE.maxTurnSpeed)
       rt.faceYaw = null
     } else if (rt.faceYaw !== null) {

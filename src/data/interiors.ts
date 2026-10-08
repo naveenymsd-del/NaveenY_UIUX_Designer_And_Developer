@@ -56,7 +56,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     palette: { floor: 0xb58a62, wall: 0xf1e9dc, wainscot: 0x4f6b58, trim: 0xf7f2ea, ceiling: 0xf4efe6 },
   },
   office: {
-    id: 'office', name: 'Naveen Solutions', subtitle: 'Chapter 04 · Where I work',
+    id: 'office', name: 'NFC Solutions', subtitle: 'Chapter 04 · Where I work',
     origin: [320, 0, 0], width: 28, depth: 20, height: 3.8,
     outside: { pos: [13.6, 17], yaw: -Math.PI / 2 },
     establish: { position: [11.5, 3.3, 8.6], target: [-2, 1.2, -3.5] },
@@ -161,12 +161,12 @@ export interface InteriorPerson {
 const chairY = 0.47
 
 /** the window table in the café: Naveen sits on the far side, the visitor on the near side */
-export const CAFE_TABLE = { x: 3.4, z: -2.6, Naveen: -0.78, visitor: 0.78 }
+export const CAFE_TABLE = { x: 3.4, z: -2.6, naveen: -0.78, visitor: 0.78 }
 // desk chair sits 0.62 behind the desk edge, facing the monitor
 const deskSeat = (d: { x: number; z: number; facing: 1 | -1 }) => ({ x: d.x, z: d.z + d.facing * 0.72, yaw: d.facing > 0 ? Math.PI : 0 })
 
 export const INTERIOR_PEOPLE: InteriorPerson[] = [
-  // ── Naveen Solutions office
+  // ── NFC Solutions office
   // desks: heads-down work, with the odd glance at a phone or a stretch back
   ...([[0, 'Murali'], [2, 'Subbu'], [3, 'SaiB'], [4, 'Sai'], [7, 'Viswa Pani'], [8, undefined]] as const).map(([i, name], k) => {
     const s = deskSeat(OFFICE_DESKS[i])
@@ -212,7 +212,7 @@ export const INTERIOR_ROUTES: { room: InteriorId; points: [number, number][]; sp
 export type StoryKind =
   | 'timeline' | 'classroom' | 'book' | 'certificates' | 'growth' | 'bell'
   | 'reception' | 'workspace' | 'meeting' | 'designWall'
-  | 'hello' | 'desk' | 'laptop' | 'bookshelf' | 'journey' | 'portfolio' | 'window' | 'contact' | 'skills' | 'approach' | 'conversation'
+  | 'hello' | 'desk' | 'laptop' | 'aiWorkflow' | 'portfolio' | 'window' | 'contact' | 'skills' | 'galleryEntry' | 'conversation'
 
 export interface InteriorStory {
   room: InteriorId
@@ -228,27 +228,23 @@ export interface InteriorStory {
 
 export const INTERIOR_STORIES: InteriorStory[] = [
   // Education
-  { room: 'education', kind: 'timeline', name: 'Learning Journey', x: -10.2, z: 0, radius: 3.2, label: 'Press E to read the timeline', cam: { position: [-5.5, 2.4, 1.5], target: [-12, 1.6, -0.5] } },
-  { room: 'education', kind: 'classroom', name: 'Classroom', x: 5.5, z: -6.2, radius: 2.8, label: 'Press E to look at the board', cam: { position: [5.5, 2.3, -1.2], target: [6, 1.9, -9] } },
-  { room: 'education', kind: 'book', name: 'Reading Desk', x: -5.8, z: -3.6, radius: 2.2, label: 'Press E to open the book', cam: { position: [-4.2, 2.1, -1.8], target: [-6, 0.9, -4.8] } },
-  { room: 'education', kind: 'certificates', name: 'Certificates', x: 10.2, z: 1.4, radius: 2.6, label: 'Press E to view certificates', cam: { position: [5.6, 2.1, 2.2], target: [12, 1.8, 1.4] } },
-  { room: 'education', kind: 'growth', name: 'Notice Board', x: 7.6, z: 6.8, radius: 2.2, label: 'Press E to read the notices', cam: { position: [6.5, 2.1, 2.8], target: [7.8, 1.7, 9] } },
+  { room: 'education', kind: 'timeline', name: 'Education', x: -10.2, z: 0, radius: 3.2, label: 'Press E to see my education', cam: { position: [-5.5, 2.4, 1.5], target: [-12, 1.6, -0.5] } },
+  { room: 'education', kind: 'certificates', name: 'Certification', x: 10.2, z: 1.4, radius: 2.6, label: 'Press E to view my certification', cam: { position: [5.6, 2.1, 2.2], target: [12, 1.8, 1.4] } },
   { room: 'education', kind: 'bell', name: 'School Bell', x: -3.2, z: 7.0, radius: 1.8, label: 'Press E to ring the bell', cam: { position: [-1.2, 2.2, 4.4], target: [-3.4, 1.8, 7.6] } },
-  // Naveen Solutions
+  // NFC Solutions
   { room: 'office', kind: 'reception', name: 'Reception', x: -3.6, z: 6.4, radius: 2.6, label: 'Press E to explore my workplace', cam: { position: [0.5, 2.3, 8.4], target: [-8, 1.8, 4.5] } },
   { room: 'office', kind: 'workspace', name: 'My Desk', x: 11, z: 5.0, radius: 2.2, label: 'Press E to see my role', cam: { position: [8.8, 2.4, 7.4], target: [11, 1.0, 3.2] } },
   { room: 'office', kind: 'meeting', name: 'Meeting Room', x: -7.2, z: -3.8, radius: 2.4, label: 'Press E to join the meeting', cam: { position: [-4.2, 2.6, -2.0], target: [-9.8, 1.0, -7] } },
   { room: 'office', kind: 'designWall', name: 'Design Wall', x: 7.2, z: -7.6, radius: 2.4, label: 'Press E to explore the design wall', cam: { position: [6.2, 2.4, -3.8], target: [7.4, 1.7, -10] } },
   // Home
-  { room: 'home', kind: 'hello', name: 'About Me', x: 0, z: 3.4, radius: 1.8, label: 'Press E to say hello', cam: { position: [2.6, 2.0, 5.8], target: [0, 1.4, 0] } },
-  { room: 'home', kind: 'desk', name: 'My Workspace', x: -1.2, z: -4.5, radius: 1.8, label: 'Press E to see my workspace', cam: { position: [0.4, 2.1, -1.6], target: [-0.4, 1.0, -6.5] } },
-  { room: 'home', kind: 'laptop', name: 'Design Tools', x: 1.4, z: -4.5, radius: 1.6, label: 'Press E to open the laptop', cam: { position: [1.9, 1.8, -3.2], target: [1.0, 0.95, -6.2] } },
-  { room: 'home', kind: 'bookshelf', name: 'Bookshelf', x: -7.2, z: -0.4, radius: 2.0, label: 'Press E to browse the books', cam: { position: [-4.2, 2.0, 0.8], target: [-9, 1.5, -0.4] } },
-  { room: 'home', kind: 'journey', name: 'Career Journey', x: 7.2, z: -2.2, radius: 2.0, label: 'Press E to see my journey', cam: { position: [4.2, 2.0, -1.0], target: [9, 1.6, -2.2] } },
+  { room: 'home', kind: 'hello', name: 'About Me', x: 0, z: 3.4, radius: 1.8, label: 'Press E to read about me', cam: { position: [2.6, 2.0, 5.8], target: [0, 1.4, 0] } },
+  { room: 'home', kind: 'desk', name: 'Experience', x: -1.2, z: -4.5, radius: 1.8, label: 'Press E to see my experience', cam: { position: [0.4, 2.1, -1.6], target: [-0.4, 1.0, -6.5] } },
+  { room: 'home', kind: 'laptop', name: 'Tools', x: 1.4, z: -4.5, radius: 1.6, label: 'Press E to see my tools', cam: { position: [1.9, 1.8, -3.2], target: [1.0, 0.95, -6.2] } },
+  { room: 'home', kind: 'aiWorkflow', name: 'AI-assisted design', x: 7.2, z: -2.2, radius: 2.0, label: 'Press E to see how I use AI', cam: { position: [4.2, 2.0, -1.0], target: [9, 1.6, -2.2] } },
   { room: 'home', kind: 'portfolio', name: 'Selected Work', x: 7.2, z: 2.8, radius: 2.0, label: 'Press E to see selected work', cam: { position: [4.2, 2.0, 3.8], target: [9, 1.6, 2.8] } },
-  { room: 'home', kind: 'window', name: 'Looking Ahead', x: -4.8, z: -5.1, radius: 1.7, label: 'Press E to look outside', cam: { position: [-3.4, 1.9, -2.6], target: [-5, 1.8, -7] } },
-  { room: 'home', kind: 'skills', name: 'Tools & skills', x: -7.1, z: 3.9, radius: 2.6, label: 'Press E to see my skills', cam: { position: [-4.4, 2.0, 4.6], target: [-9, 1.6, 3.9] } },
-  { room: 'home', kind: 'approach', name: 'Design Approach', x: 6.7, z: -5.2, radius: 1.8, label: 'Press E to see how I approach design', cam: { position: [5.6, 2.0, -2.4], target: [6.8, 1.7, -7] } },
+  { room: 'home', kind: 'window', name: 'Interests', x: -4.8, z: -5.1, radius: 1.7, label: 'Press E · outside product design', cam: { position: [-3.4, 1.9, -2.6], target: [-5, 1.8, -7] } },
+  { room: 'home', kind: 'skills', name: 'Skills & Tools', x: -7.1, z: 3.9, radius: 2.6, label: 'Press E to see my skills & tools', cam: { position: [-4.4, 2.0, 4.6], target: [-9, 1.6, 3.9] } },
+  { room: 'home', kind: 'galleryEntry', name: 'Gallery', x: 6.7, z: -5.2, radius: 1.8, label: 'Press E · gallery', cam: { position: [5.6, 2.0, -2.4], target: [6.8, 1.7, -7] } },
   { room: 'cafe', kind: 'conversation', name: 'Sit down with Naveen', x: CAFE_TABLE.x, z: CAFE_TABLE.z + 1.3, radius: 2.0, label: 'Press E to sit down', cam: { position: [CAFE_TABLE.x, 1.22, CAFE_TABLE.z + 1.05], target: [CAFE_TABLE.x, 1.02, CAFE_TABLE.z - 0.75] } },
   { room: 'home', kind: 'contact', name: 'Contact', x: -4.6, z: 5.6, radius: 1.6, label: 'Press E to get in touch', cam: { position: [-2.4, 2.0, 3.4], target: [-4.6, 1.5, 7] } },
 ]

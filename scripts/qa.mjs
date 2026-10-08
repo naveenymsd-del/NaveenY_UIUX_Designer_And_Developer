@@ -207,11 +207,11 @@ async function runProjects(browser) {
   await sleep(600)
   await shot(page, '35-menu-workflow')
   // quick travel to the café, then open it with E
-  await page.locator('.ui-menu__item', { hasText: 'Naveen Solutions' }).first().click()
+  await page.locator('.ui-menu__item', { hasText: 'NFC Solutions' }).first().click()
   await sleep(2500)
   await shot(page, '36-travel-cafe')
   const near = await page.evaluate(() => document.querySelector('.ui-prompt.is-visible')?.textContent ?? null)
-  console.log('prompt near Naveen Solutions:', near)
+  console.log('prompt near NFC Solutions:', near)
   await page.keyboard.press('KeyE')
   await sleep(2200)
   await sleep(4500)
@@ -338,7 +338,7 @@ async function runTour(browser) {
   await page.keyboard.press('Escape')
   const stops = [
     ['50-education', 2.5, -47, Math.PI - 0.1],
-    ['51-Naveen-office', 6.5, 21.5, Math.PI / 2 + 0.35],
+    ['51-nfc-office', 6.5, 21.5, Math.PI / 2 + 0.35],
     ['52-home', -6.4, -21.5, -Math.PI / 2 - 0.4],
     ['53-design-park', -13.5, 25.2, Math.PI + 0.3],
     ['54-ai-area', -21, 25, -Math.PI / 2],

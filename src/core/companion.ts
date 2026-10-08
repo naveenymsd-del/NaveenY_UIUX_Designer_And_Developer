@@ -28,6 +28,8 @@ export const companion = {
   /** earliest time the next queued line may start (breathing room between lines) */
   nextAt: 0,
   lastSpokeAt: 0,
+  /** the voice guide's state (src/ai) — drives a subtle listening / thinking / speaking pulse */
+  voice: 'idle' as 'idle' | 'listening' | 'thinking' | 'speaking' | 'navigating',
 }
 
 /**
@@ -77,4 +79,17 @@ export function tickCompanion(now: number): string | null {
   if (now >= companion.emoteUntil && companion.emote !== 'idle') companion.emote = 'idle'
   if (now >= companion.pointUntil) companion.point = null
   return now < companion.showUntil ? companion.message : null
+}
+
+/**
+ * Show a line that is still being spoken (a streaming realtime transcript):
+ * replaces what's on screen at once and grows as more arrives.
+ */
+export function sayLive(text: string, ms = 4000) {
+  const now = performance.now()
+  if (companion.message !== text) companion.message = text
+  companion.queue.length = 0
+  companion.showUntil = now + ms
+  companion.nextAt = companion.showUntil + 300
+  companion.lastSpokeAt = now
 }
