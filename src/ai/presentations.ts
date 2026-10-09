@@ -83,7 +83,7 @@ export function placePresentation(id: DestinationId): string {
     case 'contact':
       return [
         'We’ve reached the Contact Café. This is where you can connect with Naveen.',
-        `You can email him at ${CONTACT.email}, or call ${CONTACT.phone} — both are on the card here. LinkedIn and résumé links aren’t in the portfolio yet.`,
+        `You can email him at ${CONTACT.email}, or call ${CONTACT.phone} — both are on the card here, along with his résumé to view or download. LinkedIn isn’t in the portfolio yet.`,
         'Or simply keep exploring.',
       ].join(' ')
     case 'start':

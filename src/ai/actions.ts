@@ -1,6 +1,8 @@
 import { companion } from '@/core/companion'
 import { PROJECTS } from '@/data/projects'
 import { useGameStore } from '@/stores/gameStore'
+import { CONTACT } from '@/data/portfolioContent'
+import { asset } from '@/utils/basePath'
 import { cancelWalk, journey, walker } from './autoWalk'
 import { conversation } from './conversation'
 import { emitGuideEvent } from './events'
@@ -32,7 +34,7 @@ export function validateActions(raw: unknown): GuideAction[] {
     else if (x.type === 'navigateProject' && PROJECT_IDS.has(x.projectId as string)) out.push({ type: 'navigateProject', projectId: x.projectId as string })
     else if (x.type === 'openPrototype' && PROJECT_IDS.has(x.projectId as string)) out.push({ type: 'openPrototype', projectId: x.projectId as string, kind: x.kind === 'caseStudy' ? 'caseStudy' : 'prototype' })
     else if (x.type === 'showSection' && (x.section === 'overview' || x.section === 'challenges')) out.push({ type: 'showSection', section: x.section })
-    else if (x.type === 'stop' || x.type === 'goBack' || x.type === 'help') out.push({ type: x.type })
+    else if (x.type === 'stop' || x.type === 'goBack' || x.type === 'help' || x.type === 'resume') out.push({ type: x.type })
     else if (x.type === 'tour' && ['start', 'next', 'prev', 'stop', 'continue'].includes(x.op as string)) {
       out.push({ type: 'tour', op: x.op as 'start', kind: x.kind === 'projects' ? 'projects' : x.kind === 'full' ? 'full' : undefined })
     }
@@ -226,6 +228,15 @@ export async function runAction(a: GuideAction, io: ActionIO, lines: WalkLines =
       if (a.destination === 'projects') conversation.offer = { type: 'tour', op: 'start', kind: 'projects' }
       else conversation.choosing = true
       return 'done'
+    case 'resume': {
+      const url = CONTACT.resume ? asset(CONTACT.resume) : ''
+      if (!url) return 'done'
+      const tab = window.open(url, '_blank')
+      if (tab) tab.opener = null
+      // a voice command isn't a tap: if the browser blocks the tab, offer a one-tap link
+      else useVoiceStore.getState().set({ link: { label: 'Open Naveen’s résumé (PDF)', url } })
+      return 'done'
+    }
     case 'help':
       useVoiceStore.getState().set({ turns: 0 })
       return 'done'

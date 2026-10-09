@@ -92,7 +92,7 @@ export function knowledgeText() {
   lines.push(`Certification (the only one): ${CERTIFICATION.title}, ${CERTIFICATION.issuer}, ${CERTIFICATION.year}.`)
   for (const g of SKILL_GROUPS) lines.push(`Skills — ${g.group}: ${g.items.join(', ')}.`)
   lines.push(`Interests: ${INTERESTS.join(', ')}.`)
-  lines.push(`Contact: email ${CONTACT.email}; phone ${CONTACT.phone}. LinkedIn and résumé links are not available yet.`)
+  lines.push(`Contact: email ${CONTACT.email}; phone ${CONTACT.phone}. His résumé (PDF) can be viewed or downloaded from the Contact Café and the menu's Contact section. A LinkedIn link is not available yet.`)
   lines.push(`Colleagues shown in the office: ${COLLEAGUES.map((c) => c.name).join(', ')} (their roles are not listed).`)
   lines.push('')
   for (const p of PROJECT_CONTENT) {

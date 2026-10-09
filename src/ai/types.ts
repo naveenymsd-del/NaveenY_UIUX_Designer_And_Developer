@@ -16,6 +16,8 @@ export type GuideAction =
   | { type: 'showSection'; section: 'overview' | 'challenges' }
   /** open a project's Figma link: the clickable UI prototype, or the case-study presentation */
   | { type: 'openPrototype'; projectId: string; kind: 'prototype' | 'caseStudy' }
+  /** open Naveen's résumé (the PDF in the portfolio) */
+  | { type: 'resume' }
   | { type: 'stop' }
   | { type: 'goBack' }
   | { type: 'help' }

@@ -61,7 +61,10 @@ check('How many years of experience do you have?', txt(/4\+ years.*NFC Solutions
 check('What kind of products have you designed?', and(txt(/TASK, KidPool, Calmscient, INTA and IntelliStaff/), (r) => r.offer?.type === 'tour' && r.offer?.kind === 'projects'), 'lists the five projects, offers to present them one by one')
 check('Where are you based?', txt(/Hyderabad, India/), 'location')
 check('How can I contact you?', txt(/naveenyarramallugalla@gmail\.com.*\+91 70362 82178/), 'email + phone')
-check('Do you have a LinkedIn?', txt(/aren’t in the portfolio yet/), 'honest: no LinkedIn yet')
+check('Do you have a LinkedIn?', txt(/isn’t in the portfolio yet/), 'honest: no LinkedIn yet')
+check('Can I see his resume?', and(act('resume'), txt(/résumé/)), 'résumé → opens the PDF')
+check('Download his CV', act('resume'), 'CV → the résumé')
+check('show me his résumé', act('resume'), 'résumé with accents')
 
 // ── context: what is TASK → what did you do there → web or mobile → show me
 B.resetConversation()

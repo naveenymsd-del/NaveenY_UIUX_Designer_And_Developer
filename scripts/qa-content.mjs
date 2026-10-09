@@ -183,7 +183,19 @@ const c = await p.evaluate(() => ({
 }))
 expect(c.h === 'Let’s talk.', `café heading "${c.h}"`)
 expect(c.who === 'Naveen Y · UI/UX Designer · Product Designer · Hyderabad, India', `café identity "${c.who}"`)
-expect(JSON.stringify(c.links) === JSON.stringify([['Email Me', 'mailto:naveenyarramallugalla@gmail.com'], ['Call', 'tel:+917036282178']]), `café buttons ${JSON.stringify(c.links)}`)
+const RESUME = '/resume/Naveen_Yarramallugalla_UIUX_Designer_Resume.pdf'
+expect(JSON.stringify(c.links) === JSON.stringify([['Email Me', 'mailto:naveenyarramallugalla@gmail.com'], ['Call', 'tel:+917036282178'], ['View Resume ↗', RESUME], ['Download Resume ↓', RESUME]]), `café buttons ${JSON.stringify(c.links)}`)
+// the résumé: View opens the PDF in a new tab; Download saves the very same file under a clear name
+{
+  const [tab] = await Promise.all([p.context().waitForEvent('page', { timeout: 10000 }).catch(() => null), p.locator('.ui-cafe .ui-contact a', { hasText: 'View Resume' }).click()])
+  const res = tab ? await p.request.get(tab.url()) : null
+  const pdf = res ? await res.body() : null
+  expect(!!tab && /Naveen_Yarramallugalla_UIUX_Designer_Resume\.pdf$/.test(tab.url()) && res.status() === 200 && pdf?.subarray(0, 5).toString() === '%PDF-', `View Resume → opens the PDF in a new tab (${res?.status()}, ${pdf ? Math.round(pdf.length / 1024) : 0} KB)`)
+  if (tab) await tab.close()
+  const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 10000 }).catch(() => null), p.locator('.ui-cafe .ui-contact a', { hasText: 'Download Resume' }).click()])
+  const size = dl ? (await import('node:fs')).statSync(await dl.path()).size : 0
+  expect(!!dl && dl.suggestedFilename() === 'Naveen_Yarramallugalla_UIUX_Designer_Resume.pdf' && size === pdf?.length, `Download Resume → saves "${dl?.suggestedFilename()}" (${Math.round(size / 1024)} KB)`)
+}
 await shot('5-cafe-connect')
 
 // ── nothing banned anywhere we looked, nor in the menu

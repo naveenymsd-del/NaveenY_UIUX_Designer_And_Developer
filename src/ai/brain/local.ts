@@ -28,7 +28,7 @@ export function normalize(input: string) {
     .replace(/[’‘`]/g, "'")
     .replace(/\bwhat's\b/g, 'what is').replace(/\bwhere's\b/g, 'where is').replace(/\bwho's\b/g, 'who is').replace(/\bthat's\b/g, 'that is')
     .replace(/\blet's\b/g, 'let us').replace(/\bi'd\b/g, 'i would').replace(/\bcan't\b/g, 'cannot').replace(/\bdon't\b/g, 'do not')
-    .replace(/\bnaveen's\b/g, 'naveen').replace(/café/g, 'cafe')
+    .replace(/\bnaveen's\b/g, 'naveen').replace(/café/g, 'cafe').replace(/r[ée]sum[ée]/g, 'resume')
     .replace(/[^a-z0-9/+ ]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()} `
@@ -651,8 +651,12 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
     })
   }
   if (has(t, /\b(where (are|is) (you|he|naveen) (based|located|from)|based|location|which city|where (do|does) (you|he) live)\b/)) return reply(`He’s based in ${PROFILE.location}.`)
-  if (has(t, /\b(contact|reach|email|e mail|phone|number|call|hire|get in touch|linkedin|resume|cv|connect)\b/)) {
-    const missing = has(t, /\b(linkedin|resume|cv)\b/) ? ' LinkedIn and résumé links aren’t in the portfolio yet, so email or phone is best.' : ''
+  // his résumé (CV): open it — it's the PDF in the portfolio
+  if (has(t, /\b(resume|cv|curriculum vitae)\b/) && !has(t, /\bresume (the )?(tour|walk|walking|listening)\b/)) {
+    return reply('Here’s Naveen’s résumé — opening it in a new tab. You can also view or download it any time from the Contact Café or the menu’s Contact section.', { actions: [{ type: 'resume' }] })
+  }
+  if (has(t, /\b(contact|reach|email|e mail|phone|number|call|hire|get in touch|linkedin|connect)\b/)) {
+    const missing = has(t, /\blinkedin\b/) ? ' A LinkedIn link isn’t in the portfolio yet, so email or phone is best.' : ''
     return reply(`You can email Naveen at ${CONTACT.email} or call ${CONTACT.phone}.${missing} The Contact Café has both — want me to take you there?`, { offer: go('contact') })
   }
   if (has(t, /\b(hobb(y|ies)|interests?|free time|outside (of )?work|sketch\w*|cricket|danc\w*|pencil)\b/)) {
