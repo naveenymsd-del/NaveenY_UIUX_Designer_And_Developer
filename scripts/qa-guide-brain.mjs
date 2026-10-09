@@ -143,7 +143,7 @@ world = { ...BASE }
 
 // ── "explain" follows the conversation and what's on screen
 B.resetConversation()
-check('What is IntelliStaff?', txt(/^IntelliStaff Mobile lets/), 'what is → short')
+check('What is IntelliStaff?', txt(/^IntelliStaff is a job board and applicant tracking platform serving two user groups — candidates and recruiters./), 'what is → short (résumé wording)')
 check('Explain.', and(txt(/IntelliStaff/), txt(/client managers/i)), 'bare "explain" → IntelliStaff, medium')
 check('Explain it', txt(/IntelliStaff/), '"explain it" → IntelliStaff')
 check('How did Naveen build it?', and(txt(/approached the design of IntelliStaff/), txt(/doesn’t include the engineering implementation/)), 'build it → design process, honest about engineering')

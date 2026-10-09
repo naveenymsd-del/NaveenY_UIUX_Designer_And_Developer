@@ -118,7 +118,9 @@ const dot = (s: string) => s.replace(/[.!?]$/, '')
 
 /** "explain X" — a medium answer: what it is, who it's for, Naveen's part */
 function projectExplain(p: ProjectK) {
-  const mine = p.overview.find((x) => /\bI (designed|worked|built|led|created)\b/.test(x))
+  const found = p.overview.find((x) => /\bI (designed|worked|built|led|created)\b/.test(x))
+  // (when the first paragraph also holds his part, skip its opening sentence — it's already been said)
+  const mine = found === p.overview[0] ? found.split(/(?<=[.!?])\s/).slice(1).join(' ') : found
   const part = mine ? thirdPerson(mine, 'He') : `His work covered ${p.approach.slice(0, 2).map((x) => lowerFirst(dot(x))).join(', and ')}.`
   return `${firstSentence(thirdPerson(p.overview[0]))} It’s designed for ${joinList(p.users.map((u) => u.name.toLowerCase()))}, on ${lowerFirst(p.platform.replace(' · ', ', '))}. Naveen was the ${p.role}. ${part}`
 }
@@ -614,7 +616,7 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
 
   // about Naveen
   if (has(t, /\b(projects?|case stud(y|ies)|portfolio)\b/) && has(t, /\b(what|which|list|have (you|he)|worked on|designed)\b/) || has(t, /\bwhat (have|has) (you|he|naveen) (worked on|designed|built|made)\b|\bwhat (kind|kinds|type|types|sort) of (products|work|projects|apps)\b/)) {
-    return reply(`Naveen’s case studies here are ${joinList(PROJECTS_K.map((p) => p.title))} — enterprise SaaS, school carpooling, mental health, a trademark association website and a staffing app. Want me to walk you through them one by one?`, { offer: { type: 'tour', op: 'start', kind: 'projects' }, list: PROJECTS_K.map((p) => p.id) })
+    return reply(`Naveen’s case studies here are ${joinList(PROJECTS_K.map((p) => p.title))} — enterprise SaaS, school carpooling, mental health, a trademark association website and a job board & applicant tracking platform. Want me to walk you through them one by one?`, { offer: { type: 'tour', op: 'start', kind: 'projects' }, list: PROJECTS_K.map((p) => p.id) })
   }
   if (has(t, /\b(where is|where are|how do i get to|where can i find)\b/) && place) {
     return reply(`${PLACE_ABOUT[place].split('. ')[0]}. Want me to take you there?`, { offer: place === 'projects' ? { type: 'tour', op: 'start', kind: 'projects' } : go(place), place })

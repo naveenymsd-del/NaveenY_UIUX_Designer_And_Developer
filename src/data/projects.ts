@@ -372,17 +372,23 @@ export const PROJECT_CONTENT: ProjectContent[] = [
   {
     id: 'intellistaff',
     title: 'IntelliStaff',
-    fullTitle: 'IntelliStaff — Staffing Mobile App',
-    category: 'Recruitment / HR Tech · Staffing',
-    platform: 'Mobile app · iOS & Android',
+    // résumé: "IntelliStaff — Job Board & Applicant Tracking Platform · Recruitment / HR Tech · Enterprise SaaS · Web & Mobile".
+    // The Figma case study (and its screens) covers the platform's client staffing app, presented here as part of it.
+    fullTitle: 'IntelliStaff — Job Board & Applicant Tracking Platform',
+    category: 'Recruitment / HR Tech · Enterprise SaaS',
+    platform: 'Web & mobile · client app on iOS & Android',
     role: 'UI/UX Designer',
-    scope: 'Client app · job orders · staff selection · timeslips',
-    summary: 'Order, schedule and approve temporary staff — from your phone.',
+    scope: 'Job board · applicant tracking · client staffing app',
+    summary: 'A job board and hiring platform for candidates and recruiters — and a mobile app for staffing clients.',
     overview: [
-      'IntelliStaff Mobile lets a staffing agency’s clients request temporary workers, choose who they want, follow today’s assignments and approve timeslips — without a phone call.',
+      'IntelliStaff is a job board and applicant tracking platform serving two user groups — candidates and recruiters. I designed the end-to-end UX: the information architecture for job listings, candidate profiles and application-tracking dashboards, and the user flows, wireframes and interactive prototypes for job search, application and recruiter shortlisting.',
+      'This case study shows IntelliStaff Mobile, the platform’s client app: it lets a staffing agency’s clients request temporary workers, choose who they want, follow today’s assignments and approve timeslips — without a phone call.',
       'I designed the client mobile experience end to end: multi-division sign-in, a guided job-order flow, staff selection, order tracking with ratings, schedules and timeslip approvals.',
     ],
     approach: [
+      'Defined the information architecture for job listings, candidate profiles and application-tracking dashboards.',
+      'Created user flows, wireframes and interactive prototypes for job search, application and recruiter shortlisting.',
+      'Partnered with stakeholders and developers in Agile sprints to validate feasibility and support implementation.',
       'Separated the client and employee entry points from the first screen.',
       'Broke a long job-order form into guided steps with smart pickers.',
       'Made staff selection visual — photo, hours worked, rating and favourites.',
@@ -424,6 +430,8 @@ export const PROJECT_CONTENT: ProjectContent[] = [
       question: 'How might we let a busy manager book the right temporary worker quickly — from anywhere?',
     },
     users: [
+      { name: 'Candidates', who: 'People looking for work on the job board', needs: ['Search job listings', 'Apply for jobs', 'Keep a candidate profile'] },
+      { name: 'Recruiters', who: 'Hiring teams working through applicants', needs: ['Review candidate profiles', 'Track applications on dashboards', 'Shortlist candidates'] },
       { name: 'Client managers', who: 'Hiring managers and supervisors across divisions', needs: ['Request staff from anywhere', 'Pick familiar, highly rated workers', 'Track orders, approve timeslips, rate work'] },
       { name: 'Front desk', who: 'Teams managing day-to-day schedules', needs: ['See today’s assignments at a glance', 'Check an employee’s schedule and location', 'Reach the right supervisor'] },
     ],
@@ -435,7 +443,7 @@ export const PROJECT_CONTENT: ProjectContent[] = [
     ],
     // no separate UI prototype link has been supplied for IntelliStaff
     caseStudyUrl: caseStudy('1066-63962', false),
-    aliases: ['intelli staff', 'staffing', 'recruitment'],
+    aliases: ['intelli staff', 'staffing', 'recruitment', 'job board', 'applicant tracking', 'ats', 'hiring platform'],
     accent: '#444eb2',
   },
 ]
