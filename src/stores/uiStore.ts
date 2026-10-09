@@ -19,6 +19,9 @@ interface UIState {
   /** the companion's navigator panel */
   guideOpen: boolean
   setGuideOpen: (open: boolean) => void
+  /** first-run hint currently pointing at part of the interface */
+  hint: 'city' | 'move' | 'ai' | 'menu' | null
+  setHint: (hint: 'city' | 'move' | 'ai' | 'menu' | null) => void
   menuSection: MenuSection
   soundEnabled: boolean
   isTouch: boolean
@@ -36,6 +39,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   menuOpen: false,
   guideOpen: false,
   setGuideOpen: (guideOpen) => set({ guideOpen }),
+  hint: null,
+  setHint: (hint) => set({ hint }),
   menuSection: 'places',
   soundEnabled: readSoundPref(),
   isTouch: isTouchDevice(),

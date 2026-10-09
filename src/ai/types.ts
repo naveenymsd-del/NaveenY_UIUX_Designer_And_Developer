@@ -8,7 +8,10 @@ import type { Entity } from './conversation'
  * the action router (actions.ts) validates and runs them.
  */
 export type GuideAction =
-  | { type: 'navigate'; destination: DestinationId }
+  /** walk somewhere; explain = present the place in full on arrival ("take me to NFC and explain the company") */
+  | { type: 'navigate'; destination: DestinationId; explain?: boolean }
+  /** present a place in full, then offer where to go next (no walking) */
+  | { type: 'present'; destination: DestinationId }
   | { type: 'navigateProject'; projectId: string }
   | { type: 'showSection'; section: 'overview' | 'challenges' }
   /** open a project's Figma link: the clickable UI prototype, or the case-study presentation */
@@ -38,6 +41,8 @@ export interface BrainReply {
   entity?: Entity | null
   /** projects named in this answer, in order ("the first one") */
   list?: string[] | null
+  /** the guide asked "where should we go?" — a short answer naming a place takes the visitor there */
+  choosing?: boolean
   /** the built-in brain had no grounded answer: an optional server brain may try */
   unknown?: boolean
 }

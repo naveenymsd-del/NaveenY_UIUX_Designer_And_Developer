@@ -29,10 +29,14 @@ export interface ConversationState {
   /** places visited through the guide, for "go back" */
   trail: DestinationId[]
   lastIntent: string | null
+  /** the guide just asked where to go next: "projects", "the café" or "finish here" answer it */
+  choosing: boolean
+  /** a light question the guide asked on a walk ("simplicity or visual impact?"), and when */
+  question: { id: string; at: number } | null
 }
 
 export const conversation: ConversationState = {
-  project: null, prevProject: null, place: null, entity: null, lastList: null, offer: null, more: null, history: [], trail: [], lastIntent: null,
+  project: null, prevProject: null, place: null, entity: null, lastList: null, offer: null, more: null, history: [], trail: [], lastIntent: null, choosing: false, question: null,
 }
 
 const MAX_TURNS = 12
@@ -65,8 +69,10 @@ export function rememberReply(r: BrainReply) {
   if (r.list) conversation.lastList = r.list
   conversation.offer = r.offer ?? null
   conversation.more = r.more ?? null
+  conversation.choosing = !!r.choosing
+  conversation.question = null
 }
 
 export function resetConversation() {
-  Object.assign(conversation, { project: null, prevProject: null, place: null, entity: null, lastList: null, offer: null, more: null, history: [], trail: [], lastIntent: null })
+  Object.assign(conversation, { project: null, prevProject: null, place: null, entity: null, lastList: null, offer: null, more: null, history: [], trail: [], lastIntent: null, choosing: false, question: null })
 }

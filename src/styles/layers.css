@@ -1,0 +1,160 @@
+/* ── UI layers ───────────────────────────────────────────────────────────────
+   One scale for everything above the 3D world, so the order never depends on
+   where a component happens to sit in the DOM. Content always wins over the
+   AI: a project, place, gallery or café panel sits above the AI orb and its
+   sheet, and a panel's close button is always reachable.
+
+     world (canvas) · HUD 20 · controls 25 · AI orb 30 · AI sheet 40 · hints 45
+     panels 100 (their controls 110) · gallery 105 · menu 120 · menu button 125
+     fade 150 · intro 160 · loading 200 · debug 210                              */
+:root {
+  --z-hud: 20;
+  --z-controls: 25;
+  --z-ai: 30;
+  --z-ai-open: 40;
+  --z-hints: 45;
+  --z-panel: 100;
+  --z-panel-controls: 110;
+  --z-gallery: 105;
+  --z-menu: 120;
+  --z-menu-button: 125;
+  --z-fade: 150;
+  --z-intro: 160;
+  --z-loading: 200;
+  --z-debug: 210;
+}
+
+.ui-layer .ui-minimap,
+.ui-layer .ui-journey-chip,
+.ui-layer .ui-zone,
+.ui-layer .ui-hint,
+.ui-layer .ui-rail,
+.ui-layer .ui-prompt-anchor,
+.ui-layer .ui-nametag-anchor,
+.ui-layer .ui-greet-anchor,
+.ui-layer .ui-bubble-anchor { z-index: var(--z-hud); }
+/* the header holds the menu button, which must stay above the open menu: no stacking context of its own */
+.ui-layer .ui-top { z-index: auto; }
+.ui-layer .ui-top__left, .ui-layer .ui-top__right { position: relative; z-index: var(--z-hud); }
+.ui-layer .ui-menu-btn { z-index: var(--z-menu-button); }
+.ui-layer .ui-top__right:has(.ui-menu-btn.is-open) { z-index: var(--z-menu-button); }
+
+.ui-layer .ui-mobile { z-index: var(--z-controls); }
+.ui-layer .ui-voice { z-index: var(--z-ai); }
+.ui-layer .ui-voice.is-open { z-index: var(--z-ai-open); }
+/* a panel is open: the small orb (and the sheet, if the visitor opens it) sit just above the panel */
+.ui-layer .ui-voice--touch.is-modal { z-index: calc(var(--z-panel-controls) - 4); }
+.ui-layer .ui-tips { z-index: var(--z-hints); }
+
+.ui-layer .ui-case-scrim { z-index: calc(var(--z-panel) - 1); }
+.ui-layer .ui-case,
+.ui-layer .ui-panel,
+.ui-layer .ui-cafe,
+.ui-layer .ui-guide { z-index: var(--z-panel); }
+.ui-layer .ui-case__close,
+.ui-layer .ui-panel__close,
+.ui-layer .ui-cafe__close,
+.ui-layer .ui-guide__close { position: relative; z-index: var(--z-panel-controls); }
+.ui-layer .ui-gallery { z-index: var(--z-gallery); }
+
+.ui-layer .ui-menu { z-index: var(--z-menu); }
+.ui-layer .ui-fade { z-index: var(--z-fade); }
+.ui-layer .ui-intro { z-index: var(--z-intro); }
+.ui-layer .ui-loading { z-index: var(--z-loading); }
+.ui-layer .ui-debug { z-index: var(--z-debug); }
+
+/* ── phones: the case study is a bottom sheet with a fixed header ────────── */
+@media (max-width: 640px) {
+  .ui-layer .ui-case {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: min(86svh, 86vh, 760px);
+    padding: 14px 18px 12px;
+    border-radius: 24px 24px 0 0;
+    transform: translateY(40px);
+  }
+  .ui-layer .ui-case.is-visible { transform: none; }
+  .ui-layer .ui-case::before { top: 0; bottom: auto; left: 0; right: 0; width: auto; height: 4px; }
+  /* a grab handle, and a close button that is always on screen and easy to hit */
+  .ui-layer .ui-case__head { position: relative; padding-top: 8px; }
+  .ui-layer .ui-case__head::before { content: ''; position: absolute; top: -4px; left: 50%; width: 38px; height: 4px; border-radius: 2px; background: var(--hair-strong); transform: translateX(-50%); }
+  .ui-layer .ui-case__close { height: 44px; min-width: 44px; padding: 0 14px; }
+  /* room at the end so the last lines scroll clear of the AI orb in the corner */
+  .ui-layer .ui-case__scroll { padding-bottom: calc(76px + var(--safe-bottom)); }
+}
+
+/* the interaction prompt never sits on the panels it opens */
+.app:has(.ui-case.is-visible) .ui-prompt-anchor,
+.app:has(.ui-panel.is-visible) .ui-prompt-anchor { visibility: hidden; }
+
+/* ── first-run hints: one small card at a time, pointing at what it describes ── */
+.ui-layer .ui-tips--hint {
+  top: calc(176px + var(--safe-top));
+  left: 50%;
+  right: auto;
+  width: min(330px, calc(100vw - 32px));
+  padding: 14px 44px 12px 18px;
+  border-radius: 20px;
+  transform: translate(-50%, -8px);
+  transform-origin: top center;
+}
+.ui-layer .ui-tips--hint.is-visible { transform: translate(-50%, 0); }
+.is-desktop .ui-layer .ui-tips--hint { top: auto; bottom: calc(96px + var(--safe-bottom)); }
+.ui-tips__card { animation: ld-stage 0.35s var(--ease-out) both; }
+.ui-tips__title { margin: 0; font-family: var(--font-display) !important; font-size: 16.5px; font-weight: 650 !important; line-height: 1.25; }
+.ui-tips__sub { margin: 4px 0 0; font-size: 13px; line-height: 1.45; opacity: 0.78; }
+.ui-tips__dots { display: flex; gap: 5px; margin: 10px 0 0; padding: 0; list-style: none; }
+.ui-tips__dots li { width: 16px; height: 4px; border-radius: 2px; background: currentColor; opacity: 0.18; transition: opacity 0.3s, background 0.3s; }
+.ui-tips__dots li.is-done { opacity: 0.4; }
+.ui-tips__dots li.is-on { opacity: 1; background: var(--ai); }
+.ui-tips--hint .ui-tips__close { top: 8px; right: 8px; width: 34px; height: 34px; }
+.ui-tips--hint .ui-tips__close svg { width: 16px; height: 16px; }
+/* the hinted control glows */
+.app:has(.ui-tips.is-move.is-visible) .ui-joystick { box-shadow: 0 0 0 4px rgba(236, 122, 44, 0.55), 0 0 30px rgba(236, 122, 44, 0.45); border-radius: 50%; }
+.app:has(.ui-tips.is-menu.is-visible) .ui-menu-btn { box-shadow: 0 0 0 4px rgba(236, 122, 44, 0.6); animation: voice-listen 1.2s ease-in-out infinite; }
+.app.is-desktop:has(.ui-tips.is-ai.is-visible) .ui-voice__orb { box-shadow: 0 0 0 4px rgba(236, 122, 44, 0.6); }
+@media (prefers-reduced-motion: reduce) { .app:has(.ui-tips.is-menu.is-visible) .ui-menu-btn { animation: none; } }
+
+/* ── Explore Naveen's world (the menu) ───────────────────────────────────── */
+.ui-explore__kicker { margin: 0 0 12px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ai-soft); }
+.ui-explore { display: grid; gap: 6px; }
+.ui-explore__item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 10px 14px 10px 10px;
+  border-radius: 18px;
+  text-align: left;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.3s var(--ease-out);
+}
+.ui-explore__item:hover, .ui-explore__item:focus-visible { background: rgba(255, 255, 255, 0.09); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); transform: translateX(4px); outline: none; }
+.ui-explore__icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: rgba(255, 255, 255, 0.08); }
+.ui-explore__icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.ui-explore__text { display: grid; gap: 2px; min-width: 0; }
+.ui-explore__name { display: flex; align-items: baseline; gap: 10px; font-family: var(--font-display); font-size: clamp(18px, 1.9vw, 24px); font-weight: 600; letter-spacing: -0.01em; }
+.ui-explore__name i { font-family: var(--font-body); font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; opacity: 0.55; font-variant-numeric: tabular-nums; }
+.ui-explore__about { font-size: 13px; color: rgba(255, 255, 255, 0.66); }
+.ui-explore__go { font-size: 12px; font-weight: 650; color: var(--ai-soft); white-space: nowrap; opacity: 0; transition: opacity 0.2s; }
+.ui-explore__item:hover .ui-explore__go, .ui-explore__item:focus-visible .ui-explore__go, .ui-explore__item.is-here .ui-explore__go { opacity: 1; }
+.ui-explore__item.is-here { background: rgba(236, 122, 44, 0.16); box-shadow: inset 0 0 0 1px rgba(236, 122, 44, 0.55); }
+.ui-explore__item.is-here .ui-explore__icon { background: var(--ai); color: #fff; }
+.ui-explore__item.is-done:not(.is-here) .ui-explore__icon { box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.3); }
+.ui-explore__more { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+.ui-explore__more button { height: 34px; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: rgba(255, 255, 255, 0.82); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); }
+.ui-explore__more button:hover, .ui-explore__more button.is-active { background: rgba(255, 255, 255, 0.12); color: #fff; }
+@media (hover: none) { .ui-explore__go { opacity: 1; } }
+@media (max-width: 640px) {
+  .ui-explore__item { grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 9px 12px 9px 9px; }
+  .ui-explore__icon { width: 40px; height: 40px; }
+  .ui-explore__go { grid-column: 2; font-size: 11.5px; margin-top: -2px; }
+  .ui-menu--explore .ui-menu__content { display: none; }
+  .ui-menu--explore:has(.ui-explore__more .is-active) .ui-menu__content { display: block; }
+}

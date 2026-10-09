@@ -43,14 +43,15 @@ await sleep(1500)
 expect((await guide()).some((g) => /Let me give you the tour/.test(g)) && (await guide()).some((g) => /personal side/.test(g)), 'tour starts: "Let me give you the tour" → "Let’s start with the personal side"')
 let prev = await pos()
 let maxStep = 0
+let prevT = Date.now()
 const home = await until(async () => {
   const q = await pos()
-  if ((q.x > 300) === (prev.x > 300)) maxStep = Math.max(maxStep, Math.hypot(q.x - prev.x, q.z - prev.z))
+  { const now = Date.now(); if ((q.x > 300) === (prev.x > 300)) maxStep = Math.max(maxStep, Math.hypot(q.x - prev.x, q.z - prev.z) / Math.max(0.05, (now - prevT) / 1000)); prevT = now }
   prev = q
   return /Ready for the next stop/.test(await lastGuide())
 }, 90000)
 expect(home && /This is Naveen’s home/.test(await lastGuide()), `arrives Home, introduces it, waits: "${(await lastGuide()).slice(0, 60)}…"`)
-expect(maxStep < 2, `walked there (largest step ${maxStep.toFixed(2)} m between samples — no teleport)`)
+expect(maxStep < 15, `walked there (fastest ${maxStep.toFixed(1)} m/s — a jog is ~5.6, a teleport would be far more)`)
 await p.screenshot({ path: 'qa-screens/610-tour-home.png' })
 
 // a question mid-tour, then the offer to continue
@@ -77,7 +78,7 @@ expect(/I’ll stay with you/.test(await lastGuide()) && Math.hypot(c.x - a.x, c
 
 // project tour: walks to the first screen and opens it
 await type('show me all the projects')
-const first = await until(async () => /This is TASK\..*Want more on this one, or shall we move on\?/.test(await lastGuide()), 120000)
+const first = await until(async () => /This is TASK\..*Would you like to explore this project further, or should I show you the next one\?/.test(await lastGuide()), 120000)
 await sleep(1500) // the case study slides in
 const title = await p.evaluate(() => document.querySelector('.ui-case.is-visible .ui-case__title')?.textContent ?? null)
 expect(first && title === 'TASK', `project tour: walked to TASK, opened its case study, asked before moving on (${title})`)

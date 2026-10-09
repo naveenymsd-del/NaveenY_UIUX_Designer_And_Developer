@@ -211,13 +211,14 @@ const helpers = (p) => ({
   await h.hear('continue')
   let prev = await h.pos()
   let maxStep = 0
+  let prevT = Date.now()
   const home = await until(async () => {
     const q = await h.pos()
-    if ((q.x > 300) === (prev.x > 300)) maxStep = Math.max(maxStep, Math.hypot(q.x - prev.x, q.z - prev.z))
+    { const now = Date.now(); if ((q.x > 300) === (prev.x > 300)) maxStep = Math.max(maxStep, Math.hypot(q.x - prev.x, q.z - prev.z) / Math.max(0.05, (now - prevT) / 1000)); prevT = now }
     prev = q
     return /Ready for the next stop/.test(await h.last())
   }, 90000)
-  expect(home && maxStep < 2, `"continue": walked on to Home and introduced it (largest step ${maxStep.toFixed(2)} m — no teleport)`)
+  expect(home && maxStep < 15, `"continue": walked on to Home and introduced it (fastest ${maxStep.toFixed(1)} m/s — a jog is ~5.6, a teleport would be far more)`)
   await until(async () => !(await h.speaking()), 15000)
   await h.hear('explain')
   await sleep(900)

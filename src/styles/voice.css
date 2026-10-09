@@ -283,31 +283,159 @@
   cursor: pointer;
 }
 
-/* touch screens: under the header and the next-stop chip, clear of the joystick */
-.is-touch .ui-voice {
-  left: calc(12px + var(--safe-left));
-  right: calc(12px + var(--safe-right));
-  top: calc(112px + var(--safe-top));
-  bottom: auto;
+/* desktop: a content panel is open — just the bar, nothing stacked above it */
+.ui-voice.is-collapsed .ui-voice__hints, .ui-voice.is-collapsed .ui-voice__state { display: none; }
+
+/* ── phones: the orb where the jump button was, and a compact sheet ──────────
+   Collapsed = the orb (plus a brief caption of the latest line). Open = a
+   bottom sheet of at most ~30% of the screen; the world stays visible above. */
+.ui-voice--touch {
+  inset: auto 0 0 0;
   width: auto;
-  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 0;
 }
-.is-touch .ui-voice__log { max-height: 26vh; }
-.is-touch .ui-voice__form input { width: 100%; }
-/* the dock and the companion's bubble would share the top of the screen —
-   while the guide is on, the dock carries the full answer and the bubble steps aside */
+.ui-voice--touch .ui-voice__fabwrap {
+  position: absolute;
+  right: calc(18px + var(--safe-right));
+  bottom: calc(30px + var(--safe-bottom));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+.ui-voice__fab {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff8f1, #ffd9b8 70%, #ffc796);
+  box-shadow: inset 0 0 0 1px rgba(236, 122, 44, 0.45), 0 14px 28px -12px rgba(199, 90, 20, 0.6), 0 2px 6px rgba(18, 20, 26, 0.18);
+  touch-action: manipulation;
+}
+.ui-voice__fab:active { transform: scale(0.94); }
+.ui-voice__fab .ui-voice__ring { inset: -4px; box-shadow: 0 0 0 3px var(--ai); }
+.ui-voice--touch:not(.is-on) .ui-voice__fab { animation: voice-invite 3.2s ease-in-out 2s infinite; }
+.ui-voice--touch.is-hinted .ui-voice__fab .ui-voice__ring { opacity: 1; animation: voice-listen 1.2s ease-in-out infinite; }
+/* idle: a tiny microphone badge says "you can talk to me" */
+.ui-voice__micbadge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--v-primary);
+  box-shadow: 0 0 0 2px #fff;
+}
+.ui-voice__micbadge svg { width: 12px; height: 12px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; }
+/* speaking: a small waveform under the face */
+.ui-voice__wave { position: absolute; bottom: 9px; left: 50%; display: none; gap: 2px; transform: translateX(-50%); }
+.ui-voice__wave i { width: 3px; height: 8px; border-radius: 2px; background: var(--ai); animation: voice-bar 0.8s ease-in-out infinite; }
+.ui-voice__wave i:nth-child(2) { animation-delay: 0.15s; }
+.ui-voice__wave i:nth-child(3) { animation-delay: 0.3s; }
+.ui-voice--touch.is-speaking .ui-voice__wave { display: flex; }
+.ui-voice--touch.is-speaking .ui-voice__micbadge, .ui-voice--touch.is-navigating .ui-voice__micbadge { display: none; }
+@keyframes voice-bar { 0%, 100% { transform: scaleY(0.45); } 50% { transform: scaleY(1.35); } }
+/* the orb's state, as a small label beside it */
+.ui-voice__fablabel {
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--v-accent-text);
+  background: var(--v-glass-strong);
+  box-shadow: inset 0 0 0 1px var(--v-edge), var(--v-shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  white-space: nowrap;
+  animation: ld-stage 0.3s var(--ease-out) both;
+}
+/* the latest line, briefly, above the orb (tap to open the conversation) */
+.ui-voice__caption, .ui-voice__chip {
+  position: absolute;
+  right: calc(18px + var(--safe-right));
+  bottom: calc(110px + var(--safe-bottom));
+  max-width: min(300px, calc(100vw - 190px - var(--safe-left)));
+  padding: 9px 13px 10px;
+  border-radius: 16px 16px 6px 16px;
+  font-size: 13.5px;
+  line-height: 1.4;
+  text-align: left;
+  color: var(--v-text);
+  background: var(--v-glass-strong);
+  box-shadow: inset 0 0 0 1px var(--v-edge), var(--v-shadow);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  pointer-events: auto;
+  animation: ld-stage 0.35s var(--ease-out) both;
+}
+.ui-voice__caption span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+.ui-voice__chip { overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: var(--v-muted); border-radius: 999px; white-space: nowrap; }
+
+/* the sheet */
+.ui-voice__sheet {
+  display: flex;
+  flex-direction: column;
+  max-height: min(30vh, 30svh);
+  min-height: 190px;
+  margin: 0 calc(8px + var(--safe-right)) 0 calc(8px + var(--safe-left));
+  padding: 8px 10px calc(10px + var(--safe-bottom));
+  border-radius: 22px 22px 0 0;
+  background: var(--v-glass-strong);
+  color: var(--v-text);
+  box-shadow: inset 0 0 0 1px var(--v-edge), 0 -14px 34px -16px rgba(18, 20, 26, 0.45);
+  backdrop-filter: blur(22px) saturate(1.5);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  pointer-events: auto;
+  animation: voice-sheet 0.32s var(--ease-out) both;
+}
+@keyframes voice-sheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.ui-voice--touch.is-open .ui-voice__fabwrap { display: none; }
+.ui-voice__sheet-head { display: flex; align-items: center; gap: 8px; padding: 0 0 6px; }
+.ui-voice__sheet-head p { display: grid; flex: 1; min-width: 0; margin: 0; line-height: 1.15; }
+.ui-voice__sheet-head p b { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--v-soft); }
+.ui-voice__sheet-head p span { font-size: 13.5px; font-weight: 650; color: var(--v-accent-text); }
+.ui-voice__sheet-head .ui-voice__x { position: static; width: 34px; height: 34px; }
+.ui-voice__avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff8f1, #ffe2c8); }
+.ui-voice__sheet-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.ui-voice__sheet .ui-voice__log { max-height: none; overflow: visible; gap: 5px; }
+.ui-voice__sheet .ui-voice__log li { box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--v-hover); font-size: 13.5px; padding: 7px 11px 8px; }
+.ui-voice__sheet .ui-voice__log li.is-user { background: var(--v-user-bg); }
+.ui-voice__sheet .ui-voice__log li.is-guide { display: block; -webkit-line-clamp: unset; line-clamp: unset; cursor: default; }
+.ui-voice__sheet .ui-voice__consent { max-width: none; padding: 4px 2px 6px; box-shadow: none; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.ui-voice__sheet .ui-voice__consent .ui-voice__x { display: none; }
+.ui-voice__empty { margin: 4px 2px 6px; font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--v-text); }
+.ui-voice__quick { display: flex; gap: 6px; padding: 6px 0 2px; overflow-x: auto; scrollbar-width: none; }
+.ui-voice__quick::-webkit-scrollbar { display: none; }
+.ui-voice__quick button { flex: none; height: 30px; padding: 0 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--v-text); box-shadow: inset 0 0 0 1px var(--v-line); }
+.ui-voice__sheet-bar { display: flex; align-items: center; gap: 6px; padding-top: 6px; }
+.ui-voice__sheet-bar .ui-voice__form input { width: 100%; height: 38px; font-size: 16px; }
+.ui-voice__sheet-bar .ui-voice__form button { width: 38px; height: 38px; }
+.ui-voice__mic { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: var(--v-accent-text); box-shadow: inset 0 0 0 1px var(--v-line); }
+.ui-voice__mic svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.ui-voice__mic.is-live { background: var(--v-primary); color: #fff; box-shadow: var(--v-primary-glow); animation: voice-listen 1.8s ease-in-out infinite; }
+/* while a panel is open the AI is just a small orb in the corner (the panel keeps room for it);
+   the caption and chip wait, and the sheet opens only when the visitor taps the orb */
+.ui-voice--touch.is-modal .ui-voice__caption, .ui-voice--touch.is-modal .ui-voice__chip, .ui-voice--touch.is-modal .ui-voice__fablabel, .ui-voice--touch.is-modal .ui-voice__micbadge { display: none; }
+.ui-voice--touch.is-modal .ui-voice__fabwrap { right: calc(14px + var(--safe-right)); bottom: calc(14px + var(--safe-bottom)); }
+.ui-voice--touch.is-modal .ui-voice__fab { width: 50px; height: 50px; }
+.ui-voice--touch.is-modal .ui-voice__fab .ui-companion { width: 26px; height: 26px; }
+/* the sheet covers the joystick while it is open; walking closes it again */
+.app.is-touch:has(.ui-voice.is-open) .ui-joystick { opacity: 0; pointer-events: none; }
+/* the companion's floating bubble would double the guide's lines — while the guide is on, the orb's caption carries them */
 .app.is-touch:has(.ui-voice.is-on) .ui-bubble { display: none; }
-.is-touch .ui-voice:not(.is-history) .ui-voice__log li.is-guide { display: block; -webkit-line-clamp: unset; line-clamp: unset; }
 
 /* while a case study or the café conversation is open, keep to the essentials */
 .app:has(.ui-case.is-visible) .ui-voice__hints,
 .app:has(.ui-cafe.is-visible) .ui-voice__hints { display: none; }
 @media (max-width: 900px) {
-  .app:has(.ui-case.is-visible) .ui-voice__log { display: none; }
+  .app.is-desktop:has(.ui-case.is-visible) .ui-voice__log { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ui-voice, .ui-voice__log li, .ui-voice__consent { animation: none; }
+  .ui-voice, .ui-voice__log li, .ui-voice__consent, .ui-voice__sheet, .ui-voice__caption, .ui-voice__chip, .ui-voice__fablabel, .ui-voice__wave i, .ui-voice__mic { animation: none !important; }
   .ui-voice__ring, .ui-voice__orb { animation: none !important; }
   .ui-voice.is-listening .ui-voice__ring, .ui-voice.is-speaking .ui-voice__ring { opacity: 0.8; }
 }
@@ -316,3 +444,6 @@
   .ui-voice { --v-glass: rgba(255, 252, 247, 0.94); }
   .app.is-night .ui-voice { --v-glass: rgba(24, 28, 40, 0.94); }
 }
+/* a link the browser wouldn't open by itself: one tap, right above the orb */
+.ui-voice__floatlink { position: absolute; right: calc(18px + var(--safe-right)); bottom: calc(110px + var(--safe-bottom)); max-width: calc(100vw - 36px); pointer-events: auto; animation: ld-stage 0.35s var(--ease-out) both; }
+.ui-voice--touch.is-modal .ui-voice__floatlink { bottom: calc(76px + var(--safe-bottom)); }

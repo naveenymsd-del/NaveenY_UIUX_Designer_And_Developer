@@ -1,0 +1,132 @@
+/* ── the opening scene ─────────────────────────────────────────────────────
+   Restrained: darkness, motes of light, a warm glow, the companion, the name,
+   a welcome in three languages. The skyline's windows and the thin ring
+   around the companion are the progress. A slow drift stands in for camera
+   movement. */
+.ui-splash { background: radial-gradient(120% 90% at 50% 115%, #1a1f28 0%, #0b0d12 62%); }
+.ui-splash__glow {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 120vmin;
+  height: 120vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(236, 122, 44, calc(0.1 + var(--lit, 0) * 0.16)) 0%, rgba(236, 122, 44, 0.04) 35%, transparent 62%);
+  transform: translate(-50%, -50%);
+  animation: sp-glow 2.4s var(--ease-out) both 0.5s;
+  pointer-events: none;
+}
+@keyframes sp-glow { from { opacity: 0; transform: translate(-50%, -50%) scale(0.7); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+/* the slow "camera": the city and the motes drift in */
+.ui-splash .ui-loading__city { animation: ld-rise 3.4s var(--ease-out) both, sp-drift 14s ease-out both; }
+.ui-splash .ui-loading__dust { position: absolute; inset: 0; animation: sp-drift 14s ease-out both; }
+@keyframes sp-drift { from { scale: 1.06; } to { scale: 1; } }
+.ui-splash .ui-loading__dust span { width: 2.5px; height: 2.5px; left: calc(2% + var(--i) * 3.3%); background: rgba(255, 196, 140, 0.6); box-shadow: 0 0 6px rgba(255, 170, 100, 0.6); }
+
+.ui-splash__inner {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  margin-top: -10vh;
+}
+.ui-splash__guide {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 132px;
+  height: 132px;
+  margin-bottom: 26px;
+  animation: sp-appear 1.4s var(--ease-out) both 0.7s;
+}
+@keyframes sp-appear { from { opacity: 0; transform: translateY(14px) scale(0.85); } to { opacity: 1; transform: none; } }
+.ui-splash__ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.ui-splash__track { fill: none; stroke: rgba(247, 244, 239, 0.08); stroke-width: 1.5; }
+.ui-splash__arc { fill: none; stroke: var(--ai-soft); stroke-width: 2; stroke-linecap: round; filter: drop-shadow(0 0 6px rgba(236, 122, 44, 0.7)); transition: stroke-dashoffset 0.3s linear; }
+/* the companion looks around once it's awake */
+.ui-splash .ui-companion__eyes { animation: sp-look 5s ease-in-out 1.8s infinite; }
+@keyframes sp-look { 0%, 30%, 100% { transform: none; } 38%, 52% { transform: translateX(-2.2px); } 60%, 74% { transform: translateX(2.2px); } 82% { transform: none; } }
+
+.ui-splash__brand {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 640;
+  font-size: clamp(36px, 5vw, 62px);
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  line-height: 1;
+  color: var(--paper-1);
+}
+.ui-splash__brand span { display: inline-block; animation: sp-letter 0.9s var(--ease-out) both; animation-delay: calc(1.5s + var(--n) * 0.08s); }
+@keyframes sp-letter { from { opacity: 0; transform: translateY(10px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+.ui-splash__title {
+  margin: 14px 0 0;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.38em;
+  text-indent: 0.38em;
+  text-transform: uppercase;
+  color: rgba(247, 244, 239, 0.58);
+  animation: sp-fade 1s var(--ease-out) both 2.2s;
+}
+@keyframes sp-fade { from { opacity: 0; } to { opacity: 1; } }
+.ui-splash__hello {
+  min-height: 1.4em;
+  margin: 40px 0 0;
+  font-family: var(--font-display), 'Noto Sans Telugu', 'Nirmala UI', 'Telugu Sangam MN', 'Gautami', 'Noto Sans Devanagari', 'Kohinoor Devanagari', 'Mangal', sans-serif;
+  font-size: clamp(22px, 2.6vw, 30px);
+  font-weight: 500;
+  color: #ffd9b4;
+  text-shadow: 0 0 22px rgba(236, 122, 44, 0.45);
+  animation: sp-hello 1.35s var(--ease-out) both;
+}
+.ui-splash.is-ready .ui-splash__hello { animation: sp-fade 0.9s var(--ease-out) both; color: var(--paper-1); }
+@keyframes sp-hello { 0% { opacity: 0; transform: translateY(6px); filter: blur(4px); } 22%, 72% { opacity: 1; transform: none; filter: none; } 100% { opacity: 0; transform: translateY(-4px); filter: blur(3px); } }
+.ui-splash__stage {
+  margin: 14px 0 0;
+  min-height: 1.3em;
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
+  color: rgba(247, 244, 239, 0.45);
+}
+.ui-splash__stage span { display: inline-block; animation: ld-stage 0.6s var(--ease-out) both; }
+.ui-splash.is-ready .ui-splash__stage { color: var(--ai-soft); }
+/* leaving: the companion rises, the world shows through */
+.ui-splash.is-done .ui-splash__guide { transform: translateY(-10px) scale(0.92); transition: transform 1.2s var(--ease-out); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-splash__glow, .ui-splash__guide, .ui-splash__brand span, .ui-splash__title, .ui-splash__hello, .ui-splash .ui-loading__city, .ui-splash .ui-loading__dust, .ui-splash .ui-companion__eyes { animation: none !important; }
+}
+
+/* ── the hero: three ways to explore ──────────────────────────────────── */
+.ui-intro__ways { gap: 10px; }
+.ui-intro__ways .ui-btn--glass {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.ui-intro__ways .ui-btn--glass:hover { background: rgba(255, 255, 255, 0.2); }
+.ui-intro__dot { width: 9px; height: 9px; margin-right: 2px; border-radius: 50%; background: var(--ai); box-shadow: 0 0 0 4px rgba(236, 122, 44, 0.3); }
+.ui-intro__work {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  pointer-events: auto;
+}
+.ui-intro__work:hover { color: #fff; border-color: #fff; }
+.ui-intro__work svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ui-intro.is-hero .ui-intro__hero > :nth-child(6) { animation: hero-in 1.2s var(--ease-out) both 0.85s; }
+@media (max-width: 640px) {
+  .ui-intro__ways .ui-btn--lg { height: 46px; padding: 0 16px; font-size: 14.5px; }
+  .ui-intro__ways .ui-btn--primary { flex: 1 1 100%; justify-content: center; }
+  .ui-intro__ways .ui-intro__way { flex: 1 1 0; justify-content: center; }
+  .ui-intro__welcome { display: block; font-size: 14.5px; }
+}

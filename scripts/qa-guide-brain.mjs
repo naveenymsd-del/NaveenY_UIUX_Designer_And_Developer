@@ -58,7 +58,7 @@ B.resetConversation()
 check('Tell me about yourself', txt(/UI\/UX and Product Designer with 4\+ years/), 'about Naveen, third person')
 check('what do you do', txt(/Naveen is a UI\/UX and Product Designer/), '"you" means Naveen')
 check('How many years of experience do you have?', txt(/4\+ years.*NFC Solutions India Pvt\. Ltd\..*May 2022/), 'years + company + dates')
-check('What kind of products have you designed?', and(txt(/TASK, KidPool, Calmscient, INTA and IntelliStaff/), (r) => r.offer?.destination === 'projects'), 'lists the five projects')
+check('What kind of products have you designed?', and(txt(/TASK, KidPool, Calmscient, INTA and IntelliStaff/), (r) => r.offer?.type === 'tour' && r.offer?.kind === 'projects'), 'lists the five projects, offers to present them one by one')
 check('Where are you based?', txt(/Hyderabad, India/), 'location')
 check('How can I contact you?', txt(/naveenyarramallugalla@gmail\.com.*\+91 70362 82178/), 'email + phone')
 check('Do you have a LinkedIn?', txt(/aren’t in the portfolio yet/), 'honest: no LinkedIn yet')
@@ -76,7 +76,7 @@ check('tell me about that ticketing project', txt(/^TASK is/), 'ticketing alias 
 
 // ── navigation phrasing
 B.resetConversation()
-check('Take me to your projects.', act('navigate', 'destination', 'projects'), 'go to projects')
+check('Take me to your projects.', act('tour', 'kind', 'projects'), 'go to projects → walk to the studio, then each project in turn')
 check("Let's go to your office", act('navigate', 'destination', 'office'), 'go to office')
 check('Can you show me your education?', act('navigate', 'destination', 'education'), 'go to education')
 check('Actually, take me home.', act('navigate', 'destination', 'home'), 'go home')
@@ -88,7 +88,7 @@ check('open calm scient', act('navigateProject', 'projectId', 'calmscient'), 'Ca
 check('Show me Kid Pool', act('navigateProject', 'projectId', 'kidpool'), 'Kid Pool')
 check('Take me into the office', act('navigate', 'destination', 'office'), '"into" is not INTA')
 world = { ...world, location: 'projects' }
-check('Take me to projects', and(none, txt(/already here/i)), 'already in the studio: no walk')
+check('Take me to projects', act('tour', 'kind', 'projects'), 'already in the studio → presents the projects (the studio stop is "already" there, no walk)')
 world = { ...world, location: 'project:task', openProject: 'task' }
 B.resetConversation()
 check('Show me the challenge', act('showSection', 'section', 'challenges'), 'switch case study tab')
@@ -180,7 +180,7 @@ check('the healthcare one', txt(/Calmscient/), 'the healthcare one → Calmscien
 B.resetConversation()
 check('Wait, what does B2B mean?', txt(/business-to-business/), '"wait, …" answers the question')
 check('Actually, take me home', act('navigate', 'destination', 'home'), '"actually, …" carries on')
-check('Take me somewhere else', and(act('stop'), txt(/where would you like/i)), 'take me somewhere else')
+check('Take me somewhere else', and(act('stop'), txt(/Where should we go?/), (r) => r.choosing === true), 'take me somewhere else → lists the places, waits for a choice')
 check('Change that', act('stop'), 'change that')
 
 // ── colleagues: names only, never a role
@@ -213,6 +213,72 @@ check('Explain', txt(/IntelliStaff/), 'at IntelliStaff: "explain" → IntelliSta
 check('What is this?', txt(/IntelliStaff/), 'at IntelliStaff: "what is this?" → IntelliStaff')
 check('How did he design it?', txt(/IntelliStaff/), 'at IntelliStaff: "how did he design it?" → its design process')
 check('What was the challenge here?', txt(/IntelliStaff|challenge/i), 'at IntelliStaff: the challenge')
+world = { ...BASE }
+
+// ── the visitor's exact commands, as one session (the world state follows each walk) ──
+B.resetConversation()
+world = { ...BASE }
+const at = (location, extra = {}) => { world = { ...BASE, location, ...extra } }
+check('Take me home', act('navigate', 'destination', 'home'), 'take me home → walks home')
+at('home')
+check('Tell me about Naveen', and(txt(/UI\/UX and Product Designer with 4\+ years/), txt(/B\.Sc\..*M\.Sc\./), txt(/NFC Solutions India/), txt(/Where should we go\?/), (r) => r.choosing === true), 'about Naveen in full (role, skills, education, process, work), then where next')
+check('What tools does Naveen use?', txt(/Figma/), 'tools')
+check('Take me to education', act('navigate', 'destination', 'education'), 'take me to education')
+at('education')
+check('Tell me about his education', and(txt(/B\.Sc\./), txt(/M\.Sc\./), txt(/CGPA/), txt(/Where should we go\?/)), 'education in full, then where next')
+check('Take me to NFC', act('navigate', 'destination', 'office'), 'take me to NFC')
+at('office')
+check('Explain the company', and(txt(/NFC Solutions India Pvt\. Ltd\./), txt(/since May 2022/), txt(/Project Studio/), txt(/Figma/), txt(/won’t guess/), txt(/Where should we go\?/)), 'NFC in full: role, work, process, projects, tools, colleagues — then where next')
+check('What does Naveen do there?', txt(/UI\/UX Designer at NFC Solutions India/), 'his role at NFC')
+check('Take me to projects', act('tour', 'kind', 'projects'), 'take me to projects → studio, then each project')
+B.setProject('task') // the tour has arrived at TASK (tour.ts sets the subject)
+at('project:task', { openProject: 'task', tour: { status: 'active', kind: 'projects', stop: 'project:task', waiting: true } })
+check('What projects has he worked on?', txt(/TASK, KidPool, Calmscient, INTA and IntelliStaff/), 'the projects, by name')
+check('Explain this project', txt(/TASK/), 'explain this project → TASK')
+check('Show me the prototype', act('openPrototype', 'projectId', 'task'), 'show me the prototype → TASK prototype')
+check('Next project', act('tour', 'op', 'next'), 'next project (on the tour)')
+check('Go back', act('tour', 'op', 'prev'), 'go back (on the tour) → previous')
+at('street', { navigating: true, destination: 'kidpool', tour: { status: 'active', kind: 'projects', stop: 'project:kidpool', waiting: false } })
+check('Actually, take me to education', and(act('navigate', 'destination', 'education'), txt(/change of plan/)), 'change of course mid-walk → new destination, acknowledged')
+at('street')
+check('Take me to contact', act('navigate', 'destination', 'contact'), 'take me to contact')
+at('contact')
+check('What can I do here?', and(txt(/naveenyarramallugalla@gmail\.com/), txt(/somewhere else/)), 'what can I do here → at the café')
+check('Take me somewhere else', and(txt(/Where should we go\?/), (r) => r.choosing === true), 'somewhere else → the places, waiting for a choice')
+check('the design journey', and(act('navigate', 'destination', 'gallery'), (r) => r.actions[0].explain === true), 'a choice → walks there, presents it on arrival')
+check('Guide me', act('tour', 'kind', 'full'), 'guide me → the full tour')
+at('street', { navigating: true, destination: 'home', tour: { status: 'active', kind: 'full', stop: 'home', waiting: false } })
+check('Stop', act('stop'), 'stop')
+at('street', { tour: { status: 'paused', kind: 'full', stop: 'home', waiting: false } })
+check('Continue', act('tour', 'op', 'continue'), 'continue (the tour)')
+at('street', { navigating: true, destination: 'home', tour: { status: 'active', kind: 'full', stop: 'home', waiting: false } })
+check('Pause', and(act('stop'), txt(/^Paused/)), 'pause')
+at('contact')
+check('Explain this', and(txt(/Contact Café/), txt(/naveenyarramallugalla@gmail\.com/), txt(/Where should we go\?/)), 'explain this at the café → the café')
+at('projects')
+check('Explain this', and(txt(/Project Studio/), txt(/one by one/), (r) => r.offer?.type === 'tour'), 'explain this in the studio → the studio, offers the projects one by one')
+at('project:calmscient', { openProject: 'calmscient' })
+check('Explain this', txt(/Calmscient/), 'explain this inside Calmscient → Calmscient')
+
+// compound and natural navigation
+B.resetConversation()
+world = { ...BASE }
+check('Take me to NFC and explain about Naveen’s company', and(act('navigate', 'destination', 'office'), (r) => r.actions[0].explain === true, txt(/tell you all about it/)), 'walk to NFC, present it on arrival')
+for (const [q, dest] of [['Show me the company', 'office'], ['Let’s talk', 'contact'], ['Take me to the café', 'contact'], ['Show me your education', 'education']]) {
+  check(q, act('navigate', 'destination', dest), `natural phrasing → ${dest}`)
+}
+for (const q of ['Show me your projects', 'Let’s see the projects', 'Take me to the projects']) check(q, act('tour', 'kind', 'projects'), 'projects → the project tour')
+check('Where are your projects?', and(txt(/Project Studio/), (r) => r.offer?.type === 'tour'), 'where are the projects → where, and an offer')
+check('Tell me about your company', and(txt(/NFC Solutions India/), (r) => r.offer?.destination === 'office'), 'about the company (elsewhere) → presented, offer to go')
+check('How does Naveen work?', and(txt(/UX research/), (r) => r.offer?.destination === 'gallery'), 'how he works → process, offer the Design Journey')
+
+// a walk question, answered
+B.resetConversation()
+at('street', { navigating: true, destination: 'projects' })
+B.conversation.question = { id: 'simplicity', at: Date.now() }
+check('Simplicity', txt(/Good choice.*almost there/), 'answer to the walk question → a natural reply')
+B.conversation.question = { id: 'form', at: Date.now() }
+check('What is TASK?', txt(/^TASK is/), 'a real question during a walk question is answered as a question')
 world = { ...BASE }
 
 // grounding: every number/email/phone in any answer must appear in the knowledge text

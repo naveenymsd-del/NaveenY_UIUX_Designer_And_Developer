@@ -167,11 +167,11 @@ async function runMobile(browser) {
       await sleep(400)
       const s1 = await stats(page)
       console.log(`mobile ${w} joystick moved`, s0 && s1 ? Math.hypot(s1.x - s0.x, s1.z - s0.z).toFixed(2) : 'n/a')
-      await page.locator('.ui-jump').dispatchEvent('pointerdown', { pointerId: 9, pointerType: 'touch' })
-      await sleep(250)
-      const sj = await stats(page)
-      console.log(`mobile ${w} jump y`, sj?.y, sj?.state)
-      await page.locator('.ui-jump').dispatchEvent('pointerup', { pointerId: 9, pointerType: 'touch' })
+      // phones have no jump button: the AI guide's orb sits bottom-right instead
+      const orb = await page.evaluate(() => { const r = document.querySelector('.ui-voice__fab')?.getBoundingClientRect(); return r ? [Math.round(r.right), Math.round(r.bottom)] : null })
+      const jumps = await page.evaluate(() => document.querySelectorAll('.ui-jump').length)
+      console.log(`mobile ${w} AI orb bottom-right`, orb, 'jump buttons', jumps)
+      if (!orb || jumps) errors.push(`[mobile-${w}] expected the AI orb and no jump button`)
     }
     await ctx.close()
   }
@@ -206,8 +206,11 @@ async function runProjects(browser) {
   await page.getByRole('button', { name: /AI Workflow/ }).click()
   await sleep(600)
   await shot(page, '35-menu-workflow')
-  // quick travel to the café, then open it with E
-  await page.locator('.ui-menu__item', { hasText: 'NFC Solutions' }).first().click()
+  // the Explore menu lists the places (choosing one walks there — covered by qa-mobile-ux); here: stand at NFC and open it with E
+  console.log('explore menu places:', await page.evaluate(() => [...document.querySelectorAll('.ui-explore__name')].map((n) => n.textContent.replace(/^\d+/, '')).join(', ')))
+  await page.getByRole('button', { name: 'Close menu' }).click()
+  await sleep(600)
+  await page.evaluate(() => window.__teleport(10.8, 17, Math.PI / 2))
   await sleep(2500)
   await shot(page, '36-travel-cafe')
   const near = await page.evaluate(() => document.querySelector('.ui-prompt.is-visible')?.textContent ?? null)

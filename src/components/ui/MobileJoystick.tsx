@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { input, pressJump } from '@/core/input'
+import { input } from '@/core/input'
 import { soundManager } from '@/core/sound/SoundManager'
 import { controlsEnabled, useGameStore } from '@/stores/gameStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -7,8 +7,8 @@ import { useUIStore } from '@/stores/uiStore'
 const DEAD_ZONE = 0.14
 
 /**
- * Virtual joystick (bottom-left) + jump button (bottom-right) for touch
- * devices. Pointer Events with pointer capture track one finger each; the
+ * Virtual joystick (bottom-left) for touch devices. The bottom-right corner
+ * belongs to the AI guide's orb (VoiceDock) — phones have no jump button. Pointer Events with pointer capture track one finger each; the
  * output is a normalised vector with a dead zone and a smooth spring return.
  * touch-action: none prevents scrolling and browser gestures.
  */
@@ -19,7 +19,6 @@ export function MobileControls() {
   return (
     <div className={`ui-mobile ${enabled ? 'is-visible' : ''}`} aria-hidden={!enabled}>
       <Joystick enabled={enabled} />
-      <JumpButton />
     </div>
   )
 }
@@ -118,30 +117,5 @@ function Joystick({ enabled }: { enabled: boolean }) {
       <div className="ui-joystick__arrows" aria-hidden="true"><i /><i /><i /><i /></div>
       <div ref={thumb} className="ui-joystick__thumb" />
     </div>
-  )
-}
-
-function JumpButton() {
-  const ref = useRef<HTMLButtonElement>(null)
-  return (
-    <button
-      ref={ref}
-      className="ui-jump"
-      aria-label="Jump"
-      onPointerDown={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-        soundManager.unlock()
-        pressJump()
-        ref.current?.classList.add('is-pressed')
-      }}
-      onPointerUp={() => ref.current?.classList.remove('is-pressed')}
-      onPointerCancel={() => ref.current?.classList.remove('is-pressed')}
-      onPointerLeave={() => ref.current?.classList.remove('is-pressed')}
-      onContextMenu={(e) => e.preventDefault()}
-    >
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6m-6 6 6-6 6 6" /></svg>
-      <span>JUMP</span>
-    </button>
   )
 }

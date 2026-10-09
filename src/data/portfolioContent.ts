@@ -213,7 +213,7 @@ export const HOME_STORIES: Record<string, StoryContent> = {
   galleryEntry: {
     kicker: 'Gallery', heading: 'Selected work & interests',
     body: 'UI screens from my case studies, and what I enjoy outside product design.',
-    cta: { label: 'Go to the Gallery', action: 'gallery' },
+    cta: { label: 'Go to the Design Journey', action: 'gallery' },
   },
   portfolio: {
     kicker: 'Selected work', heading: 'Projects',

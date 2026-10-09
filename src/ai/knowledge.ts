@@ -20,7 +20,7 @@ export type DestinationId = (typeof DESTINATIONS)[number]
 
 export const PLACE_NAMES: Record<DestinationId, string> = {
   start: 'the start', home: 'Home', education: 'Education', office: 'the NFC Solutions office',
-  projects: 'the Project Studio', gallery: 'the Gallery', contact: 'the Contact Café',
+  projects: 'the Project Studio', gallery: 'the Design Journey', contact: 'the Contact Café',
 }
 
 /** where the visitor can be (for "what is this?") */
@@ -28,14 +28,14 @@ export type LocationKey = DestinationId | 'street' | 'plaza' | `project:${string
 
 /** what each place is, in the guide's words (grounded in what the place contains) */
 export const PLACE_ABOUT: Record<DestinationId | 'street' | 'plaza', string> = {
-  start: 'This is the start of Naveen’s world — the welcome promenade. Home, Education, the NFC Solutions office, the Gallery and the Contact Café are all up the avenue.',
+  start: 'This is the start of Naveen’s world — the welcome promenade. Home, Education, the NFC Solutions office, the Project Studio, the Design Journey and the Contact Café are all up the avenue.',
   home: 'This is Naveen’s home — about him, his skills and tools, how he uses AI in design, and a few interests.',
   education: 'This is where you can explore Naveen’s academic background: an M.Sc. and a B.Sc. in Computer Science, and his UI/UX certification.',
   office: `This represents Naveen’s professional world at ${EXPERIENCE.company}, where he has worked as a ${EXPERIENCE.title} since May 2022. The Project Studio is in the glass wing on the right.`,
   projects: `This is the Project Studio, where Naveen’s case studies live: ${PROJECT_CONTENT.map((p) => p.title).join(', ')}.`,
-  gallery: 'This is the Gallery — real UI screens from his case studies on the easels, the AI-assisted design area in the gazebo, and his interests outside product design.',
+  gallery: 'This is the Design Journey, in the park — how Naveen approaches design: his AI-assisted workflow in the gazebo, real UI screens from his case studies on the easels, and his interests outside product design.',
   contact: 'This is the Contact Café, the last stop — where you can get in touch with Naveen.',
-  street: 'You’re out on the avenue. I can take you to Home, Education, NFC Solutions, the Project Studio, the Gallery or the Contact Café.',
+  street: 'You’re out on the avenue. I can take you to Home, Education, NFC Solutions, the Project Studio, the Design Journey or the Contact Café.',
   plaza: 'This is the fountain plaza, a place to pause. The projects are in the Project Studio inside the NFC Solutions office.',
 }
 
@@ -50,7 +50,7 @@ export const PROJECT_ALIASES: Record<string, string[]> = {
 
 /** portfolio vocabulary, offered to speech recognisers that accept phrase hints */
 export const VOCABULARY = [
-  'Naveen', 'NFC Solutions', ...PROJECT_CONTENT.map((p) => p.title), 'Project Studio', 'Contact Café', 'Gallery',
+  'Naveen', 'NFC Solutions', ...PROJECT_CONTENT.map((p) => p.title), 'Project Studio', 'Contact Café', 'Design Journey', 'Gallery',
   'Figma', 'Figma Make', 'UX Pilot', 'Relume', 'Google Stitch', 'UI/UX', 'UX', 'Product Designer', 'B2B', 'SaaS', 'prototype', 'case study',
 ]
 

@@ -9,6 +9,8 @@ import type { GuideAction } from './types'
 import { useVoiceStore } from './voiceStore'
 import { currentLocation } from './worldState'
 import { projectArrival } from './brain/local'
+import { arrivalLine, nextPrompt, placePresentation } from './presentations'
+import { nextWalkQuestion } from './smalltalk'
 import { runTour } from './tour'
 
 /**
@@ -25,7 +27,8 @@ export function validateActions(raw: unknown): GuideAction[] {
   for (const a of raw.slice(0, 3)) {
     if (!a || typeof a !== 'object') continue
     const x = a as Record<string, unknown>
-    if (x.type === 'navigate' && DESTINATIONS.includes(x.destination as DestinationId)) out.push({ type: 'navigate', destination: x.destination as DestinationId })
+    if (x.type === 'navigate' && DESTINATIONS.includes(x.destination as DestinationId)) out.push({ type: 'navigate', destination: x.destination as DestinationId, explain: x.explain === true })
+    else if (x.type === 'present' && DESTINATIONS.includes(x.destination as DestinationId)) out.push({ type: 'present', destination: x.destination as DestinationId })
     else if (x.type === 'navigateProject' && PROJECT_IDS.has(x.projectId as string)) out.push({ type: 'navigateProject', projectId: x.projectId as string })
     else if (x.type === 'openPrototype' && PROJECT_IDS.has(x.projectId as string)) out.push({ type: 'openPrototype', projectId: x.projectId as string, kind: x.kind === 'caseStudy' ? 'caseStudy' : 'prototype' })
     else if (x.type === 'showSection' && (x.section === 'overview' || x.section === 'challenges')) out.push({ type: 'showSection', section: x.section })
@@ -38,9 +41,12 @@ export function validateActions(raw: unknown): GuideAction[] {
 }
 
 export interface ActionIO {
-  /** say a line (bubble + transcript + voice) */
+  /** say a line (bubble + transcript + voice) — replies to the visitor, at once */
   respond: (text: string) => void
+  /** narration the guide starts itself (arrivals, tour stops): waits for the current line to finish first */
+  narrate?: (text: string) => Promise<void>
 }
+const narrate = (io: ActionIO, text: string) => (io.narrate ? io.narrate(text) : Promise.resolve(io.respond(text)))
 
 /** a line or two of narration per destination — said once, about halfway */
 const MIDWAY: Partial<Record<DestinationId, string>> = {
@@ -51,14 +57,47 @@ const MIDWAY: Partial<Record<DestinationId, string>> = {
   gallery: 'The Gallery is in the park — real screens from his projects, and the AI corner.',
   contact: 'The café is down at the end of the avenue.',
 }
-const ARRIVE: Record<DestinationId, string> = {
-  start: 'Here we are — back at the start.',
-  home: 'Here we are. Make yourself at home.',
-  education: 'Here we are.',
-  office: 'Here we are — NFC Solutions.',
-  projects: 'We’re here. These are the projects Naveen has worked on. Which one would you like to see?',
-  gallery: 'Here we are. Each easel shows real screens from one project.',
-  contact: 'We’re here — the Contact Café.',
+
+/**
+ * Arriving is never silent: a short welcome, then the next step — the full
+ * story of the place (now, if they asked for it; otherwise one "yes" away),
+ * the projects one by one, or where to go next. The Contact Café always
+ * presents itself and offers the rest of the world, or finishing here.
+ */
+async function arriveAt(dest: DestinationId, explain: boolean, io: ActionIO) {
+  conversation.place = dest
+  conversation.entity = { kind: 'place', id: dest }
+  if (dest === 'contact') {
+    await narrate(io, `${placePresentation('contact')} Would you like me to take you somewhere else — Home, Education, NFC Solutions, the Project Studio or the Design Journey — or would you like to finish the journey here?`)
+    conversation.choosing = true
+    conversation.offer = null
+    return
+  }
+  if (explain) {
+    await narrate(io, `${placePresentation(dest)} ${nextPrompt(dest)}`)
+    conversation.choosing = true
+    conversation.offer = null
+    return
+  }
+  if (dest === 'projects') {
+    await narrate(io, `${arrivalLine('projects')} Shall I walk you through them one by one, starting with TASK? You can stop me any time.`)
+    conversation.offer = { type: 'tour', op: 'start', kind: 'projects' }
+    return
+  }
+  await narrate(io, `${arrivalLine(dest)} Want the full story here, or shall we go somewhere else?`)
+  conversation.offer = { type: 'present', destination: dest }
+  conversation.choosing = true
+}
+
+/** on a longer walk, now and then: one light question instead of narration */
+let walks = 0
+function midwayLine(dest: DestinationId): { text: string; question?: string } {
+  walks++
+  if (walks % 2 === 1) {
+    const q = nextWalkQuestion()
+    return { text: q.ask, question: q.id }
+  }
+  return { text: MIDWAY[dest] ?? '' }
 }
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -77,6 +116,8 @@ export type ActionResult = 'arrived' | 'already' | 'manual' | 'stuck' | 'cancell
 /** narration overrides for a walk (tours tell their own story); null = stay quiet */
 export interface WalkLines {
   midway?: string | null
+  /** the midway line is this walk question: a reply to it gets an answer */
+  questionId?: string
   arrive?: string | null
   manual?: string
 }
@@ -97,12 +138,24 @@ export async function runAction(a: GuideAction, io: ActionIO, lines: WalkLines =
       if (from === a.destination || (a.destination === 'projects' && from === 'projects' && !g.activeProjectId)) return 'already'
       if (from) conversation.trail.push(from)
       navStatus(`Taking you to ${PLACE_NAMES[a.destination].replace(/^the /, '')}…`)
-      const mid = lines.midway === undefined ? MIDWAY[a.destination] : lines.midway
-      const r = await journey(a.destination, null, { onMidway: () => { if (mid) io.respond(mid) } })
-      await handleEnd(r, io, lines, () => {
-        const say = lines.arrive === undefined ? ARRIVE[a.destination] : lines.arrive
-        if (say) io.respond(say)
+      const r = await journey(a.destination, null, {
+        onMidway: () => {
+          if (lines.midway !== undefined) {
+            if (lines.midway) io.respond(lines.midway)
+            if (lines.questionId) conversation.question = { id: lines.questionId, at: Date.now() }
+            return
+          }
+          const m = midwayLine(a.destination)
+          if (!m.text) return
+          io.respond(m.text)
+          if (m.question) conversation.question = { id: m.question, at: Date.now() }
+        },
       })
+      await handleEnd(r, io, lines, () => {})
+      if (r === 'arrived') {
+        if (lines.arrive === undefined) await arriveAt(a.destination, !!a.explain, io)
+        else if (lines.arrive) await narrate(io, lines.arrive)
+      }
       return r
     }
     case 'navigateProject': {
@@ -137,8 +190,11 @@ export async function runAction(a: GuideAction, io: ActionIO, lines: WalkLines =
       if (!/^https:\/\/www\.figma\.com\/proto\//.test(url)) return 'done'
       const tab = window.open(url, '_blank')
       if (tab) tab.opener = null
-      // browsers block tabs that weren't opened by a click — offer a one-tap link instead
-      else useVoiceStore.getState().set({ link: { label: `Open the ${p.title} ${url === p.caseStudyUrl ? 'case study' : 'prototype'}`, url } })
+      // browsers block tabs that weren't opened by a tap (a voice command isn't one):
+      // point at the panel's own button when it's on screen, otherwise offer a one-tap link
+      else if (useGameStore.getState().activeProjectId === p.id) {
+        io.respond(`Your browser needs a tap for that — use “${url === p.caseStudyUrl ? 'Case study' : 'View prototype'}” at the top of the ${p.title} panel.`)
+      } else useVoiceStore.getState().set({ link: { label: `Open the ${p.title} ${url === p.caseStudyUrl ? 'case study' : 'prototype'}`, url } })
       return 'done'
     }
     case 'stop':
@@ -159,9 +215,17 @@ export async function runAction(a: GuideAction, io: ActionIO, lines: WalkLines =
       }
       navStatus(`Taking you back to ${PLACE_NAMES[back].replace(/^the /, '')}…`)
       const r = await journey(back, null)
-      await handleEnd(r, io, {}, () => io.respond(ARRIVE[back!]))
+      await handleEnd(r, io, {}, () => {})
+      if (r === 'arrived') await arriveAt(back, false, io)
       return r
     }
+    case 'present':
+      conversation.place = a.destination
+      conversation.entity = { kind: 'place', id: a.destination }
+      io.respond(`${placePresentation(a.destination)} ${a.destination === 'projects' ? 'Shall I walk you through them one by one?' : nextPrompt(a.destination)}`)
+      if (a.destination === 'projects') conversation.offer = { type: 'tour', op: 'start', kind: 'projects' }
+      else conversation.choosing = true
+      return 'done'
     case 'help':
       useVoiceStore.getState().set({ turns: 0 })
       return 'done'

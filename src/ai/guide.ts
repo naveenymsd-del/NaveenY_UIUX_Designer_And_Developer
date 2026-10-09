@@ -8,6 +8,7 @@ import { conversation, rememberAssistant, rememberReply, rememberUser } from './
 import { toolToAction, worldSummary } from './guidePrompt'
 import { leaveTour, pauseTour, tour, tourActive } from './tour'
 import type { BrainReply, GuideAction } from './types'
+import { PLACE_NAMES, type DestinationId } from './knowledge'
 import { BrowserVoice } from './voice/browser'
 import { RealtimeVoice, realtimeSupported } from './voice/realtime'
 import type { VoiceErrorCode, VoiceProvider } from './voice/types'
@@ -73,6 +74,24 @@ export function respond(text: string) {
   if (store().mode !== 'off' && browserVoice.canSpeak && soundManager.isEnabled) void browserVoice.say(spoken(text))
 }
 
+/** resolves once the guide has finished its current line (or after a safety timeout) */
+async function speechDone(max = 20000) {
+  const t0 = Date.now()
+  await new Promise((r) => setTimeout(r, 40))
+  while (Date.now() - t0 < max) {
+    // our own speaking state (it has a safety timeout) — some browsers report speechSynthesis.speaking forever
+    const speaking = live() ? provider!.speaking : browserVoice.speaking
+    if (!speaking) return
+    await new Promise((r) => setTimeout(r, 150))
+  }
+}
+
+/** a line the guide starts itself (arrival, tour stop): after the current one, never over it */
+export async function narrate(text: string) {
+  await speechDone()
+  respond(text)
+}
+
 // ── tours and other actions, shared by every engine ─────────────────────
 function startActions(actions: GuideAction[]) {
   const nav = actions.some((a) => a.type === 'navigate' || a.type === 'navigateProject' || a.type === 'goBack')
@@ -82,7 +101,7 @@ function startActions(actions: GuideAction[]) {
     cancelWalk()
     if (tourActive()) pauseTour()
   }
-  void runActions(actions, { respond }).finally(settle)
+  void runActions(actions, { respond, narrate }).finally(settle)
 }
 
 /** while a tour waits at a stop, a question gets its answer — then the tour offers to move on */
@@ -387,6 +406,21 @@ export function enableText() {
     greeted = true
     respond('Sure — type to me any time. Ask about Naveen or a project, or tell me where you’d like to go.')
   }
+}
+
+/** world stops (data/world.ts) → the guide's destinations */
+const STOP_TO_DEST: Record<string, DestinationId> = { start: 'start', home: 'home', education: 'education', nfcSolutions: 'office', projects: 'projects', gallery: 'gallery', contactCafe: 'contact' }
+
+/**
+ * Walk the visitor somewhere — the Explore menu's "Take me there", and the
+ * next-stop chip while the guide is on. The character walks (never a
+ * teleport); the guide narrates the arrival and offers what's next.
+ */
+export function walkTo(stop: string) {
+  const destination = STOP_TO_DEST[stop] ?? (stop as DestinationId)
+  if (tourActive()) leaveTour()
+  respond(`Sure — let’s walk to ${PLACE_NAMES[destination] ?? 'there'}.`)
+  startActions([{ type: 'navigate', destination }])
 }
 
 /** pause / resume listening without leaving voice mode (tap the orb) */

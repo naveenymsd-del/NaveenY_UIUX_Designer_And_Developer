@@ -35,6 +35,8 @@ interface VoiceStore {
   /** turns completed this session (first-run guidance fades after the first) */
   turns: number
   historyOpen: boolean
+  /** phones: the compact conversation sheet is expanded (collapsed = just the orb) */
+  sheet: boolean
   set: (patch: Partial<VoiceStore>) => void
   add: (role: ChatMessage['role'], text: string) => number
   /** update a message in place (realtime transcripts grow as they stream) */
@@ -58,6 +60,7 @@ export const useVoiceStore = create<VoiceStore>((set) => ({
   canSpeak: false,
   turns: 0,
   historyOpen: false,
+  sheet: false,
   set: (patch) => set(patch),
   add: (role, text) => {
     const id = nextId++

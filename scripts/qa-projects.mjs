@@ -28,7 +28,8 @@ const PROJECTS = [
   { title: 'INTA', ui: 'https://www.figma.com/proto/QCaAaghXmnuMOjWVpdXSUB/INTADesign?node-id=17616-105510&viewport=27096%2C-7560%2C0.3&t=AvpwDXISkSBHOWm3-1&scaling=scale-down-width&content-scaling=fixed&starting-point-node-id=17616%3A105510&page-id=0%3A1', proto: U + '1066-69071&viewport=276%2C308%2C0.06&t=YI4dKAPdPrQxEo1a-1&scaling=scale-down-width&content-scaling=fixed&starting-point-node-id=1066%3A69071&show-proto-sidebar=1', bay: [21.6, 4.0, Math.PI / 2] },
   { title: 'IntelliStaff', proto: U + '1066-63962&viewport=276%2C308%2C0.06&t=YI4dKAPdPrQxEo1a-1&scaling=scale-down-width&content-scaling=fixed&starting-point-node-id=1066%3A63962', bay: [21.6, 7.4, Math.PI / 2] },
 ]
-const REMOVED = ['Spyder', 'Ebounti', 'WasteBeMinerals', 'ServiceNow', 'Design Journey']
+// ("Design Journey" was once a project; it is now the name of a place, so it may appear — just not as a project)
+const REMOVED = ['Spyder', 'Ebounti', 'WasteBeMinerals', 'ServiceNow']
 
 await p.goto(`${base}/street?debug${mobile ? '' : '&desktop'}`)
 await p.waitForFunction(() => window.__intro && window.__intro.running, null, { timeout: 90000 })
@@ -74,6 +75,11 @@ for (const [i, pr] of PROJECTS.entries()) {
   await p.locator('.ui-case.is-visible .ui-case__shots').scrollIntoViewIfNeeded()
   await sleep(1500)
   await shot(`1${i}-${pr.title}-screens`)
+  // (lazy images load once each is near the viewport: bring each into view and give it a moment — a broken one stays at 0 px)
+  for (const img of await p.locator('.ui-case.is-visible .ui-case__shots img').all()) {
+    await img.scrollIntoViewIfNeeded()
+    await img.evaluate((el) => (el.complete ? null : new Promise((r) => { el.onload = el.onerror = r; setTimeout(r, 6000) })))
+  }
   const imgs = await p.evaluate(() => [...document.querySelectorAll('.ui-case.is-visible .ui-case__shots img')].map((i) => i.complete && i.naturalWidth > 0))
   expect(imgs.length === 2 && imgs.every(Boolean), `  key screens load (${imgs.filter(Boolean).length}/${imgs.length})`)
   expect(r.count === `Project 0${i + 1} / 0${PROJECTS.length}`, `  count "${r.count}"`)

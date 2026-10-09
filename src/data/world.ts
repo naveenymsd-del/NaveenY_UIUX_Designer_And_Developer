@@ -72,10 +72,10 @@ export const WORLD_STOPS: WorldStop[] = [
     words: '\\b(projects?|show projects|work|case ?stud(y|ies)|portfolio)\\b',
   },
   {
-    id: 'gallery', label: 'GALLERY', name: 'Gallery', line: 'What else do I create?', icon: 'gallery', place: 'park',
+    id: 'gallery', label: 'DESIGN JOURNEY', name: 'Design Journey', line: 'How do I approach design?', icon: 'gallery', place: 'park',
     mapAt: [-26, 29], arrive: [-21.6, 25.6], yaw: Math.PI, point: [-21, 2, 20],
-    hello: 'Welcome to the <b>Gallery</b> — selected UI work, how I use AI, and life outside the screen.', suggest: 'Want to see the <b>Gallery</b>?',
-    words: '\\b(gallery|photos?|pictures?|art|sketch\\w*|pencil|drawing|interests?|hobb(y|ies)|cricket|dance|creative|park|ai|workflow|claude|chatgpt)\\b',
+    hello: 'Welcome to my <b>Design Journey</b> — how I approach design, real UI work, and life outside the screen.', suggest: 'Want to see how I <b>approach design</b>?',
+    words: '\\b(design journey|journey|process|approach|gallery|photos?|pictures?|art|sketch\\w*|pencil|drawing|interests?|hobb(y|ies)|cricket|dance|creative|park|ai|workflow|claude|chatgpt)\\b',
   },
   {
     id: 'contactCafe', label: 'CONTACT CAFÉ', name: 'Contact Café', line: 'Let’s talk.', icon: 'cafe', place: 'cafe',

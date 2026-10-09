@@ -80,7 +80,8 @@ export function InteractionManager() {
       if (near && controlsEnabled(game)) {
         _v.set(p.x, p.y + 2.35, p.z).project(camera)
         const x = (_v.x * 0.5 + 0.5) * size.width
-        const y = (-_v.y * 0.5 + 0.5) * size.height
+        // never up under the header and the next-stop chip (phones frame the avatar high on screen)
+        const y = Math.max((-_v.y * 0.5 + 0.5) * size.height, size.width < 700 ? 250 : 170)
         screenAnchors.prompt.x = x
         screenAnchors.prompt.y = y
         screenAnchors.prompt.visible = _v.z < 1

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { say } from '@/core/companion'
 import { type Destination, matchCommand, navigateToLocation, navigateToProject } from '@/core/navigation'
+import { walkTo } from '@/ai/guide'
+import { useVoiceStore } from '@/ai/voiceStore'
 import { matchProject, PROJECTS } from '@/data/projects'
 import { matchAnswer } from '@/data/portfolioContent'
 import { soundManager } from '@/core/sound/SoundManager'
@@ -35,7 +37,9 @@ export function GuidePanel() {
   const go = (dest: Destination) => {
     soundManager.play('click')
     setOpen(false)
-    navigateToLocation(dest)
+    // with the AI guide on, it walks you there; otherwise the quick trip
+    if (useVoiceStore.getState().mode !== 'off') walkTo(dest)
+    else navigateToLocation(dest)
   }
   const goProject = (id: string) => {
     soundManager.play('click')

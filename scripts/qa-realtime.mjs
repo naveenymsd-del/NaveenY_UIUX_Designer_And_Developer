@@ -202,3 +202,6 @@ expect(/browser’s voice|let’s type/.test(fb), `realtime unavailable → fall
 console.log(`\n${problems.length ? `${problems.length} problem(s):\n- ${problems.join('\n- ')}` : 'all checks passed'}`)
 console.log('errors:', errors.length ? errors : 'none')
 await b.close()
+// stop the dev server this script started (a running child keeps Node alive), then exit with the result
+stopServer()
+process.exit(problems.length ? 1 : 0)

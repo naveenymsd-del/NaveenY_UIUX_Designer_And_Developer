@@ -31,7 +31,7 @@ await sleep(700)
 await p.screenshot({ path: 'qa-screens/150-guide-open.png' })
 await p.getByRole('button', { name: 'Close guide' }).click()
 await sleep(500)
-const trips = [['quick', 'Home'], ['type', 'college'], ['type', 'show projects'], ['quick', 'Gallery'], ['type', 'resume'], ['type', 'career']]
+const trips = [['quick', 'Home'], ['type', 'college'], ['type', 'show projects'], ['quick', 'Design Journey'], ['type', 'resume'], ['type', 'career']]
 for (const [how, what] of trips) {
   await p.getByRole('button', { name: /Open your guide/ }).click()
   await sleep(500)

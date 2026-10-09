@@ -171,6 +171,25 @@ export function Player() {
           if (!game.interior) {
             for (const [id, a] of agentPositions) if (id !== 'player') avoid(a.x, a.z)
             for (const st of STANDERS) avoid(st.pos[0], st.pos[1])
+            // traffic: steer a wider berth around cars and buses ahead, and ease off while passing one
+            let near = Infinity
+            for (const v of vehiclePositions.values()) {
+              const vx = v.x - rt.position.x
+              const vz = v.z - rt.position.z
+              const d = Math.hypot(vx, vz)
+              if (d > 4.5 || d < 0.01) continue
+              const along = vx * dx + vz * dz
+              if (along < 0.1 * d) continue
+              near = Math.min(near, d)
+              const cx = vx - along * dx
+              const cz = vz - along * dz
+              const cl = Math.hypot(cx, cz) || 1
+              const side = Math.hypot(cx, cz) < 0.05 ? aw.side : 1
+              const w = ((4.5 - d) / 4.5) * (along / d) * 1.4
+              px -= (cx / cl) * side * w
+              pz -= (cz / cl) * side * w
+            }
+            if (near < 3) autoSpeed *= 0.65 + (near / 3) * 0.35
           }
           dx += px * 1.8
           dz += pz * 1.8
@@ -315,7 +334,10 @@ export function Player() {
     else controller.enableSnapToGround(0.35)
 
     _desired.set(s.vx * dt, s.vy * dt, s.vz * dt)
-    controller.computeColliderMovement(col, _desired, undefined, undefined, (c) => !c.isSensor())
+    // a guided walk steers around traffic, and a stopped car (they stop for the player) never traps it:
+    // during the walk vehicles are soft for the player. Walking yourself, they stay solid.
+    const guided = !!rt.autoWalk
+    controller.computeColliderMovement(col, _desired, undefined, undefined, (c) => !c.isSensor() && !(guided && (c.parent()?.userData as { vehicle?: boolean } | undefined)?.vehicle))
     const moved = controller.computedMovement()
     const wasGrounded = s.grounded
     s.grounded = controller.computedGrounded()

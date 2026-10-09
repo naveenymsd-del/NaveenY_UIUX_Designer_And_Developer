@@ -1,4 +1,6 @@
 import { navigateToLocation } from '@/core/navigation'
+import { walkTo } from '@/ai/guide'
+import { useVoiceStore } from '@/ai/voiceStore'
 import { soundManager } from '@/core/sound/SoundManager'
 import { useGameStore } from '@/stores/gameStore'
 import { STORY_STOPS as STORY } from '@/data/world'
@@ -33,7 +35,9 @@ export function JourneyChip() {
             tabIndex={visible ? 0 : -1}
             onClick={() => {
               soundManager.play('click')
-              navigateToLocation(next.id)
+              // with the AI guide on, it walks you there (and narrates); otherwise the quick trip
+              if (useVoiceStore.getState().mode !== 'off') walkTo(next.id)
+              else navigateToLocation(next.id)
             }}
           >
             Guide me

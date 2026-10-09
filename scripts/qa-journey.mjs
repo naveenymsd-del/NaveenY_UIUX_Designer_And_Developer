@@ -22,20 +22,25 @@ await p.getByRole('button', { name: 'Open menu' }).click()
 await sleep(900)
 await p.screenshot({ path: 'qa-screens/111-menu-journey.png' })
 for (const [label, file] of [['About', 'about'], ['AI Workflow', 'workflow'], ['Contact', 'contact'], ['Feedback', 'feedback']]) {
-  await p.locator('.ui-menu__item', { has: p.locator('.ui-menu__label', { hasText: new RegExp(`^${label}$`) }) }).click()
+  await p.locator('.ui-explore__more button', { hasText: new RegExp('^' + label + '$') }).click()
   await sleep(600)
   await p.screenshot({ path: `qa-screens/112-menu-${file}.png` })
 }
 await p.getByRole('button', { name: 'Close menu' }).click()
 await sleep(700)
 // (the journey now ends at the Contact Café — thank-you and feedback are covered by qa-cafe.mjs)
-// menu travel into the projects
+// Explore menu → Project Studio: walks there (no teleport), the guide narrates on arrival
 await p.getByRole('button', { name: 'Open menu' }).click()
 await sleep(700)
-await p.locator('.ui-menu__item', { hasText: 'Projects' }).first().click()
-await sleep(6500)
+await p.locator('.ui-explore__item', { hasText: 'Project Studio' }).click()
+let arrived = false
+for (let t = 0; t < 120000 && !arrived; t += 1000) {
+  await sleep(1000)
+  arrived = await p.evaluate(() => [...document.querySelectorAll('.ui-voice__log li.is-guide')].some((l) => /Here we are — the Project Studio/.test(l.textContent)))
+}
 const s = await p.evaluate(() => ({ ...window.__mindscape }))
-console.log('menu → projects lands at', s.x, s.z)
+console.log('menu → Project Studio (walked):', arrived ? 'arrived' : 'NOT ARRIVED', s.x, s.z)
+if (!arrived) process.exitCode = 1
 await p.screenshot({ path: 'qa-screens/115-menu-projects.png' })
 await p.close()
 // mobile hero + play

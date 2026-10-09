@@ -3,11 +3,22 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore } from '@/stores/gameStore'
 import { CompanionGlyph } from './CompanionGlyph'
 
-const MIN_TIME = 2600
+/** long enough for the opening to play: the companion, the name, one round of greetings */
+const MIN_TIME = 4600
+/** welcome — in English, Telugu (Naveen's home language) and Hindi */
+const GREETINGS: { text: string; lang: string }[] = [
+  { text: 'Welcome', lang: 'en' },
+  { text: 'స్వాగతం', lang: 'te' },
+  { text: 'स्वागत है', lang: 'hi' },
+]
+const RING = 2 * Math.PI * 54
 
 /**
- * Cinematic loading: a dark skyline whose windows switch on as the world is
- * built, drifting dust, and the AI companion's silhouette waking at the end.
+ * The opening scene. Darkness, a few drifting motes of light, then the
+ * orange companion wakes and looks around; the name arrives, the welcome
+ * passes through three languages, and the city on the horizon lights up
+ * window by window as the world is built — that, and the thin ring around the
+ * companion, are the progress. No bar in the middle of the screen.
  * Progress is weighted by real milestones (fonts, asset probe, city build,
  * physics, shader compile, GLB downloads) and eased so it never jumps.
  */
@@ -19,6 +30,7 @@ export function LoadingScreen() {
   const [shown, setShown] = useState(0)
   const [gone, setGone] = useState(false)
   const [ready, setReady] = useState(false)
+  const [hello, setHello] = useState(0)
   const start = useRef(performance.now())
 
   let target = 4
@@ -40,12 +52,19 @@ export function LoadingScreen() {
     return () => cancelAnimationFrame(raf)
   }, [target])
 
-  // "Ready." holds for a beat, then the cinematic takes over
+  // the welcome, once in each language (it begins after the name has arrived)
+  useEffect(() => {
+    if (ready) return
+    const t = setInterval(() => setHello((h) => h + 1), 1350)
+    return () => clearInterval(t)
+  }, [ready])
+
+  // the companion introduces the world, then the cinematic takes over
   useEffect(() => {
     if (!done || phase !== 'loading' || shown < 99.5) return
     const wait = Math.max(0, MIN_TIME - (performance.now() - start.current))
     const t1 = setTimeout(() => setReady(true), wait)
-    const t2 = setTimeout(() => setPhase('intro'), wait + 1100)
+    const t2 = setTimeout(() => setPhase('intro'), wait + 1500)
     return () => {
       clearTimeout(t1)
       clearTimeout(t2)
@@ -73,15 +92,19 @@ export function LoadingScreen() {
             : 'Preparing your guide…'
   const pct = Math.round(shown)
   const lit = shown / 100
+  // the greeting starts once the name is in (~2.4 s), then cycles
+  const g = GREETINGS[Math.max(0, hello - 1) % GREETINGS.length]
   return (
     <div
-      className={`ui-loading ${phase !== 'loading' ? 'is-done' : ''} ${ready ? 'is-ready' : ''}`}
+      className={`ui-loading ui-splash ${phase !== 'loading' ? 'is-done' : ''} ${ready ? 'is-ready' : ''}`}
       role="status"
       aria-live="polite"
-      aria-label={`Preparing your journey, ${pct} percent. ${stage}`}
+      aria-label={`Naveen — interactive portfolio. Preparing your journey, ${pct} percent. ${stage}`}
+      style={{ ['--lit' as string]: lit }}
     >
+      <div className="ui-splash__glow" aria-hidden="true" />
       <div className="ui-loading__dust" aria-hidden="true">
-        {Array.from({ length: 22 }, (_, i) => <span key={i} style={{ ['--i' as string]: i }} />)}
+        {Array.from({ length: 30 }, (_, i) => <span key={i} style={{ ['--i' as string]: i }} />)}
       </div>
       <svg className="ui-loading__city" viewBox="0 0 1600 360" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
         <defs>
@@ -95,20 +118,24 @@ export function LoadingScreen() {
           <rect key={i} x={w.x} y={w.y} width={3} height={4} className={w.at < lit ? 'is-on' : ''} style={{ transitionDelay: `${(w.at * 900) % 700}ms` }} />
         ))}
       </svg>
-      <div className="ui-loading__inner">
-        <div className="ui-loading__guide" aria-hidden="true">
-          <CompanionGlyph awake={ready} />
+      <div className="ui-splash__inner">
+        <div className="ui-splash__guide" aria-hidden="true">
+          <svg className="ui-splash__ring" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="54" className="ui-splash__track" />
+            <circle cx="60" cy="60" r="54" className="ui-splash__arc" style={{ strokeDasharray: RING, strokeDashoffset: RING * (1 - shown / 100) }} />
+          </svg>
+          <CompanionGlyph awake size={78} />
         </div>
-        <p className="ui-loading__brand">NAVEEN</p>
-        <p className="ui-loading__title">Interactive portfolio</p>
-        <p className="ui-loading__lead">Preparing your journey…</p>
-        <div className="ui-loading__meter" aria-hidden="true">
-          <div className="ui-loading__fill" style={{ transform: `scaleX(${shown / 100})` }} />
-        </div>
-        <div className="ui-loading__meta">
-          <span key={stage} className="ui-loading__stage">{stage}</span>
-          <span className="ui-loading__pct">{String(pct).padStart(2, '0')}</span>
-        </div>
+        <p className="ui-splash__brand" aria-hidden="true">
+          {'NAVEEN'.split('').map((c, i) => <span key={i} style={{ ['--n' as string]: i }}>{c}</span>)}
+        </p>
+        <p className="ui-splash__title">Interactive portfolio</p>
+        <p className="ui-splash__hello" lang={g.lang} key={`${hello}-${ready}`}>
+          {ready ? 'Welcome to Naveen’s world.' : hello === 0 ? ' ' : g.text}
+        </p>
+        <p className="ui-splash__stage">
+          <span key={stage}>{ready ? 'Your journey begins.' : stage}</span>
+        </p>
       </div>
     </div>
   )

@@ -20,7 +20,7 @@ const where = () => p.evaluate(() => document.querySelector('.ui-where b')?.text
 const ROOM_OF = (x, z) => (x < 300 ? null : Math.abs(z - 120) < 20 ? 'home' : Math.abs(z + 120) < 20 ? 'education' : Math.abs(z - 240) < 20 ? 'cafe' : Math.abs(z) < 20 ? 'office' : '?')
 const interior = () => p.evaluate(() => [window.__mindscape?.x ?? 0, window.__mindscape?.z ?? 0]).then(([x, z]) => ROOM_OF(x, z))
 const waitRoom = async (room) => { for (let t = 0; t < 30000 && (await interior()) !== room; t += 250) await sleep(250) }
-const BANNED = /\[ADD|\[PLACEHOLDER|lorem ipsum|\bTBD\b|coming soon|My Journey|How I Design|Career Journey|Design Journey|Looking Ahead|Certificate [23]|myProfile|portfolio\.link|Spyder/i
+const BANNED = /\[ADD|\[PLACEHOLDER|lorem ipsum|\bTBD\b|coming soon|My Journey|How I Design|Career Journey|Looking Ahead|Certificate [23]|myProfile|portfolio\.link|Spyder/i
 const seenText = []
 const panel = async () => {
   const r = await p.evaluate(() => {
@@ -41,11 +41,11 @@ await sleep(5000)
 
 // ── minimap + guide quick links
 const markers = await p.evaluate(() => [...document.querySelectorAll('.ui-minimap__marker')].map((m) => m.textContent.trim()))
-expect(markers.join('|').includes('GALLERY') && !markers.join('|').includes('DESIGN'), `minimap stops: ${markers.join(' · ')}`)
+expect(markers.join('|').includes('DESIGN JOURNEY'), `minimap stops: ${markers.join(' · ')}`)
 await p.getByRole('button', { name: /Open your guide/ }).click()
 await sleep(500)
 const quick = await p.evaluate(() => [...document.querySelectorAll('.ui-guide__quick button')].map((b) => b.textContent.trim()))
-expect(quick.join('|') === 'Home|Education|NFC Solutions|Projects|Gallery|Contact Café', `guide quick links: ${quick.join(' · ')}`)
+expect(quick.join('|') === 'Home|Education|NFC Solutions|Projects|Design Journey|Contact Café', `guide quick links: ${quick.join(' · ')}`)
 await shot('00-guide')
 await p.getByRole('button', { name: 'Close guide' }).click()
 await sleep(400)
@@ -71,7 +71,9 @@ for (const [q, want, room] of QUESTIONS) {
   await sleep(1300)
   const said = await p.evaluate(() => document.querySelector('.ui-bubble')?.textContent ?? '')
   expect(said.includes(want), `"${q}" → ${said.slice(0, 90)}…`)
-  await sleep(10500)
+  // the trip takes 8–12 s depending on where it starts: wait for the room rather than a fixed time
+  if (room) { await waitRoom(room); await sleep(7000) } // (let the door transition and the room’s welcome line finish, as a visitor would)
+  else await sleep(10500)
   const r = await interior()
   if (room) expect(r === room, `  travelled to ${r ?? 'street'} (${await where()})`)
   else expect(r === null, `  travelled to the street: ${await where()}`)
@@ -85,7 +87,7 @@ const HOME = [
   ['hello', 0, 3.4, 'Hi, I’m Naveen.', 'UI/UX Designer · Product Designer'],
   ['skills', -7.1, 3.9, 'What I work with', 'Heuristic Evaluation'],
   ['aiWorkflow', 7.2, -2.2, 'AI helps me explore. I make the design decisions.', 'Human judgment'],
-  ['galleryEntry', 6.7, -5.2, 'Selected work & interests', 'Go to the Gallery'],
+  ['galleryEntry', 6.7, -5.2, 'Selected work & interests', 'Go to the Design Journey'],
   ['desk', -1.2, -4.5, 'UI/UX Designer', 'May 2022 – Present'],
   ['laptop', 1.4, -4.5, 'Tools I work with', 'Google Stitch'],
   ['window', -4.8, -5.1, 'Interests', 'Pencil Art & Sketching · Cricket · Dance'],

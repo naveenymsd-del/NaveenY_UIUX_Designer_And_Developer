@@ -25,7 +25,7 @@ export const INTRO = {
   heroAt: 17.2,
   messages: [
     { at: 13.8, text: 'Hey! Welcome to <b>Naveen’s world</b>.', ms: 3200 },
-    { at: 17.5, text: 'I’m your guide — <b>click me</b> any time to jump somewhere.', ms: 4200 },
+    { at: 17.5, text: 'I’m your guide — <b>talk to me</b> any time, or open the menu to see every place.', ms: 4200 },
   ],
 }
 

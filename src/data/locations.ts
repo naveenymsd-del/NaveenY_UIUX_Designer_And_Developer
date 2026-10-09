@@ -215,7 +215,7 @@ export const ZONES: ZoneDef[] = [
   { id: 'campus', name: 'Education Campus', subtitle: 'Chapter 02 · Where I started', center: [0, -49], radius: 8, reveal: [0, 7, -66] },
   { id: 'nfc', name: 'NFC Solutions', subtitle: 'Chapter 04 · Where I work', center: [8, 17], radius: 6.5, reveal: [23, 7, 17] },
   { id: 'home', name: 'My Home', subtitle: 'Chapter 01 · Who I am', center: [-7, -25], radius: 5, reveal: [-16, 3.5, -25] },
-  { id: 'park', name: 'Gallery', subtitle: 'Chapter 06 · Work, AI & interests', center: [-16, 16], radius: 8, reveal: [-16, 1.5, 15.5] },
+  { id: 'park', name: 'Design Journey', subtitle: 'Chapter 06 · How I approach design', center: [-16, 16], radius: 8, reveal: [-16, 1.5, 15.5] },
   { id: 'cafe', name: 'Contact Café', subtitle: 'Chapter 09 · Let’s talk', center: [-14, 53], radius: 4.5, reveal: [-14, 3, 60] },
   { id: 'plaza', name: 'Fountain Plaza', subtitle: 'A place to pause', center: [19, -25], radius: 11, reveal: [19, 3, -25] },
 ]

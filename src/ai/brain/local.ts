@@ -7,6 +7,8 @@ import type { BrainReply, GuideAction, WorldContext } from '../types'
 import type { ConversationState, Entity } from '../conversation'
 import { portfolioAnswer, portfolioTopic } from '../portfolioKnowledge'
 import { partOfDay } from '../guidePrompt'
+import { CHOICE_WORDS, nextPrompt, placeActions, placePresentation } from '../presentations'
+import { answerWalkQuestion } from '../smalltalk'
 
 /**
  * The guide's built-in brain: understands natural phrasing by intent (not
@@ -77,10 +79,10 @@ export function findProject(t: string): ProjectK | null {
 
 const PLACE_WORDS: [DestinationId, RegExp][] = [
   ['projects', /\b(projects?|project studio|studio|case stud(y|ies)|your work|his work|naveen work|portfolio|products?)\b/],
-  ['contact', /\b(contact|cafe|coffee|get in touch)\b/],
+  ['contact', /\b(contact|cafe|coffee|get in touch|let us talk)\b/],
   ['office', /\b(office|nfc|nfc solutions|work ?place|company|professional world)\b/],
   ['education', /\b(education|college|school|universit(y|ies)|campus|degrees?|academic|studies)\b/],
-  ['gallery', /\b(gallery|art|sketch\w*|park|gazebo|ai area|interests|hobbies|easels?)\b/],
+  ['gallery', /\b(design journey|gallery|art|sketch\w*|park|gazebo|ai area|interests|hobbies|easels?)\b/],
   ['home', /\b(home|house|skills?|tools?|skill wall)\b/],
   ['start', /\b(start|beginning|entrance|spawn|welcome)\b/],
 ]
@@ -121,7 +123,7 @@ function projectExplain(p: ProjectK) {
   return `${firstSentence(thirdPerson(p.overview[0]))} It’s designed for ${joinList(p.users.map((u) => u.name.toLowerCase()))}, on ${lowerFirst(p.platform.replace(' · ', ', '))}. Naveen was the ${p.role}. ${part}`
 }
 /** "explain everything about X" — the whole case study, conversationally */
-function projectEverything(p: ProjectK) {
+export function projectEverything(p: ProjectK) {
   const links = p.prototypeUrl ? 'Both the clickable prototype and the full case study are in Figma if you want to see them.' : 'The full case study is in Figma if you want to see it.'
   return [
     `${p.overview.map((x) => thirdPerson(x)).join(' ')}`,
@@ -137,8 +139,32 @@ function projectEverything(p: ProjectK) {
 function projectProcess(p: ProjectK) {
   return `Here’s how Naveen approached the design of ${p.title}. ${p.approach.join(' ')} The key flows were ${joinList(p.flows.map((f) => f.title.toLowerCase()))}. Visually, ${lowerFirst(p.design.text)} I can explain the UX and UI design, but the portfolio doesn’t include the engineering implementation details for ${p.title}.`
 }
+/** a place in full, then where next (the studio offers its projects one by one) */
+function presentPlace(id: DestinationId, world: WorldContext): BrainReply {
+  const here = world.location === id || (id === 'projects' && world.location.startsWith('project:'))
+  if (id === 'projects') {
+    return reply(`${placePresentation('projects')} ${here ? 'Shall I walk you through them one by one?' : 'Want me to take you there and walk you through them one by one?'}`, { place: id, offer: { type: 'tour', op: 'start', kind: 'projects' } })
+  }
+  // (at Home, say where we are first — the rest is about Naveen himself)
+  if (here || id === 'start') return reply(`${id === 'home' ? 'This is Naveen’s home. ' : ''}${placePresentation(id)} ${nextPrompt(id)}`, { place: id, choosing: true })
+  return reply(`${placePresentation(id)} Want me to take you there?`, { place: id, offer: go(id) })
+}
+/** a place named as the topic of a question ("tell me about the company", "explain his education") */
+const TOPIC_PLACE: [DestinationId, RegExp][] = [
+  ['office', /\b(nfc|company|office|professional world|work ?place|where (he|naveen) works)\b/],
+  ['education', /\b(education|college|studies|degrees?|academic|universit(y|ies)|campus)\b/],
+  ['contact', /\b(contact cafe|cafe|contact options)\b/],
+  ['gallery', /\b(design journey|gallery)\b/],
+  ['projects', /\b(project studio|studio)\b/],
+  ['home', /\b(his home|naveen s home|home)\b/],
+]
+const topicPlace = (t: string) => TOPIC_PLACE.find(([, re]) => re.test(t))?.[0] ?? null
+/** where the visitor is, as a destination (a project screen counts as the studio) */
+const placeOf = (loc: string): DestinationId | null =>
+  loc.startsWith('project:') ? 'projects' : (DESTINATIONS as readonly string[]).includes(loc) ? (loc as DestinationId) : null
+
 /** a place, explained a little more than "what is this?" */
-function placeExplain(id: DestinationId) {
+export function placeExplain(id: DestinationId) {
   const [m, b] = EDUCATION
   const extra: Partial<Record<DestinationId, string>> = {
     home: `His skills span UX research and information architecture, UI and interaction design, design systems, prototyping and developer handoff, and his tools include ${joinList(TOOLS.slice(0, 5))} and more.`,
@@ -256,6 +282,9 @@ function projectFacet(p: ProjectK, t: string): BrainReply | null {
   return null
 }
 
+function aboutNaveenFull(): BrainReply {
+  return reply(`${placePresentation('home')} ${nextPrompt(null)}`, { entity: { kind: 'naveen' }, choosing: true })
+}
 function aboutNaveen(): BrainReply {
   return reply(
     `Naveen is a UI/UX and Product Designer with ${PROFILE.experience} of experience, designing web and mobile products across enterprise SaaS, healthcare, recruitment and service platforms. Want to see some of his work?`,
@@ -317,7 +346,7 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
   if (has(t, /\b(show|walk|take) me (through )?(all|every one of|each of) (the |his |naveen )?projects\b|\b(walk|take) me through (the |his |all |all the )?projects\b|\b(tour|go through) (of )?(the |all |all the )?projects( one by one)?\b|\bprojects one by one\b/)) {
     return reply('Sure — I’ll take you through the projects one at a time. Stop me whenever you like.', { actions: [tourCmd('start', 'projects')] })
   }
-  if (has(t, /\b(tell me everything about (naveen|him|you)|give me (a|the|a full|the full|a guided) tour|(show|take) me around|walk me through (the |this |his |naveen )?(portfolio|world|everything|place)|take me through everything|(full|guided|whole) tour|show me (his|naveen|your) journey|tour of the portfolio)\b/)) {
+  if (has(t, /\b(tell me everything about (naveen|him|you)|give me (a|the|a full|the full|a guided) tour|(show|take) me around|walk me through (the |this |his |naveen )?(portfolio|world|everything|place)|take me through everything|(full|guided|whole) tour|show me (his|naveen|your) journey|tour of the portfolio|guide me|be my guide|show me everything)\b/)) {
     return reply('Sure. Let me give you the tour — we’ll walk it, and you can stop me or ask questions any time.', { actions: [tourCmd('start', 'full')] })
   }
   if (touring) {
@@ -336,8 +365,12 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
     return reply(touring ? 'Paused. Ask me anything, or say “continue” when you’re ready.' : 'Okay, I’ve paused.', { actions: [{ type: 'stop' }], offer: null })
   }
   if (has(t, /^ (wait|hold on|hang on|one sec|one second|wait a (sec|second|minute)|just a sec) /)) return reply('Yep?', { actions: [{ type: 'stop' }] })
+  // "let's talk" — the Contact Café
+  if (has(t, /^ (let us talk|let us connect|i want to (talk|connect)( to (him|naveen))?|let us get in touch) $/)) {
+    return world.location === 'contact' ? presentPlace('contact', world) : reply('Sure — let’s go to the Contact Café.', { actions: [{ type: 'navigate', destination: 'contact' }], place: 'contact' })
+  }
   if (has(t, /^ (take me somewhere else|somewhere else|change that|change of plan|not there) /)) {
-    return reply('Sure — where would you like to go instead?', { actions: [{ type: 'stop' }, ...(touring ? [tourCmd('stop')] : [])] })
+    return reply(nextPrompt(placeOf(world.location), 'Sure.'), { actions: [{ type: 'stop' }, ...(touring ? [tourCmd('stop')] : [])], choosing: true })
   }
   // "actually, take me home" — drop the "actually" and carry on; on its own it's a change of mind
   if (has(t, /^ (actually|no wait|no no) /)) return reply('Sure — what would you like instead?', { actions: [{ type: 'stop' }] })
@@ -348,11 +381,32 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
     const a = ctx.offer
     return reply(a.type === 'navigate' || a.type === 'navigateProject' ? 'Great — follow me.' : a.type === 'tour' ? '' : 'Sure.', { actions: [a], offer: null })
   }
+  // "where should we go?" — a short answer naming a place, or finishing here
+  // (a question is a question, not a choice: "who is this?", "what is TASK?")
+  if (ctx.choosing && n <= 8 && !has(t, /^ (what|who|why|how|when|is|are|can|could|does|do|did|tell|explain|which) /)) {
+    if (has(t, /^ (finish|finish here|finish the journey|end here|end the journey|that is all|i am done|done|i am good|nothing|no thanks|nope|no|stay here|i will stay here|i will explore myself|i will explore on my own) /)) {
+      return reply('Thanks for walking through Naveen’s world with me. I’ll be right here if you want to explore more — and you can always reach him from the Contact Café.')
+    }
+    const pick = findProject(t) ? null : CHOICE_WORDS.find(([, re]) => re.test(t))?.[0] ?? null
+    if (pick) {
+      if (pick === 'projects') return reply('', { actions: [tourCmd('start', 'projects')] })
+      if (world.location === pick) return presentPlace(pick, world)
+      return reply(`Great — let’s go to ${PLACE_NAMES[pick]}.`, { actions: [{ type: 'navigate', destination: pick, explain: true }], place: pick })
+    }
+  }
   if (ctx.offer && n <= 4 && has(t, /^ (no|nope|not now|maybe later|no thanks|nah) /)) return reply('No problem. What else would you like to know?', { offer: null })
+  // a reply to the guide's question on the walk ("simplicity or visual impact?")
+  if (ctx.question && Date.now() - ctx.question.at < 120000) {
+    const said = answerWalkQuestion(ctx.question.id, t)
+    if (said) return reply(world.navigating ? `${said} And we’re almost there.` : said)
+  }
 
   if (n <= 4 && has(t, /^ (thanks|thank you|thx|cheers|cool|nice|great|awesome|perfect|got it) /)) return reply('You’re welcome. Anything else you’d like to see?')
   if (n <= 5 && has(t, /^ (hi|hey|hello|hiya|yo|good (morning|afternoon|evening)|howdy|hey there|hi there|hello there)\b/)) return reply(greeting(t, world.hour))
   if (n <= 5 && has(t, /^ (what is up|whats up|sup|how are you|how is it going)\b/)) return reply('All good — just showing people around Naveen’s world. Where would you like to start?')
+  if (has(t, /\bwhat (can|should|do) i do (here|now)\b|\bwhat is there to do\b|\bwhat can i do in (this|here)\b/)) {
+    return reply(placeActions(placeOf(world.location), world.openProject ? PROJ(world.openProject) : null))
+  }
   if (has(t, /\b(what can (you|i) (do|say|ask)|help me|^ help |how does this work|what should i (say|ask)|commands?|what do i say)\b/)) return reply(HELP, { actions: [{ type: 'help' }] })
 
   // who the guide is (honest: an AI guide, not Naveen)
@@ -415,6 +469,21 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
     return reply(portfolioAnswer(ptopic, world.voice, deep), { entity: { kind: 'portfolio' }, more: ptopic === 'architecture' ? null : portfolioAnswer('architecture', world.voice, true) })
   }
 
+  // "take me to NFC and explain the company" — walk there, present it on arrival
+  const tp = !proj ? topicPlace(t) ?? (place && place !== 'start' && place !== 'home' ? place : null) : null
+  const explainWords = has(t, /\b(explain|tell me (all )?about|describe|walk me through)\b/)
+  if (tp && explainWords && has(t, /\b(take|bring|walk|go|head|lead)\b/) && !has(t, /\bwalk me through\b/)) {
+    if (tp === 'projects') return reply('', { actions: [tourCmd('start', 'projects')] })
+    if (world.location === tp) return presentPlace(tp, world)
+    return reply(`Sure — let’s head to ${PLACE_NAMES[tp]}, and I’ll tell you all about it when we get there.`, { actions: [{ type: 'navigate', destination: tp, explain: true }], place: tp })
+  }
+  // "what does Naveen do there?" at NFC Solutions
+  if (has(t, /\bwhat (does|did) (he|naveen) do (there|here|at nfc|at the company)\b|\b(his|naveen s) (role|job) (there|here|at nfc)\b/) && (world.location === 'office' || (ctx.place === 'office' && !world.openProject))) {
+    return reply(`He’s a ${EXPERIENCE.title} at ${EXPERIENCE.company}, since May 2022: ${lowerFirst(dot(EXPERIENCE.summary))}. The work covers ${joinList(EXPERIENCE.focus.slice(0, 6).map(lowerFirst))}.`, { place: 'office', more: placePresentation('office') })
+  }
+  // "tell me about the company", "explain his education", "explain the company"
+  if (tp && explainWords && !refers) return presentPlace(tp, world)
+
   // "explain", "explain it", "explain everything about X", "explain the previous one"
   // ("open the full case study in Figma" is a link request, handled below)
   const openingLink = has(t, /\bcase ?stud(y|ies)\b/) && has(t, /\b(open|figma|link|new tab|presentation)\b/)
@@ -439,7 +508,7 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
       }
       return reply(projectExplain(p), { project: p.id, more: projectEverything(p) })
     }
-    if (e?.kind === 'place') return reply(placeExplain(e.id), { place: e.id })
+    if (e?.kind === 'place') return presentPlace(e.id, world)
     if (e?.kind === 'portfolio') return reply(portfolioAnswer('architecture', world.voice, true), { entity: e })
     if (e?.kind === 'naveen') return reply(`${PROFILE.summary} ${thirdPerson(PROFILE.craft).replace('Naveen work', 'Naveen works')}`, { entity: e })
     if (e?.kind === 'person') return reply('I don’t have more information about that person in the portfolio.')
@@ -476,7 +545,7 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
   }
 
   // "tell me more"
-  if (has(t, /\b(tell me more|more detail|more details|go deeper|elaborate|explain more|in detail|keep going|go on|more about (it|that))\b/) && !proj) {
+  if (has(t, /\b(tell me more|show me more|more detail|more details|go deeper|elaborate|explain more|in detail|keep going|go on|more about (it|that)|explore (it|this|this project|that) further|explore further)\b/) && !proj) {
     if (ctx.more) return reply(ctx.more, { more: null })
     if (ctxProject) return reply(projectMore(PROJ(ctxProject)), { project: ctxProject })
     return reply('More about what — Naveen, his experience, or one of the projects?')
@@ -515,12 +584,14 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
       if (ctx.place) dest = ctx.place
     }
     if (dest) {
-      const here = world.location === dest || (dest === 'projects' && world.location.startsWith('project:'))
-      if (here) return reply(dest === 'projects' ? 'We’re already here. Which project would you like to see?' : `We’re already at ${PLACE_NAMES[dest]}.`, { place: dest })
-      const line = dest === 'projects' ? 'Sure. Follow me — the Project Studio is inside the NFC Solutions office.' : `Sure, let’s go to ${PLACE_NAMES[dest]}.`
+      // "take me to the projects" / "show me your projects": the studio, then each project in turn
+      if (dest === 'projects') return reply('', { actions: [tourCmd('start', 'projects')] })
+      if (world.location === dest) return presentPlace(dest, world)
+      const turning = world.navigating && !!world.destination && world.destination !== dest
+      const line = turning ? `Sure — change of plan. Let’s go to ${PLACE_NAMES[dest]}.` : `Sure, let’s go to ${PLACE_NAMES[dest]}.`
       return reply(line, { actions: [go(dest)], place: dest })
     }
-    if (has(t, /\b(take|bring|walk|lead|go|head|navigate)\b/)) return reply('Where would you like to go — Home, Education, NFC Solutions, the Project Studio, the Gallery or the Contact Café?')
+    if (has(t, /\b(take|bring|walk|lead|go|head|navigate)\b/)) return reply(nextPrompt(placeOf(world.location), 'Where to?'), { choosing: true })
   }
 
   // capability questions about Naveen ("can you design mobile apps?") — unless they point at a project
@@ -543,10 +614,10 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
 
   // about Naveen
   if (has(t, /\b(projects?|case stud(y|ies)|portfolio)\b/) && has(t, /\b(what|which|list|have (you|he)|worked on|designed)\b/) || has(t, /\bwhat (have|has) (you|he|naveen) (worked on|designed|built|made)\b|\bwhat (kind|kinds|type|types|sort) of (products|work|projects|apps)\b/)) {
-    return reply(`Naveen’s case studies here are ${joinList(PROJECTS_K.map((p) => p.title))} — enterprise SaaS, school carpooling, mental health, a trademark association website and a staffing app. Want me to take you to them?`, { offer: go('projects') })
+    return reply(`Naveen’s case studies here are ${joinList(PROJECTS_K.map((p) => p.title))} — enterprise SaaS, school carpooling, mental health, a trademark association website and a staffing app. Want me to walk you through them one by one?`, { offer: { type: 'tour', op: 'start', kind: 'projects' }, list: PROJECTS_K.map((p) => p.id) })
   }
   if (has(t, /\b(where is|where are|how do i get to|where can i find)\b/) && place) {
-    return reply(`${PLACE_ABOUT[place].split('. ')[0]}. Want me to take you there?`, { offer: go(place), place })
+    return reply(`${PLACE_ABOUT[place].split('. ')[0]}. Want me to take you there?`, { offer: place === 'projects' ? { type: 'tour', op: 'start', kind: 'projects' } : go(place), place })
   }
   if (has(t, /\b(how many years|years of experience|how long|experience|worked (at|for)|career|employer|companies|company|job|where (do|does) (you|he) work|current (role|job))\b/)) {
     return reply(`Naveen has ${PROFILE.experience} of experience. He’s been a ${EXPERIENCE.title} at ${EXPERIENCE.company} in ${EXPERIENCE.location} since May 2022, owning UX and UI for enterprise, healthcare and service-industry products.`, {
@@ -554,8 +625,8 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
     })
   }
   if (has(t, /\b(design process|(your|his) process|how (do|does) (you|he|naveen) (design|work|approach)|workflow|methodology|how (you|he) work)\b/) && !has(t, /\bai\b/)) {
-    return reply(`${thirdPerson(PROFILE.craft).replace('Naveen work', 'Naveen works')} AI helps him explore faster, but he makes the design decisions.`, {
-      more: `His AI-assisted workflow: ${AI_WORKFLOW.map((s) => `${s.title} — ${s.text.replace(/\.$/, '').toLowerCase()}`).join('; ')}.`,
+    return reply(`${thirdPerson(PROFILE.craft).replace('Naveen work', 'Naveen works')} AI helps him explore faster, but he makes the design decisions. The Design Journey in the park is all about this — want me to take you there?`, {
+      more: `His AI-assisted workflow: ${AI_WORKFLOW.map((s) => `${s.title} — ${s.text.replace(/\.$/, '').toLowerCase()}`).join('; ')}.`, offer: go('gallery'),
     })
   }
   if (has(t, /\b(ai|artificial intelligence|chatgpt|claude|machine learning|llm)\b/)) {
@@ -590,7 +661,9 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
   if (has(t, /\b(colleagues?|coworkers?|team ?mates?|who (is|are) (that|these|those|they)|people in the office)\b/)) {
     return reply(`The people in the office are his colleagues at NFC Solutions — ${joinList(COLLEAGUES.map((c) => c.name))}. I don’t have their roles.`)
   }
-  if (has(t, /\b(what (do|does) (you|he|naveen) do|who is (naveen|he)|tell me about (yourself|naveen|him)|about (yourself|naveen|him)|introduce|(your|his) background|what is (your|his) (work|job|role)|who (made|built|designed) this)\b/)) return aboutNaveen()
+  // "tell me about Naveen" — the full picture, then where next; "what does he do?" stays short
+  if (has(t, /\b(tell me (all |everything )?about (yourself|naveen|him)|who is (naveen|he)|introduce (yourself|naveen|him)|(your|his|naveen s) background|more about (naveen|him))\b/)) return aboutNaveenFull()
+  if (has(t, /\b(what (do|does) (you|he|naveen) do|about (yourself|naveen|him)|what is (your|his) (work|job|role)|who (made|built|designed) this)\b/)) return aboutNaveen()
 
   if (has(t, METRICS)) return reply('The portfolio doesn’t include metrics or business results, and I don’t want to guess. I can walk you through the design work instead.')
 

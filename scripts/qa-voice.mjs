@@ -34,6 +34,7 @@ const type = async (text) => {
 async function follow(untilFn, maxMs) {
   let prev = await pos()
   let maxStep = 0
+  let prevT = Date.now()
   const t0 = Date.now()
   let moved = 0
   while (Date.now() - t0 < maxMs) {
@@ -41,7 +42,9 @@ async function follow(untilFn, maxMs) {
     const q = await pos()
     const step = Math.hypot(q.x - prev.x, q.z - prev.z)
     const roomChange = (q.x > 300) !== (prev.x > 300)
-    if (!roomChange) maxStep = Math.max(maxStep, step)
+    const now = Date.now()
+    if (!roomChange) maxStep = Math.max(maxStep, step / Math.max(0.05, (now - prevT) / 1000))
+    prevT = now
     moved += roomChange ? 0 : step
     prev = q
     if (await untilFn(q)) break
@@ -89,12 +92,14 @@ await type('Take me to your projects')
 await sleep(800)
 expect(/Taking you to Project Studio/.test(await status()), `status while walking: "${await status()}"`)
 const walk = await follow(async (q) => q.x > 320 + 14.5, 120000)
-expect(walk.maxStep < 1.6, `street walk is continuous (largest step ${walk.maxStep.toFixed(2)} m per 150 ms, ${walk.moved.toFixed(0)} m walked in ${(walk.ms / 1000).toFixed(0)} s)`)
+expect(walk.maxStep < 15, `street walk is continuous (fastest ${walk.maxStep.toFixed(1)} m/s — a jog is ~5.6, ${walk.moved.toFixed(0)} m walked in ${(walk.ms / 1000).toFixed(0)} s)`)
 expect(walk.moved > 20, 'the character actually walked the avenue')
-await until(async () => /These are the projects/.test(await lastGuide()), 8000)
+const guideSaid = (re) => p.evaluate((src) => [...document.querySelectorAll('.ui-voice__log li.is-guide')].some((l) => new RegExp(src).test(l.textContent)), re.source)
+await until(() => guideSaid(/this is the Project Studio. I’ll walk you through the projects one by one/), 20000)
 const inStudio = await pos()
 expect(inStudio.x - 320 > 14, `arrived in the Project Studio (room x ${(inStudio.x - 320).toFixed(1)})`)
-expect(/These are the projects/.test(await lastGuide()), `arrival line: "${await lastGuide()}"`)
+expect(await guideSaid(/this is the Project Studio. I’ll walk you through the projects one by one/), 'arrival: the studio introduces itself and presents the projects one by one')
+expect(await until(() => guideSaid(/This is TASK./), 30000), 'then the first project, TASK, is presented')
 await shot('03-studio')
 
 // a project: walk to its screen, open it, then its Challenges tab and prototype
@@ -182,8 +187,7 @@ await m.waitForSelector('.ui-intro.is-hero', { timeout: 20000 })
 await sleep(1000)
 await m.getByRole('button', { name: 'Start exploring' }).click()
 await sleep(4000)
-const dockHidden = !(await m.getByRole('button', { name: 'Talk to the AI guide' }).isVisible().catch(() => false))
-expect(dockHidden, 'phone: the dock waits while the first-run controls card is open')
+expect(await m.locator('.ui-voice__fab').waitFor({ state: 'visible', timeout: 15000 }).then(() => true).catch(() => false), 'phone: the AI orb is ready bottom-right (first-run hints are a small card, not a wall)')
 await m.getByRole('button', { name: 'Close tips' }).click().catch(() => {})
 await sleep(800)
 await m.getByRole('button', { name: 'Talk to the AI guide' }).click()

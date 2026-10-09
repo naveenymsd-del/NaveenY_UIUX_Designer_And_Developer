@@ -27,6 +27,7 @@ import { NameTag } from '@/components/ui/NameTag'
 import { VoiceDock } from '@/components/ui/VoiceDock'
 import { initGuide } from '@/ai/guide'
 import { initJourney } from '@/core/journey'
+import { initModalHistory } from '@/core/modalHistory'
 import { useDayNight } from '@/core/dayNight'
 import { useKeyboardControls } from '@/hooks/useKeyboardControls'
 import { useResponsive } from '@/hooks/useResponsive'
@@ -49,6 +50,7 @@ export function App() {
   useEffect(() => initRouter(), [])
   useEffect(() => initJourney(), [])
   useEffect(() => initGuide(), [])
+  useEffect(() => initModalHistory(), [])
 
   useEffect(() => {
     const setLoading = useGameStore.getState().setLoading

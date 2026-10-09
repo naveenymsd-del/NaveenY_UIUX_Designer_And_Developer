@@ -21,6 +21,8 @@ interface Sim {
   braking: number
   wheelSpin: number
   handle: VehicleHandle | null
+  /** QA only (?debug): parked here, ignoring its lane */
+  parked?: { x: number; z: number; yaw: number }
 }
 
 const _q = new Quaternion()
@@ -53,6 +55,16 @@ export function TrafficManager() {
     [paths],
   )
   const handles = useRef(new Map<string, VehicleHandle>())
+  // QA hook (?debug only): park a vehicle across the route to test guided walks around traffic
+  if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug')) {
+    const w = window as unknown as { __parkVehicle?: unknown; __unparkVehicles?: unknown }
+    w.__parkVehicle = (x: number, z: number, yaw = 0, i = 0) => {
+      const v = sims[i % sims.length]
+      v.parked = { x, z, yaw }
+      return v.def.kind
+    }
+    w.__unparkVehicles = () => sims.forEach((v) => delete v.parked)
+  }
   const onReady = useCallback((id: string, h: VehicleHandle) => {
     handles.current.set(id, h)
     const sim = sims.find((s) => s.def.id === id)
@@ -64,6 +76,23 @@ export function TrafficManager() {
     const pp = playerRuntime.position
     let nearest = Infinity
     for (const v of sims) {
+      if (v.parked) {
+        v.pos.set(v.parked.x, 0, v.parked.z)
+        v.yaw = v.parked.yaw
+        v.hx = Math.sin(v.yaw)
+        v.hz = Math.cos(v.yaw)
+        v.speed = 0
+        vehiclePositions.set(v.def.id, v.pos)
+        const ph = v.handle
+        if (ph?.group) {
+          ph.group.position.copy(v.pos)
+          ph.group.rotation.y = v.yaw
+          _q.setFromAxisAngle(_up, v.yaw)
+          ph.body?.setNextKinematicTranslation({ x: v.pos.x, y: 0, z: v.pos.z })
+          ph.body?.setNextKinematicRotation(_q)
+        }
+        continue
+      }
       const size = VEHICLE_SIZE[v.def.kind]
       const front = size.half[2]
       let target = v.def.speed

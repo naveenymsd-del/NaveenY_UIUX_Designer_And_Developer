@@ -35,7 +35,8 @@ export function Vehicle({ def, onReady }: { def: VehicleDef; onReady: (id: strin
   const procedural = <ProceduralVehicle def={def} register={(p) => (handle.current.parts = p)} />
   return (
     <>
-      <RigidBody ref={body} type="kinematicPosition" colliders={false}>
+      {/* tagged so a guided walk can treat traffic as soft (it steers around it, but is never trapped by it) */}
+      <RigidBody ref={body} type="kinematicPosition" colliders={false} userData={{ vehicle: true }}>
         <CuboidCollider args={size.half} position={[0, size.half[1] + 0.05, 0]} />
       </RigidBody>
       <group ref={group}>

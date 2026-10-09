@@ -2,8 +2,11 @@ import { COLLEAGUES } from '@/data/colleagues'
 import { STORY_STOPS } from '@/data/world'
 import { cancelWalk } from './autoWalk'
 import { type ActionIO, runAction } from './actions'
+import { projectEverything } from './brain/local'
 import { conversation, setProject } from './conversation'
-import { CERTIFICATION, CONTACT, EDUCATION, EXPERIENCE, INTERESTS, PROJECTS_K, joinList, type DestinationId } from './knowledge'
+import { PROJECT_TOUR_PROMPT, placePresentation, projectPresentation } from './presentations'
+import { nextWalkQuestion } from './smalltalk'
+import { CERTIFICATION, EDUCATION, EXPERIENCE, PROJECTS_K, joinList, type DestinationId } from './knowledge'
 import type { GuideAction, TourKind, TourStatus } from './types'
 
 /**
@@ -23,19 +26,22 @@ interface Stop {
   midway?: string
   /** said on arrival — short */
   arrive: string
+  /** go straight on to the next stop after this one (the Project Studio hands over to its first project) */
+  autoNext?: boolean
+  /** ask a light question on the way instead of narrating */
+  question?: boolean
 }
 
 const STOP_ID: Record<string, DestinationId> = { home: 'home', education: 'education', nfcSolutions: 'office', projects: 'projects', gallery: 'gallery', contactCafe: 'contact' }
 const P = (id: string) => PROJECTS_K.find((p) => p.id === id)!
-const firstSentence = (s: string) => `${s.split(/(?<=[.!?])\s/)[0].replace(/[.!?]$/, '')}.`
 
 function projectStop(id: string, i: number): Stop {
   const p = P(id)
   return {
     id: `project:${id}`,
     action: { type: 'navigateProject', projectId: id },
-    depart: i === 0 ? `Let’s start with ${p.title}.` : `Next up: ${p.title}.`,
-    arrive: `This is ${p.title}. ${firstSentence(p.overview[0])} The main challenge — ${p.challenge.headline} Naveen was the ${p.role}.`,
+    depart: i === 0 ? '' : `Next up: ${p.title}.`,
+    arrive: projectPresentation(p),
   }
 }
 
@@ -59,17 +65,19 @@ function placeStop(dest: DestinationId): Stop {
       arrive: `This is NFC Solutions, where Naveen has been a ${EXPERIENCE.title} since May 2022. The people working here are his colleagues — like ${names}. I don’t have their roles, so I won’t guess.`,
     },
     projects: {
-      depart: 'Now I’ll show you the product work.',
-      arrive: `This is the Project Studio — the main products Naveen has worked on: ${joinList(PROJECTS_K.map((p) => p.title))}.`,
+      depart: 'Alright — we’re heading to the Project Studio.',
+      arrive: `Here we are — this is the Project Studio. I’ll walk you through the projects one by one: ${joinList(PROJECTS_K.map((p) => p.title))}. We’ll start with ${PROJECTS_K[0].title}. You can interrupt me any time and ask questions.`,
+      autoNext: true,
+      question: true,
     },
     gallery: {
-      depart: 'Let’s step outside to the Gallery in the park.',
-      midway: 'The Gallery has real screens from his case studies, set out on easels.',
-      arrive: `This is the Gallery — screens from his case studies on the easels, the AI-assisted design corner in the gazebo, and his interests: ${joinList(INTERESTS.map((x) => x.toLowerCase()))}.`,
+      depart: 'Let’s step outside to the Design Journey in the park.',
+      midway: 'This part of the world is about how Naveen approaches design.',
+      arrive: placePresentation('gallery'),
     },
     contact: {
       depart: 'Last stop — the Contact Café.',
-      arrive: `This is the Contact Café. You can email Naveen at ${CONTACT.email} or call ${CONTACT.phone}.`,
+      arrive: placePresentation('contact'),
     },
   }
   return { id: dest, action: { type: 'navigate', destination: dest }, ...S[dest] }
@@ -77,7 +85,8 @@ function placeStop(dest: DestinationId): Stop {
 
 function buildStops(kind: TourKind): Stop[] {
   const projects = PROJECTS_K.map((p, i) => projectStop(p.id, i))
-  if (kind === 'projects') return projects
+  // the project tour starts by walking to the studio, which introduces itself and hands over to the first project
+  if (kind === 'projects') return [placeStop('projects'), ...projects]
   const out: Stop[] = []
   for (const st of STORY_STOPS) {
     const dest = STOP_ID[st.id]
@@ -109,19 +118,22 @@ function prompt(stop: Stop, last: boolean) {
       ? ' That’s all of the projects. Want to see one again, or head to the Contact Café?'
       : ' That’s the tour — thanks for coming along. Ask me anything else, or explore on your own.'
   }
-  return stop.id.startsWith('project:') ? ' Want more on this one, or shall we move on?' : ' Ready for the next stop?'
+  return stop.id.startsWith('project:') ? ` ${PROJECT_TOUR_PROMPT}` : ' Ready for the next stop?'
 }
 
-async function go(i: number, io: ActionIO) {
+async function go(i: number, io: ActionIO, chained = false) {
   if (i >= tour.stops.length) return finish(io)
   const token = ++tour.token
   tour.index = i
   tour.status = 'active'
   tour.waiting = false
   const stop = tour.stops[i]
-  io.respond(stop.depart)
+  // straight on from the studio's introduction: no "next up" line over it
+  if (stop.depart && !chained) io.respond(stop.depart)
+  const q = stop.question && !stop.midway ? nextWalkQuestion() : null
   const r = await runAction(stop.action, io, {
-    midway: stop.midway ?? null,
+    midway: q ? q.ask : stop.midway ?? null,
+    questionId: q?.id,
     arrive: null,
     manual: 'Got it — you’re driving. Say “continue the tour” whenever you like.',
   })
@@ -129,12 +141,18 @@ async function go(i: number, io: ActionIO) {
   if (r === 'arrived' || r === 'already') {
     const last = i === tour.stops.length - 1
     // what we're standing at is now what "this", "it" and "explain" mean
-    if (stop.action.type === 'navigateProject') setProject(stop.action.projectId)
-    else if (stop.action.type === 'navigate') {
+    if (stop.action.type === 'navigateProject') {
+      setProject(stop.action.projectId)
+      conversation.more = projectEverything(PROJECTS_K.find((p) => p.id === (stop.action as { projectId: string }).projectId)!)
+    } else if (stop.action.type === 'navigate') {
       conversation.place = stop.action.destination
       conversation.entity = { kind: 'place', id: stop.action.destination }
     }
-    io.respond(stop.arrive + prompt(stop, last))
+    const say = stop.arrive + (stop.autoNext ? '' : prompt(stop, last))
+    if (io.narrate) await io.narrate(say)
+    else io.respond(say)
+    if (token !== tour.token) return
+    if (stop.autoNext && !last) return go(i + 1, io, true)
     if (last) {
       tour.status = 'completed'
       tour.waiting = false
