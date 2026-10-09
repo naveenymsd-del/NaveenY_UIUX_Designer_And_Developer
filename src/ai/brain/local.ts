@@ -655,9 +655,12 @@ export function localReply(input: string, world: WorldContext, ctx: Conversation
   if (has(t, /\b(resume|cv|curriculum vitae)\b/) && !has(t, /\bresume (the )?(tour|walk|walking|listening)\b/)) {
     return reply('Here’s Naveen’s résumé — opening it in a new tab. You can also view or download it any time from the Contact Café or the menu’s Contact section.', { actions: [{ type: 'resume' }] })
   }
-  if (has(t, /\b(contact|reach|email|e mail|phone|number|call|hire|get in touch|linkedin|connect)\b/)) {
-    const missing = has(t, /\blinkedin\b/) ? ' A LinkedIn link isn’t in the portfolio yet, so email or phone is best.' : ''
-    return reply(`You can email Naveen at ${CONTACT.email} or call ${CONTACT.phone}.${missing} The Contact Café has both — want me to take you there?`, { offer: go('contact') })
+  // his LinkedIn profile: open it
+  if (has(t, /\b(linkedin|linked in)\b/)) {
+    return reply('Here’s Naveen’s LinkedIn profile — opening it in a new tab. It’s also on the Contact Café card and in the menu’s Contact section.', { actions: [{ type: 'linkedin' }] })
+  }
+  if (has(t, /\b(contact|reach|email|e mail|phone|number|call|hire|get in touch|connect)\b/)) {
+    return reply(`You can email Naveen at ${CONTACT.email} or call ${CONTACT.phone} — his LinkedIn and résumé are there too. The Contact Café has them all — want me to take you there?`, { offer: go('contact') })
   }
   if (has(t, /\b(hobb(y|ies)|interests?|free time|outside (of )?work|sketch\w*|cricket|danc\w*|pencil)\b/)) {
     return reply(`Outside product design, Naveen enjoys ${joinList(INTERESTS.map((i) => i.toLowerCase()))}.`, { offer: go('gallery') })

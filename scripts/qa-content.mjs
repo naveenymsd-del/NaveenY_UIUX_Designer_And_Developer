@@ -184,7 +184,7 @@ const c = await p.evaluate(() => ({
 expect(c.h === 'Let’s talk.', `café heading "${c.h}"`)
 expect(c.who === 'Naveen Y · UI/UX Designer · Product Designer · Hyderabad, India', `café identity "${c.who}"`)
 const RESUME = '/resume/Naveen_Yarramallugalla_UIUX_Designer_Resume.pdf'
-expect(JSON.stringify(c.links) === JSON.stringify([['Email Me', 'mailto:naveenyarramallugalla@gmail.com'], ['Call', 'tel:+917036282178'], ['View Resume ↗', RESUME], ['Download Resume ↓', RESUME]]), `café buttons ${JSON.stringify(c.links)}`)
+expect(JSON.stringify(c.links) === JSON.stringify([['Email Me', 'mailto:naveenyarramallugalla@gmail.com'], ['Call', 'tel:+917036282178'], ['LinkedIn ↗', 'https://www.linkedin.com/in/naveen-yarramallugalla-782361238'], ['View Resume ↗', RESUME], ['Download Resume ↓', RESUME]]), `café buttons ${JSON.stringify(c.links)}`)
 // the résumé: View opens the PDF in a new tab; Download saves the very same file under a clear name
 {
   const [tab] = await Promise.all([p.context().waitForEvent('page', { timeout: 10000 }).catch(() => null), p.locator('.ui-cafe .ui-contact a', { hasText: 'View Resume' }).click()])

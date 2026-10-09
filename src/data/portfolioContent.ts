@@ -46,15 +46,13 @@ export const PROFILE = {
 
 /**
  * Contact. Only real, working values belong here — an empty string hides the
- * button everywhere. The résumé's LinkedIn ("linkedin.com/in/myProfile") and
- * portfolio ("portfolio.link") are template text, so they stay empty until
- * the real URLs are provided. `resume` is Naveen's résumé PDF, served from
+ * button everywhere. LinkedIn is Naveen's profile (supplied by him). `resume` is Naveen's résumé PDF, served from
  * /public (View opens it in a new tab, Download saves it).
  */
 export const CONTACT = {
   email: 'naveenyarramallugalla@gmail.com',
   phone: '+91 70362 82178',
-  linkedin: '',
+  linkedin: 'https://www.linkedin.com/in/naveen-yarramallugalla-782361238',
   resume: '/resume/Naveen_Yarramallugalla_UIUX_Designer_Resume.pdf',
 }
 

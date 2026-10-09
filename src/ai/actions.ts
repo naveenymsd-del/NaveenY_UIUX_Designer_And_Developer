@@ -34,7 +34,7 @@ export function validateActions(raw: unknown): GuideAction[] {
     else if (x.type === 'navigateProject' && PROJECT_IDS.has(x.projectId as string)) out.push({ type: 'navigateProject', projectId: x.projectId as string })
     else if (x.type === 'openPrototype' && PROJECT_IDS.has(x.projectId as string)) out.push({ type: 'openPrototype', projectId: x.projectId as string, kind: x.kind === 'caseStudy' ? 'caseStudy' : 'prototype' })
     else if (x.type === 'showSection' && (x.section === 'overview' || x.section === 'challenges')) out.push({ type: 'showSection', section: x.section })
-    else if (x.type === 'stop' || x.type === 'goBack' || x.type === 'help' || x.type === 'resume') out.push({ type: x.type })
+    else if (x.type === 'stop' || x.type === 'goBack' || x.type === 'help' || x.type === 'resume' || x.type === 'linkedin') out.push({ type: x.type })
     else if (x.type === 'tour' && ['start', 'next', 'prev', 'stop', 'continue'].includes(x.op as string)) {
       out.push({ type: 'tour', op: x.op as 'start', kind: x.kind === 'projects' ? 'projects' : x.kind === 'full' ? 'full' : undefined })
     }
@@ -235,6 +235,13 @@ export async function runAction(a: GuideAction, io: ActionIO, lines: WalkLines =
       if (tab) tab.opener = null
       // a voice command isn't a tap: if the browser blocks the tab, offer a one-tap link
       else useVoiceStore.getState().set({ link: { label: 'Open Naveen’s résumé (PDF)', url } })
+      return 'done'
+    }
+    case 'linkedin': {
+      if (!CONTACT.linkedin.startsWith('https://www.linkedin.com/')) return 'done'
+      const tab = window.open(CONTACT.linkedin, '_blank')
+      if (tab) tab.opener = null
+      else useVoiceStore.getState().set({ link: { label: 'Open Naveen’s LinkedIn', url: CONTACT.linkedin } })
       return 'done'
     }
     case 'help':

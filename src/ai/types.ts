@@ -18,6 +18,8 @@ export type GuideAction =
   | { type: 'openPrototype'; projectId: string; kind: 'prototype' | 'caseStudy' }
   /** open Naveen's résumé (the PDF in the portfolio) */
   | { type: 'resume' }
+  /** open Naveen's LinkedIn profile */
+  | { type: 'linkedin' }
   | { type: 'stop' }
   | { type: 'goBack' }
   | { type: 'help' }
