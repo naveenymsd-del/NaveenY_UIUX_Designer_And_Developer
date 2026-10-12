@@ -1,5 +1,6 @@
 import { Vector3 } from 'three'
 import { soundManager } from './sound/SoundManager'
+import { useVoiceStore } from '@/ai/voiceStore'
 
 /**
  * Shared state for the AI companion. Gameplay/UI code talks to it through
@@ -37,6 +38,14 @@ export const companion = {
  * reactions such as opening a project); otherwise lines wait their turn.
  */
 export function say(text: string, opts: { ms?: number; emote?: Emote; point?: Vector3 | null; interrupt?: boolean } = {}) {
+  // while the guide's chat is on, the chat is the one place the guide speaks (it narrates arrivals and
+  // projects itself) — these short world lines would only repeat it in a second floating bubble
+  if (useVoiceStore.getState().mode !== 'off') {
+    if (opts.interrupt) clearCompanion()
+    if (opts.emote) emote(opts.emote, 2600)
+    if (opts.point) pointAt(opts.point)
+    return
+  }
   const line: Line = { text, ms: opts.ms ?? Math.min(7000, 2200 + text.replace(/<[^>]+>/g, '').length * 55), emote: opts.emote, point: opts.point }
   if (opts.interrupt) {
     companion.queue.length = 0

@@ -189,8 +189,19 @@ function DesktopDock({ modal }: { modal: boolean }) {
   useEffect(() => { if (typing) setTimeout(() => input.current?.focus({ preventScroll: true }), 40) }, [typing])
   // once a guided walk starts, hand the keyboard back to the world so WASD / arrows can take over
   useEffect(() => { if (v.state === 'navigating') input.current?.blur() }, [v.state])
-  // a content panel opened: close the consent card and the history (the bar stays, out of the panel's way)
-  useEffect(() => { if (modal) useVoiceStore.getState().set({ consentOpen: false, historyOpen: false }) }, [modal])
+  // a content panel opened: close the consent card and the history (the bar stays, out of the panel's way);
+  // when it closes, an open conversation comes back as it was
+  const restoreHistory = useRef(false)
+  useEffect(() => {
+    const s = useVoiceStore.getState()
+    if (modal) {
+      restoreHistory.current = s.historyOpen
+      s.set({ consentOpen: false, historyOpen: false })
+    } else if (restoreHistory.current) {
+      restoreHistory.current = false
+      s.set({ historyOpen: true })
+    }
+  }, [modal])
 
   const on = v.mode !== 'off'
   const label = v.status ?? LABEL[v.state] ?? 'Talk to me'
