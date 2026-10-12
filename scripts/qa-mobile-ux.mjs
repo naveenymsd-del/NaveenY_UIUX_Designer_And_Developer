@@ -102,15 +102,8 @@ async function walkUntil(fn, ms) {
 
 // ── 1–3. splash → hero → world ────────────────────────────────────────────
 await p.goto(`${base}/street?debug&mode=day`)
-const splash = await until(() => p.evaluate(() => !!document.querySelector('.ui-splash .ui-splash__brand')), 15000)
-const greetings = new Set()
-for (let t = 0; t < 5000; t += 300) {
-  const g = await p.evaluate(() => document.querySelector('.ui-splash__hello')?.textContent?.trim())
-  if (g) greetings.add(g)
-  await sleep(300)
-}
-expect(splash && !(await p.evaluate(() => !!document.querySelector('.ui-loading__meter'))), 'splash: cinematic opening (companion, name), no progress bar')
-expect(['Welcome', 'స్వాగతం', 'स्वागत है'].filter((g) => greetings.has(g)).length >= 2, `splash: multilingual welcome (${[...greetings].join(' · ')})`)
+const splash = await until(() => p.evaluate(() => !!document.querySelector('.ui-rain .ui-rain__glass')), 15000)
+expect(splash && !(await p.evaluate(() => !!document.querySelector('.ui-loading__meter, .ui-splash__brand, .ui-splash__hello'))), 'splash: rain-covered glass, no welcome text or progress bar')
 await shot('00-splash')
 await p.waitForSelector('.ui-intro__skip', { timeout: 90000 })
 await p.getByRole('button', { name: 'Skip intro' }).click()

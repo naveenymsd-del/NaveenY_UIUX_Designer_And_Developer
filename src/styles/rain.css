@@ -1,0 +1,30 @@
+/* ── opening: the world through a rain-covered window (LoadingScreen) ──── */
+.ui-loading.ui-rain {
+  display: block;
+  background: none;
+  cursor: crosshair;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+  transition: opacity 1.2s var(--ease-out), visibility 0s linear 1.2s;
+}
+.ui-rain > * { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* stands in for the scene until the world is built: a cool, out-of-focus street at dusk */
+.ui-rain__cover {
+  background:
+    radial-gradient(38% 30% at 22% 34%, rgba(214, 226, 236, 0.55), transparent 70%),
+    radial-gradient(30% 26% at 70% 26%, rgba(196, 212, 226, 0.45), transparent 72%),
+    radial-gradient(26% 40% at 12% 82%, rgba(18, 26, 36, 0.75), transparent 70%),
+    radial-gradient(34% 44% at 62% 86%, rgba(22, 32, 44, 0.7), transparent 72%),
+    radial-gradient(18% 30% at 88% 64%, rgba(30, 42, 56, 0.6), transparent 70%),
+    linear-gradient(180deg, #8ea3b5 0%, #6d8396 42%, #44586b 100%);
+  transition: opacity 1.6s var(--ease-out);
+}
+.ui-rain.is-ready .ui-rain__cover { opacity: 0; }
+
+@media (hover: none) {
+  .ui-loading.ui-rain { cursor: default; }
+}

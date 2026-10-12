@@ -1,75 +1,203 @@
 import { useProgress } from '@react-three/drei'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useGameStore } from '@/stores/gameStore'
-import { CompanionGlyph } from './CompanionGlyph'
 
-/** long enough for the opening to play: the companion, the name, one round of greetings */
-const MIN_TIME = 4600
-/** welcome — in English, Telugu (Naveen's home language) and Hindi */
-const GREETINGS: { text: string; lang: string }[] = [
-  { text: 'Welcome', lang: 'en' },
-  { text: 'స్వాగతం', lang: 'te' },
-  { text: 'स्वागत है', lang: 'hi' },
-]
-const RING = 2 * Math.PI * 54
+/** a hands-off visitor sees the glass clear in about this long */
+const AUTO_MS = 7000
+/** until the world is ready the glass only clears this far (no blank screen behind it) */
+const PRE_READY_CAP = 0.42
+/** with the glass this clear (and the world ready) the opening cinematic takes over */
+const HANDOFF_AT = 0.86
 
 /**
- * The opening scene. Darkness, a few drifting motes of light, then the
- * orange companion wakes and looks around; the name arrives, the welcome
- * passes through three languages, and the city on the horizon lights up
- * window by window as the world is built — that, and the thin ring around the
- * companion, are the progress. No bar in the middle of the screen.
- * Progress is weighted by real milestones (fonts, asset probe, city build,
- * physics, shader compile, GLB downloads) and eased so it never jumps.
+ * The opening: the world seen through a rain-covered window. Droplets and
+ * condensation sit on a frosted pane over the (blurred) live 3D canvas; the
+ * pointer — a mouse moving, or a finger swiping — wipes it clear, and the pane
+ * also clears by itself in ~7 s. One small mask canvas carries both: wipes are
+ * painted into it, the automatic evaporation is composed on top, and it is
+ * applied as a CSS mask to the blur and droplet layers.
+ * Readiness is the same as before (fonts, assets, city, physics, shaders,
+ * downloads); until then a soft blue-grey cover stands in for the scene.
  */
 export function LoadingScreen() {
   const loading = useGameStore((s) => s.loading)
   const phase = useGameStore((s) => s.phase)
   const setPhase = useGameStore((s) => s.setPhase)
-  const { progress: assetProgress, active } = useProgress()
-  const [shown, setShown] = useState(0)
+  const { active } = useProgress()
   const [gone, setGone] = useState(false)
-  const [ready, setReady] = useState(false)
-  const [hello, setHello] = useState(0)
-  const start = useRef(performance.now())
-
-  let target = 4
-  if (loading.fontsReady) target += 10
-  if (loading.assetsProbed) target += 12
-  if (loading.worldReady) target += 32
-  if (loading.physicsReady) target += 16
-  if (loading.compiled) target += 26
-  if (active) target = Math.min(target, 40 + assetProgress * 0.5)
+  const root = useRef<HTMLDivElement>(null)
+  const view = useRef<HTMLCanvasElement>(null)
   const done = loading.fontsReady && loading.assetsProbed && loading.worldReady && loading.physicsReady && loading.compiled && !active
+  const readyRef = useRef(done)
+  readyRef.current = done
+  const [ready, setReady] = useState(false)
+  useEffect(() => { if (done) setReady(true) }, [done])
 
   useEffect(() => {
+    const el = root.current, out = view.current
+    if (!el || !out) return
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+    const octx = out.getContext('2d')!
+    // static pane (fog + droplets), painted once per size
+    const glass = document.createElement('canvas'), gctx = glass.getContext('2d')!
+    // the live world, shrunk (that's the blur) — two steps so the upscale stays soft
+    const tiny = document.createElement('canvas'), tctx = tiny.getContext('2d')!
+    const soft = document.createElement('canvas'), sctx2 = soft.getContext('2d')!
+    const manual = document.createElement('canvas'), mctx = manual.getContext('2d')!
+    const mask = document.createElement('canvas'), kctx = mask.getContext('2d')!
+    let W = 0, H = 0, dpr = 1, mw = 160, mh = 90
+    let sliders: Slider[] = []
+    let laidOut = false
+    let blobs: Blob[] = []
+
+    const layout = () => {
+      W = innerWidth
+      H = innerHeight
+      dpr = Math.min(devicePixelRatio || 1, 1.5)
+      for (const c of [out, glass]) {
+        c.width = Math.round(W * dpr)
+        c.height = Math.round(H * dpr)
+      }
+      tiny.width = Math.max(8, Math.round(W / 24))
+      tiny.height = Math.max(8, Math.round(H / 24))
+      soft.width = Math.max(16, Math.round(W / 6))
+      soft.height = Math.max(16, Math.round(H / 6))
+      // keep what was wiped when the window resizes or the phone rotates
+      const old = laidOut ? manual : null
+      const prev = old ? Object.assign(document.createElement('canvas'), { width: old.width, height: old.height }) : null
+      if (prev && old) prev.getContext('2d')!.drawImage(old, 0, 0)
+      mw = 160
+      mh = Math.max(60, Math.round((160 * H) / Math.max(1, W)))
+      manual.width = mask.width = mw
+      manual.height = mask.height = mh
+      mctx.fillStyle = '#fff'
+      mctx.fillRect(0, 0, mw, mh)
+      if (prev) {
+        mctx.globalCompositeOperation = 'copy'
+        mctx.drawImage(prev, 0, 0, mw, mh)
+        mctx.globalCompositeOperation = 'source-over'
+      }
+      laidOut = true
+      paintGlass(gctx, W * dpr, H * dpr, dpr)
+      sliders = reduced ? [] : makeSliders(W * dpr, H * dpr, dpr)
+      blobs = makeBlobs()
+    }
+
+    /** blur the live 3D canvas behind the pane; false if it can't be read yet */
+    const world = document.querySelector<HTMLCanvasElement>('.game-canvas canvas')
+    let worldOk = false
+    const blurWorld = () => {
+      if (!world || !world.width) return false
+      try {
+        tctx.drawImage(world, 0, 0, tiny.width, tiny.height)
+        if (!worldOk) {
+          // a blank (unreadable) frame comes back fully black — don't show that
+          const px = tctx.getImageData(tiny.width >> 1, tiny.height >> 2, 1, 1).data
+          if (px[0] + px[1] + px[2] < 12) return false
+          worldOk = true
+        }
+        sctx2.imageSmoothingQuality = 'high'
+        sctx2.drawImage(tiny, 0, 0, soft.width, soft.height)
+        return true
+      } catch {
+        return false
+      }
+    }
+    // ── wiping ───────────────────────────────────────────────────────────
+    let boost = 0
+    let last: { x: number; y: number } | null = null
+    const stamp = (x: number, y: number) => {
+      const r = Math.min(mw, mh) * 0.1
+      const g = mctx.createRadialGradient(x, y, 0, x, y, r)
+      g.addColorStop(0, 'rgba(0,0,0,0.85)')
+      g.addColorStop(0.55, 'rgba(0,0,0,0.45)')
+      g.addColorStop(1, 'rgba(0,0,0,0)')
+      mctx.globalCompositeOperation = 'destination-out'
+      mctx.fillStyle = g
+      mctx.fillRect(x - r, y - r, r * 2, r * 2)
+      mctx.globalCompositeOperation = 'source-over'
+    }
+    const wipe = (e: PointerEvent) => {
+      const x = (e.clientX / W) * mw, y = (e.clientY / H) * mh
+      const step = Math.min(mw, mh) * 0.035
+      if (last) {
+        const d = Math.hypot(x - last.x, y - last.y)
+        const n = Math.min(40, Math.ceil(d / step))
+        for (let i = 1; i <= n; i++) stamp(last.x + ((x - last.x) * i) / n, last.y + ((y - last.y) * i) / n)
+        boost = Math.min(3, boost + d / mw * 1.6)
+      } else stamp(x, y)
+      last = { x, y }
+    }
+    const lift = () => { last = null }
+    const key = () => { boost = 3 }
+    el.addEventListener('pointermove', wipe)
+    el.addEventListener('pointerdown', wipe)
+    el.addEventListener('pointerup', lift)
+    el.addEventListener('pointercancel', lift)
+    el.addEventListener('pointerleave', lift)
+    addEventListener('keydown', key)
+
+    // ── resize / rotate ──────────────────────────────────────────────────
+    let rt = 0
+    const onResize = () => {
+      clearTimeout(rt)
+      rt = window.setTimeout(layout, 120)
+    }
+    addEventListener('resize', onResize)
+    addEventListener('orientationchange', onResize)
+    layout()
+
+    // ── the clock: evaporation + the hand-off ────────────────────────────
+    let p = 0
+    let prevT = performance.now()
+    let handed = false
     let raf = 0
-    const tick = () => {
-      setShown((v) => Math.min(target, v + (target - v) * 0.06 + (v < target ? 0.12 : 0)))
-      raf = requestAnimationFrame(tick)
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - prevT) / 1000)
+      prevT = now
+      boost *= Math.pow(0.25, dt)
+      const cap = readyRef.current ? 1 : PRE_READY_CAP
+      if (p < cap) p = Math.min(cap, p + (dt * 1000 / AUTO_MS) * (1 + boost))
+      else if (!readyRef.current) p = cap
+      const w = out.width, h = out.height
+      octx.globalCompositeOperation = 'source-over'
+      octx.clearRect(0, 0, w, h)
+      // behind the pane: the live world, out of focus (until it's ready the cover shows through)
+      if (readyRef.current && blurWorld()) {
+        octx.imageSmoothingQuality = 'high'
+        octx.drawImage(soft, 0, 0, w, h)
+        octx.fillStyle = 'rgba(96, 116, 136, 0.34)'
+        octx.fillRect(0, 0, w, h)
+      }
+      octx.drawImage(glass, 0, 0)
+      if (!reduced) drawSliders(octx, sliders, dt, w, h)
+      // wipes + evaporation cut the pane away
+      composeMask(kctx, manual, blobs, p, mw, mh, reduced)
+      octx.globalCompositeOperation = 'destination-in'
+      octx.imageSmoothingQuality = 'high'
+      octx.drawImage(mask, 0, 0, w, h)
+      octx.globalCompositeOperation = 'source-over'
+      if (!handed && readyRef.current && p >= HANDOFF_AT && useGameStore.getState().phase === 'loading') {
+        handed = true
+        setPhase('intro')
+      }
+      if (p < 1 || useGameStore.getState().phase === 'loading') raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [target])
 
-  // the welcome, once in each language (it begins after the name has arrived)
-  useEffect(() => {
-    if (ready) return
-    const t = setInterval(() => setHello((h) => h + 1), 1350)
-    return () => clearInterval(t)
-  }, [ready])
-
-  // the companion introduces the world, then the cinematic takes over
-  useEffect(() => {
-    if (!done || phase !== 'loading' || shown < 99.5) return
-    const wait = Math.max(0, MIN_TIME - (performance.now() - start.current))
-    const t1 = setTimeout(() => setReady(true), wait)
-    const t2 = setTimeout(() => setPhase('intro'), wait + 1500)
     return () => {
-      clearTimeout(t1)
-      clearTimeout(t2)
+      cancelAnimationFrame(raf)
+      clearTimeout(rt)
+      el.removeEventListener('pointermove', wipe)
+      el.removeEventListener('pointerdown', wipe)
+      el.removeEventListener('pointerup', lift)
+      el.removeEventListener('pointercancel', lift)
+      el.removeEventListener('pointerleave', lift)
+      removeEventListener('keydown', key)
+      removeEventListener('resize', onResize)
+      removeEventListener('orientationchange', onResize)
     }
-  }, [done, phase, shown, setPhase])
+  }, [setPhase])
 
   useEffect(() => {
     if (phase === 'loading') return
@@ -77,88 +205,165 @@ export function LoadingScreen() {
     return () => clearTimeout(t)
   }, [phase])
 
-  const skyline = useMemo(buildSkyline, [])
   if (gone) return null
-  const stage = ready
-    ? 'Ready.'
-    : !loading.fontsReady || !loading.assetsProbed
-      ? 'Preparing the neighbourhood…'
-      : !loading.worldReady
-        ? 'Preparing the people…'
-        : !loading.physicsReady
-          ? 'Preparing the office…'
-          : !loading.compiled
-            ? 'Preparing the projects…'
-            : 'Preparing your guide…'
-  const pct = Math.round(shown)
-  const lit = shown / 100
-  // the greeting starts once the name is in (~2.4 s), then cycles
-  const g = GREETINGS[Math.max(0, hello - 1) % GREETINGS.length]
   return (
     <div
-      className={`ui-loading ui-splash ${phase !== 'loading' ? 'is-done' : ''} ${ready ? 'is-ready' : ''}`}
+      ref={root}
+      className={`ui-loading ui-rain ${phase !== 'loading' ? 'is-done' : ''} ${ready ? 'is-ready' : ''}`}
       role="status"
       aria-live="polite"
-      aria-label={`Naveen — interactive portfolio. Preparing your journey, ${pct} percent. ${stage}`}
-      style={{ ['--lit' as string]: lit }}
+      aria-label={ready ? 'Naveen’s interactive portfolio is ready.' : 'Loading Naveen’s interactive portfolio.'}
     >
-      <div className="ui-splash__glow" aria-hidden="true" />
-      <div className="ui-loading__dust" aria-hidden="true">
-        {Array.from({ length: 30 }, (_, i) => <span key={i} style={{ ['--i' as string]: i }} />)}
-      </div>
-      <svg className="ui-loading__city" viewBox="0 0 1600 360" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-        <defs>
-          <linearGradient id="ld-fade" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#1b2029" />
-            <stop offset="1" stopColor="#0d1015" />
-          </linearGradient>
-        </defs>
-        {skyline.buildings.map((b, i) => <rect key={i} x={b.x} y={360 - b.h} width={b.w} height={b.h} fill={b.far ? '#141820' : 'url(#ld-fade)'} />)}
-        {skyline.windows.map((w, i) => (
-          <rect key={i} x={w.x} y={w.y} width={3} height={4} className={w.at < lit ? 'is-on' : ''} style={{ transitionDelay: `${(w.at * 900) % 700}ms` }} />
-        ))}
-      </svg>
-      <div className="ui-splash__inner">
-        <div className="ui-splash__guide" aria-hidden="true">
-          <svg className="ui-splash__ring" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="54" className="ui-splash__track" />
-            <circle cx="60" cy="60" r="54" className="ui-splash__arc" style={{ strokeDasharray: RING, strokeDashoffset: RING * (1 - shown / 100) }} />
-          </svg>
-          <CompanionGlyph awake size={78} />
-        </div>
-        <p className="ui-splash__brand" aria-hidden="true">
-          {'NAVEEN'.split('').map((c, i) => <span key={i} style={{ ['--n' as string]: i }}>{c}</span>)}
-        </p>
-        <p className="ui-splash__title">Interactive portfolio</p>
-        <p className="ui-splash__hello" lang={g.lang} key={`${hello}-${ready}`}>
-          {ready ? 'Welcome to Naveen’s world.' : hello === 0 ? ' ' : g.text}
-        </p>
-        <p className="ui-splash__stage">
-          <span key={stage}>{ready ? 'Your journey begins.' : stage}</span>
-        </p>
-      </div>
+      <div className="ui-rain__cover" aria-hidden="true" />
+      <canvas ref={view} className="ui-rain__glass" aria-hidden="true" />
     </div>
   )
 }
 
-/** deterministic skyline silhouette with windows that switch on in progress order */
-function buildSkyline() {
-  let seed = 7
-  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
-  const buildings: { x: number; w: number; h: number; far: boolean }[] = []
-  const windows: { x: number; y: number; at: number }[] = []
-  for (const far of [true, false]) {
-    let x = -20
-    while (x < 1620) {
-      const w = far ? 50 + rnd() * 70 : 60 + rnd() * 90
-      const h = far ? 120 + rnd() * 150 : 60 + rnd() * 140
-      buildings.push({ x, w, h, far })
-      if (!far) {
-        for (let wy = 360 - h + 14; wy < 346; wy += 14)
-          for (let wx = x + 10; wx < x + w - 10; wx += 12) if (rnd() < 0.34) windows.push({ x: wx, y: wy, at: rnd() * 0.96 })
-      }
-      x += w + (far ? 4 : 10 + rnd() * 20)
-    }
+// ── the pane ─────────────────────────────────────────────────────────────
+
+let seed = 11
+const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
+
+/** condensation, slide trails and droplets, painted once per size */
+function paintGlass(ctx: CanvasRenderingContext2D, w: number, h: number, dpr: number) {
+  seed = 11
+  ctx.clearRect(0, 0, w, h)
+  const s = (Math.min(w, h) / dpr / 900) * dpr
+  const area = w * h / (dpr * dpr)
+
+  // the misted film: cool, slightly brighter at the top where the light is
+  const fog = ctx.createLinearGradient(0, 0, 0, h)
+  fog.addColorStop(0, 'rgba(214, 226, 236, 0.30)')
+  fog.addColorStop(0.6, 'rgba(176, 194, 210, 0.24)')
+  fog.addColorStop(1, 'rgba(150, 170, 188, 0.30)')
+  ctx.fillStyle = fog
+  ctx.fillRect(0, 0, w, h)
+
+  // micro-condensation
+  const micro = Math.min(16000, area / 150)
+  for (let i = 0; i < micro; i++) {
+    const x = rnd() * w, y = rnd() * h, r = (0.35 + rnd() * 1.1) * dpr
+    ctx.fillStyle = `rgba(28, 40, 54, ${0.12 + rnd() * 0.14})`
+    ctx.beginPath(); ctx.arc(x, y + r * 0.3, r, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = `rgba(236, 244, 250, ${0.18 + rnd() * 0.25})`
+    ctx.beginPath(); ctx.arc(x - r * 0.25, y - r * 0.25, r * 0.55, 0, Math.PI * 2); ctx.fill()
   }
-  return { buildings, windows }
+
+  // trails where drops have already run down the glass
+  const trails = Math.round(3 + w / dpr / 420)
+  ctx.globalCompositeOperation = 'destination-out'
+  for (let i = 0; i < trails; i++) {
+    let x = rnd() * w
+    const y0 = rnd() * h * 0.5, len = h * (0.25 + rnd() * 0.5), wd = (3 + rnd() * 4) * s
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)'
+    ctx.lineWidth = wd
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    ctx.moveTo(x, y0)
+    for (let y = y0; y < y0 + len; y += 14 * dpr) {
+      x += (rnd() - 0.5) * 3 * dpr
+      ctx.lineTo(x, y)
+    }
+    ctx.stroke()
+  }
+  ctx.globalCompositeOperation = 'source-over'
+
+  // droplets: many small, some medium, a few large
+  const smallN = Math.min(1400, area / 1500)
+  for (let i = 0; i < smallN; i++) drawDrop(ctx, rnd() * w, rnd() * h, (1.6 + rnd() * 3.2) * s)
+  const midN = Math.min(420, area / 5200)
+  for (let i = 0; i < midN; i++) drawDrop(ctx, rnd() * w, rnd() * h, (4.5 + rnd() * 5) * s)
+  const bigN = Math.min(48, area / 42000)
+  for (let i = 0; i < bigN; i++) drawDrop(ctx, rnd() * w, rnd() * h, (9 + rnd() * 9) * s)
+}
+
+/** one refracting droplet: dark rim below, light pooled at the bottom (the inverted sky), a sharp highlight on top */
+function drawDrop(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, k = 1.04 + rnd() * 0.22) {
+  const ry = r * k
+  // body + rim
+  const body = ctx.createRadialGradient(x, y - ry * 0.15, r * 0.1, x, y, r * 1.08)
+  body.addColorStop(0, 'rgba(120, 140, 160, 0.10)')
+  body.addColorStop(0.7, 'rgba(40, 56, 72, 0.22)')
+  body.addColorStop(1, 'rgba(14, 22, 32, 0.55)')
+  ctx.fillStyle = body
+  ctx.beginPath(); ctx.ellipse(x, y, r, ry, 0, 0, Math.PI * 2); ctx.fill()
+  // refracted light pooled low in the drop
+  const pool = ctx.createRadialGradient(x, y + ry * 0.42, 0, x, y + ry * 0.42, r * 0.85)
+  pool.addColorStop(0, 'rgba(226, 236, 246, 0.55)')
+  pool.addColorStop(1, 'rgba(226, 236, 246, 0)')
+  ctx.fillStyle = pool
+  ctx.beginPath(); ctx.ellipse(x, y, r * 0.92, ry * 0.92, 0, 0, Math.PI * 2); ctx.fill()
+  // specular highlight
+  if (r > 1.4) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+    ctx.beginPath(); ctx.ellipse(x - r * 0.32, y - ry * 0.42, r * 0.24, r * 0.14, -0.6, 0, Math.PI * 2); ctx.fill()
+  }
+  if (r > 5) {
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)'
+    ctx.lineWidth = Math.max(0.6, r * 0.06)
+    ctx.beginPath(); ctx.ellipse(x, y, r * 0.96, ry * 0.96, 0, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke()
+  }
+}
+
+// ── a few drops running down the pane (stick, then slip) ─────────────────
+
+interface Slider { x: number; y: number; r: number; v: number; hold: number }
+function makeSliders(w: number, h: number, dpr: number): Slider[] {
+  const s = (Math.min(w, h) / dpr / 900) * dpr
+  return Array.from({ length: Math.round(3 + w / dpr / 420) }, () => ({ x: rnd() * w, y: rnd() * h * 0.6, r: (7 + rnd() * 6) * s, v: 0, hold: rnd() * 2 }))
+}
+function drawSliders(ctx: CanvasRenderingContext2D, list: Slider[], dt: number, w: number, h: number) {
+  for (const d of list) {
+    if (d.hold > 0) {
+      d.hold -= dt
+      d.v = 0
+    } else {
+      d.v = Math.min(h * 0.35, d.v + h * 0.6 * dt)
+      d.y += d.v * dt
+      d.x += (Math.random() - 0.5) * d.r * 0.15
+      if (Math.random() < dt * 1.2) d.hold = 0.3 + Math.random() * 1.4
+      if (d.y > h + d.r * 2) {
+        d.y = -d.r * 2
+        d.x = Math.random() * w
+      }
+    }
+    drawDrop(ctx, d.x, d.y, d.r, 1.18)
+  }
+}
+
+// ── the mask: wipes, then evaporation patches growing over the pane ──────
+
+interface Blob { x: number; y: number; rate: number }
+function makeBlobs(): Blob[] {
+  return [
+    { x: 0.5, y: 0.48, rate: 1.0 },
+    { x: 0.22, y: 0.3, rate: 0.75 },
+    { x: 0.8, y: 0.34, rate: 0.8 },
+    { x: 0.3, y: 0.78, rate: 0.7 },
+    { x: 0.76, y: 0.74, rate: 0.72 },
+  ]
+}
+function smooth(a: number, b: number, v: number) {
+  const t = Math.min(1, Math.max(0, (v - a) / (b - a)))
+  return t * t * (3 - 2 * t)
+}
+function composeMask(ctx: CanvasRenderingContext2D, manual: HTMLCanvasElement, blobs: Blob[], p: number, mw: number, mh: number, reduced: boolean) {
+  ctx.clearRect(0, 0, mw, mh)
+  ctx.globalAlpha = 1 - smooth(reduced ? 0.3 : 0.72, 1, p)
+  ctx.drawImage(manual, 0, 0)
+  ctx.globalAlpha = 1
+  if (reduced) return
+  const diag = Math.hypot(mw, mh)
+  ctx.globalCompositeOperation = 'destination-out'
+  for (const b of blobs) {
+    const r = Math.max(0.01, smooth(0.04, 1, p * b.rate * 1.05) * diag * 0.62)
+    const x = b.x * mw, y = b.y * mh
+    const g = ctx.createRadialGradient(x, y, r * 0.35, x, y, r)
+    g.addColorStop(0, 'rgba(0,0,0,1)')
+    g.addColorStop(1, 'rgba(0,0,0,0)')
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, mw, mh)
+  }
+  ctx.globalCompositeOperation = 'source-over'
 }
