@@ -1,4 +1,4 @@
-// Rain-glass opening: captures the pane, a mouse wipe (desktop), a finger swipe (touch emulation),
+// Rain-glass opening (only when RAIN_GLASS = true in src/components/ui/LoadingScreen.tsx): captures the pane, a mouse wipe (desktop), a finger swipe (touch emulation),
 // and checks the glass clears by itself and hands over to the intro cinematic.
 import { chromium } from 'playwright-core'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))

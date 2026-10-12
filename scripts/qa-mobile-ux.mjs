@@ -102,8 +102,9 @@ async function walkUntil(fn, ms) {
 
 // ── 1–3. splash → hero → world ────────────────────────────────────────────
 await p.goto(`${base}/street?debug&mode=day`)
-const splash = await until(() => p.evaluate(() => !!document.querySelector('.ui-rain .ui-rain__glass')), 15000)
-expect(splash && !(await p.evaluate(() => !!document.querySelector('.ui-loading__meter, .ui-splash__brand, .ui-splash__hello'))), 'splash: rain-covered glass, no welcome text or progress bar')
+// no splash: a plain cover until the world is ready (no rain glass, text or progress), then the existing opening
+const start = await until(() => p.evaluate(() => !!document.querySelector('.ui-loading.ui-start')), 15000)
+expect(start && !(await p.evaluate(() => !!document.querySelector('.ui-rain, .ui-loading__meter, .ui-splash__brand, .ui-splash__hello'))), 'start: no splash (no rain glass, welcome text or progress bar)')
 await shot('00-splash')
 await p.waitForSelector('.ui-intro__skip', { timeout: 90000 })
 await p.getByRole('button', { name: 'Skip intro' }).click()

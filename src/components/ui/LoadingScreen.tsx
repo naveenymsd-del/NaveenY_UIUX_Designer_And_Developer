@@ -2,6 +2,12 @@ import { useProgress } from '@react-three/drei'
 import { useEffect, useRef, useState } from 'react'
 import { useGameStore } from '@/stores/gameStore'
 
+/**
+ * The rain-covered glass opening is switched off: the site opens straight into
+ * the existing experience. Set to true to bring the glass back (nothing else changes).
+ */
+const RAIN_GLASS = false
+
 /** a hands-off visitor sees the glass clear in about this long */
 const AUTO_MS = 7000
 /** until the world is ready the glass only clears this far (no blank screen behind it) */
@@ -14,12 +20,49 @@ const HANDOFF_AT = 0.86
  * condensation sit on a frosted pane over the (blurred) live 3D canvas; the
  * pointer — a mouse moving, or a finger swiping — wipes it clear, and the pane
  * also clears by itself in ~7 s. One small mask canvas carries both: wipes are
- * painted into it, the automatic evaporation is composed on top, and it is
- * applied as a CSS mask to the blur and droplet layers.
+ * painted into it, the automatic evaporation is composed on top, and the pane
+ * (blurred world, fog, droplets) is cut by it on one canvas.
  * Readiness is the same as before (fonts, assets, city, physics, shaders,
  * downloads); until then a soft blue-grey cover stands in for the scene.
  */
 export function LoadingScreen() {
+  return RAIN_GLASS ? <RainGlass /> : <DirectStart />
+}
+
+/**
+ * No splash: a plain cover in the world's own haze colour (no text, logo or
+ * progress) holds only until the same readiness flags are met, then fades as the
+ * existing opening flight begins — so there is never a blank or half-built frame.
+ */
+function DirectStart() {
+  const loading = useGameStore((s) => s.loading)
+  const phase = useGameStore((s) => s.phase)
+  const setPhase = useGameStore((s) => s.setPhase)
+  const { active } = useProgress()
+  const [gone, setGone] = useState(false)
+  const done = loading.fontsReady && loading.assetsProbed && loading.worldReady && loading.physicsReady && loading.compiled && !active
+
+  useEffect(() => {
+    if (done && phase === 'loading') setPhase('intro')
+  }, [done, phase, setPhase])
+  useEffect(() => {
+    if (phase === 'loading') return
+    const t = setTimeout(() => setGone(true), 1800)
+    return () => clearTimeout(t)
+  }, [phase])
+
+  if (gone) return null
+  return (
+    <div
+      className={`ui-loading ui-start ${phase !== 'loading' ? 'is-done' : ''}`}
+      role="status"
+      aria-live="polite"
+      aria-label={done ? 'Naveen’s interactive portfolio is ready.' : 'Loading Naveen’s interactive portfolio.'}
+    />
+  )
+}
+
+function RainGlass() {
   const loading = useGameStore((s) => s.loading)
   const phase = useGameStore((s) => s.phase)
   const setPhase = useGameStore((s) => s.setPhase)

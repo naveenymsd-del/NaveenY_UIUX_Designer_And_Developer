@@ -28,3 +28,6 @@
 @media (hover: none) {
   .ui-loading.ui-rain { cursor: default; }
 }
+
+/* no splash (RAIN_GLASS off): the world's haze colour until it is ready, then a fade */
+.ui-loading.ui-start { display: block; background: #dcdad4; }
