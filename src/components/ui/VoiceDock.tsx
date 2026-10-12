@@ -293,7 +293,12 @@ function TouchDock({ modal }: { modal: boolean }) {
   const rot = useRotation(6500)
   const input = useRef<HTMLInputElement>(null)
   const log = useRef<HTMLOListElement>(null)
+  const root = useRef<HTMLElement>(null)
+  const body = useRef<HTMLDivElement>(null)
+  /** the reader is at the latest line (new lines follow); scrolled up to read, they stay put */
+  const atEnd = useRef(true)
   const restore = useRef(false)
+  const [tall, setTall] = useState(false)
   const [caption, setCaption] = useState<{ id: number; text: string } | null>(null)
   const on = v.mode !== 'off'
   // the sheet never opens over a panel by itself — only when the visitor taps the orb
@@ -310,7 +315,34 @@ function TouchDock({ modal }: { modal: boolean }) {
       s.set({ sheet: true })
     }
   }, [modal])
-  useEffect(() => { if (log.current) log.current.scrollTop = log.current.scrollHeight }, [v.messages.length, open])
+  // the sheet's own scroller follows the conversation — unless the visitor scrolled up to read
+  useEffect(() => { atEnd.current = true }, [open])
+  useEffect(() => {
+    const el = body.current
+    if (el && atEnd.current) el.scrollTop = el.scrollHeight
+  }, [v.messages.length, v.messages[v.messages.length - 1]?.text, open, tall])
+  // the visible viewport (browser bars, on-screen keyboard): the sheet sizes to it and sits above the keyboard
+  useEffect(() => {
+    const vv = window.visualViewport
+    const el = root.current
+    if (!open || !vv || !el) return
+    const fit = () => {
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      el.style.setProperty('--vv-h', `${Math.round(vv.height)}px`)
+      el.style.setProperty('--kb', `${Math.round(kb)}px`)
+      el.classList.toggle('has-keyboard', kb > 80)
+    }
+    fit()
+    vv.addEventListener('resize', fit)
+    vv.addEventListener('scroll', fit)
+    return () => {
+      vv.removeEventListener('resize', fit)
+      vv.removeEventListener('scroll', fit)
+      el.style.removeProperty('--vv-h')
+      el.style.removeProperty('--kb')
+      el.classList.remove('has-keyboard')
+    }
+  }, [open])
   // a guided walk starts: the sheet steps aside so the world (and the joystick) are free
   useEffect(() => {
     if (v.state === 'navigating') {
@@ -360,7 +392,8 @@ function TouchDock({ modal }: { modal: boolean }) {
 
   return (
     <section
-      className={`ui-voice ui-voice--touch is-${v.state} ${on ? 'is-on' : ''} ${open ? 'is-open' : ''} ${modal ? 'is-modal' : ''} ${hintStep === 'ai' ? 'is-hinted' : ''}`}
+      ref={root}
+      className={`ui-voice ui-voice--touch is-${v.state} ${on ? 'is-on' : ''} ${open ? 'is-open' : ''} ${tall ? 'is-tall' : ''} ${modal ? 'is-modal' : ''} ${hintStep === 'ai' ? 'is-hinted' : ''}`}
       aria-label="Talk to the AI guide"
     >
       {open && (
@@ -373,17 +406,20 @@ function TouchDock({ modal }: { modal: boolean }) {
                 <span aria-hidden="true" className="ui-voice__dot" />{v.tier === 'realtime' ? 'Live voice' : 'Browser voice'}
               </button>
             )}
+            <button className="ui-voice__x ui-voice__grow" onClick={() => setTall((t) => !t)} aria-label={tall ? 'Make the conversation smaller' : 'Make the conversation taller'} aria-pressed={tall}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d={tall ? 'M8 4l4 4 4-4M8 20l4-4 4 4' : 'M8 8l4-4 4 4M8 16l4 4 4-4'} /></svg>
+            </button>
             <button className="ui-voice__x" onClick={() => useVoiceStore.getState().set({ sheet: false, consentOpen: false })} aria-label="Collapse the AI guide">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
             </button>
           </header>
-          <div className="ui-voice__sheet-body">
+          <div className="ui-voice__sheet-body" ref={body} onScroll={(e) => { const el = e.currentTarget; atEnd.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40 }}>
             {v.consentOpen ? <Consent onType={() => setTimeout(() => input.current?.focus({ preventScroll: true }), 60)} /> : <Log all refEl={log} />}
             {!v.consentOpen && v.messages.length === 0 && <p className="ui-voice__empty">What would you like to explore?</p>}
             <Extras />
           </div>
           {!v.consentOpen && (
-            <div className="ui-voice__quick" aria-label="Quick destinations">
+            <div className="ui-voice__quick" role="group" aria-label="Quick destinations">
               {QUICK.map(([name, say]) => (
                 <button key={name} onClick={() => { if (!on) enableText(); void submit(say) }}>{name}</button>
               ))}

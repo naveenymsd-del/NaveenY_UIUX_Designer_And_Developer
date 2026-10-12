@@ -396,14 +396,19 @@
 .ui-voice__caption span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
 .ui-voice__chip { overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: var(--v-muted); border-radius: 999px; white-space: nowrap; }
 
-/* the sheet */
+/* the sheet: header · conversation (the only part that scrolls) · quick destinations · composer.
+   Every row but the conversation keeps its size (flex: none), so nothing is ever squeezed on top
+   of anything else. Sized to the *visible* viewport (browser bars, keyboard — set from script). */
+.ui-voice--touch.is-open { bottom: var(--kb, 0px); }
 .ui-voice__sheet {
+  --sheet-vh: var(--vv-h, 100dvh);
   display: flex;
   flex-direction: column;
-  max-height: min(30vh, 30svh);
-  min-height: 190px;
+  /* ~38% of what's visible; never below 272px, where the conversation would get too cramped */
+  height: clamp(272px, calc(var(--sheet-vh) * 0.38), calc(var(--sheet-vh) * 0.6));
   margin: 0 calc(8px + var(--safe-right)) 0 calc(8px + var(--safe-left));
-  padding: 8px 10px calc(10px + var(--safe-bottom));
+  padding: 8px 12px calc(10px + var(--safe-bottom));
+  box-sizing: border-box;
   border-radius: 22px 22px 0 0;
   background: var(--v-glass-strong);
   color: var(--v-text);
@@ -412,30 +417,73 @@
   -webkit-backdrop-filter: blur(22px) saturate(1.5);
   pointer-events: auto;
   animation: voice-sheet 0.32s var(--ease-out) both;
+  transition: height 0.3s var(--ease-out);
 }
+.ui-voice--touch.is-tall .ui-voice__sheet { height: calc(var(--sheet-vh) * 0.6); }
+/* keyboard up: the sheet sits on it and keeps the composer in view, without the home-bar inset */
+.ui-voice--touch.has-keyboard .ui-voice__sheet { height: min(calc(var(--sheet-vh) - 64px), 360px); padding-bottom: 8px; transition: none; }
 @keyframes voice-sheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 .ui-voice--touch.is-open .ui-voice__fabwrap { display: none; }
-.ui-voice__sheet-head { display: flex; align-items: center; gap: 8px; padding: 0 0 6px; }
-.ui-voice__sheet-head p { display: grid; flex: 1; min-width: 0; margin: 0; line-height: 1.15; }
+
+.ui-voice__sheet-head { flex: none; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 0 4px; }
+.ui-voice__sheet-head p { display: grid; flex: 1; min-width: 0; margin: 0; line-height: 1.2; }
 .ui-voice__sheet-head p b { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--v-soft); }
-.ui-voice__sheet-head p span { font-size: 13.5px; font-weight: 650; color: var(--v-accent-text); }
-.ui-voice__sheet-head .ui-voice__x { position: static; width: 34px; height: 34px; }
-.ui-voice__avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff8f1, #ffe2c8); }
-.ui-voice__sheet-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
-.ui-voice__sheet .ui-voice__log { max-height: none; overflow: visible; gap: 5px; }
-.ui-voice__sheet .ui-voice__log li { box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--v-hover); font-size: 13.5px; padding: 7px 11px 8px; }
+.ui-voice__sheet-head p span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 650; color: var(--v-accent-text); }
+.ui-voice__sheet-head .ui-voice__x { position: static; flex: none; width: 40px; height: 40px; }
+.ui-voice__sheet-head .ui-voice__grow { margin-right: -4px; }
+.ui-voice__sheet-head .ui-voice__x:focus-visible { outline: 2px solid var(--v-primary); outline-offset: 1px; }
+.ui-voice__avatar { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff8f1, #ffe2c8); }
+
+.ui-voice__sheet-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 2px 0 4px; -webkit-overflow-scrolling: touch; }
+.ui-voice__sheet .ui-voice__log { max-height: none; overflow: visible; gap: 6px; }
+.ui-voice__sheet .ui-voice__log li { max-width: 100%; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--v-hover); font-size: 14.5px; line-height: 1.4; padding: 8px 12px 9px; overflow-wrap: anywhere; }
 .ui-voice__sheet .ui-voice__log li.is-user { background: var(--v-user-bg); }
-.ui-voice__sheet .ui-voice__log li.is-guide { display: block; -webkit-line-clamp: unset; line-clamp: unset; cursor: default; }
+/* in the sheet every reply is shown in full (the 3-line clamp is only for the collapsed preview) */
+.ui-voice .ui-voice__sheet .ui-voice__log li.is-guide { display: block; -webkit-line-clamp: none; line-clamp: none; overflow: visible; cursor: default; }
 .ui-voice__sheet .ui-voice__consent { max-width: none; padding: 4px 2px 6px; box-shadow: none; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .ui-voice__sheet .ui-voice__consent .ui-voice__x { display: none; }
 .ui-voice__empty { margin: 4px 2px 6px; font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--v-text); }
-.ui-voice__quick { display: flex; gap: 6px; padding: 6px 0 2px; overflow-x: auto; scrollbar-width: none; }
+
+/* quick destinations: their own row above the composer; one line that scrolls sideways, the
+   next chip peeking out under a soft edge so it reads as "more this way" */
+.ui-voice__quick {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  margin: 6px -12px 0;
+  padding: 2px 28px 2px 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: 12px;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+}
 .ui-voice__quick::-webkit-scrollbar { display: none; }
-.ui-voice__quick button { flex: none; height: 30px; padding: 0 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--v-text); box-shadow: inset 0 0 0 1px var(--v-line); }
-.ui-voice__sheet-bar { display: flex; align-items: center; gap: 6px; padding-top: 6px; }
-.ui-voice__sheet-bar .ui-voice__form input { width: 100%; height: 38px; font-size: 16px; }
-.ui-voice__sheet-bar .ui-voice__form button { width: 38px; height: 38px; }
-.ui-voice__mic { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: var(--v-accent-text); box-shadow: inset 0 0 0 1px var(--v-line); }
+.ui-voice__quick button {
+  flex: none;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  font-size: 14.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--v-text);
+  box-shadow: inset 0 0 0 1px var(--v-line);
+  transition: background 0.2s, transform 0.12s;
+}
+.ui-voice__quick button:active { transform: scale(0.97); background: var(--v-user-bg); }
+.ui-voice__quick button:focus-visible { outline: 2px solid var(--v-primary); outline-offset: 2px; }
+@media (hover: hover) { .ui-voice__quick button:hover { background: var(--v-user-bg); } }
+
+/* composer: mic · message · send, one row anchored to the bottom */
+.ui-voice__sheet-bar { flex: none; display: flex; align-items: center; gap: 8px; padding-top: 8px; }
+.ui-voice__sheet-bar .ui-voice__form { flex: 1; min-width: 0; }
+.ui-voice__sheet-bar .ui-voice__form input { width: 100%; height: 44px; font-size: 16px; }
+.ui-voice__sheet-bar .ui-voice__form button { flex: none; width: 44px; height: 44px; }
+.ui-voice__sheet-bar .ui-voice__mic { width: 44px; height: 44px; }.ui-voice__mic { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: var(--v-accent-text); box-shadow: inset 0 0 0 1px var(--v-line); }
 .ui-voice__mic svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .ui-voice__mic.is-live { background: var(--v-primary); color: #fff; box-shadow: var(--v-primary-glow); animation: voice-listen 1.8s ease-in-out infinite; }
 /* while a panel is open the AI is just a small orb in the corner (the panel keeps room for it);
@@ -446,6 +494,8 @@
 .ui-voice--touch.is-modal .ui-voice__fab .ui-companion { width: 26px; height: 26px; }
 /* the sheet covers the joystick while it is open; walking closes it again */
 .app.is-touch:has(.ui-voice.is-open) .ui-joystick { opacity: 0; pointer-events: none; }
+/* …and the first-run hint cards wait until it closes, so they never sit on the conversation */
+.app.is-touch:has(.ui-voice.is-open) .ui-tips { visibility: hidden; }
 /* the companion's floating bubble would double the guide's lines — while the guide is on, the orb's caption carries them */
 .app.is-touch:has(.ui-voice.is-on) .ui-bubble { display: none; }
 
