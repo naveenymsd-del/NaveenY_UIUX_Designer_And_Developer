@@ -1,4 +1,4 @@
-import { companion, emote, say, sayLive } from '@/core/companion'
+import { clearCompanion, companion, emote } from '@/core/companion'
 import { soundManager } from '@/core/sound/SoundManager'
 import { runActions, validateActions } from './actions'
 import { cancelWalk, walker } from './autoWalk'
@@ -38,7 +38,6 @@ let provider: VoiceProvider | null = null
 const store = () => useVoiceStore.getState()
 const live = () => provider?.conversational && provider.isConnected()
 
-const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 /** what a speech engine reads: symbols said as words */
 const spoken = (s: string) =>
   s.replace(/\s·\s/g, ', ').replace(/\s?→\s?/g, ' then ').replace(/&/g, ' and ').replace(/\s—\s/g, ', ').replace(/UI\/UX/g, 'UI UX').replace(/\//g, ' ').replace(/\s+/g, ' ')
@@ -70,7 +69,9 @@ export function respond(text: string) {
     return
   }
   store().add('guide', text)
-  say(escapeHtml(text), { ms: Math.min(18000, Math.max(3200, 2600 + text.length * 60)), emote: 'explain', interrupt: true })
+  // the answer lives in the chat only — the companion just gestures (no floating bubble copy)
+  clearCompanion()
+  emote('explain', Math.min(6000, 2600 + text.length * 20))
   if (store().mode !== 'off' && browserVoice.canSpeak && soundManager.isEnabled) void browserVoice.say(spoken(text))
 }
 
@@ -221,9 +222,12 @@ function wireRealtime() {
     },
     assistantTranscript: (text, final, turn) => {
       const id = turnMessage.get(turn)
-      if (id === undefined) turnMessage.set(turn, store().add('guide', text))
-      else store().patch(id, text)
-      sayLive(escapeHtml(text), final ? Math.min(14000, 2200 + text.length * 45) : 6000)
+      // the reply lives in the chat only — the companion just gestures as it starts
+      if (id === undefined) {
+        turnMessage.set(turn, store().add('guide', text))
+        clearCompanion()
+        emote('explain', 2600)
+      } else store().patch(id, text)
       if (final) {
         turnMessage.delete(turn)
         rememberAssistant(text)
