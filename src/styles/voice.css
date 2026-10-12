@@ -194,6 +194,28 @@
   scrollbar-width: thin;
 }
 .ui-voice.is-history .ui-voice__log { max-height: 46vh; padding: 10px; border-radius: 20px; }
+/* the full conversation gets its own close button, top-right */
+.ui-voice__history { position: relative; width: 100%; }
+.ui-voice__history .ui-voice__log { padding-top: 40px; }
+.ui-voice__history-close {
+  position: absolute;
+  top: 8px;
+  right: 14px;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--v-hover);
+  color: inherit;
+  cursor: pointer;
+  box-shadow: 0 2px 8px -3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.ui-voice__history-close:hover { transform: scale(1.08); background: var(--v-user-bg); }
+.ui-voice__history-close:focus-visible { outline: 2px solid #e8772e; outline-offset: 2px; }
 .ui-voice__log li {
   width: fit-content;
   max-width: 100%;

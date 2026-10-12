@@ -209,7 +209,14 @@ function DesktopDock({ modal }: { modal: boolean }) {
 
   return (
     <section className={`ui-voice is-${v.state} ${on ? 'is-on' : ''} ${v.historyOpen ? 'is-history' : ''} ${modal ? 'is-collapsed' : ''}`} aria-label="Talk to the AI guide">
-      {!modal && <Log refEl={log} />}
+      {!modal && (v.historyOpen ? (
+        <div className="ui-voice__history">
+          <Log refEl={log} />
+          <button className="ui-voice__history-close" onClick={() => useVoiceStore.getState().set({ historyOpen: false })} aria-label="Close conversation" title="Close">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
+          </button>
+        </div>
+      ) : <Log refEl={log} />)}
       {/* a panel is open: the lines step aside visually but stay readable for screen readers */}
       {modal && <div className="sr-only"><Log /></div>}
       {!modal && <Extras />}
