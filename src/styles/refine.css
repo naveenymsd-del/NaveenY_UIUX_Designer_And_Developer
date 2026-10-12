@@ -968,11 +968,16 @@
 .ui-guide-btn .ui-companion { overflow: visible; }
 .ui-guide-btn.is-open { box-shadow: 0 0 0 2px var(--ai), var(--surface-shadow); }
 .ui-guide {
+  /* one spacing scale for the whole panel: 20px edges, 16px between blocks, 8px inside them */
+  --g-pad: 20px;
+  --g-block: 16px;
+  --g-gap: 8px;
   position: absolute;
   top: calc(84px + var(--safe-top));
   right: calc(var(--gutter) + var(--safe-right));
   width: min(400px, calc(100vw - 24px));
-  padding: 18px 18px 14px;
+  box-sizing: border-box;
+  padding: var(--g-pad);
   border-radius: 22px;
   background: var(--paper-1);
   color: var(--ink-1);
@@ -984,44 +989,59 @@
   pointer-events: none;
   z-index: 40;
 }
+.ui-guide > * { min-width: 0; }
 .ui-guide.is-open { opacity: 1; transform: none; pointer-events: auto; }
-.ui-guide__head { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
-.ui-guide__head h2 { margin: 2px 0 0; font-family: var(--font-display); font-weight: 600; font-size: 20px; letter-spacing: var(--track-heading); }
-.ui-guide__head .ui-kicker { color: var(--ai); }
-.ui-guide__close { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; }
+.ui-guide__head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.ui-guide__head .ui-kicker { margin: 0; color: var(--ai); }
+.ui-guide__head h2 { margin: 2px 0 0; font-family: var(--font-display); font-weight: 600; font-size: 20px; line-height: 1.2; letter-spacing: var(--track-heading); text-wrap: balance; }
+.ui-guide__close { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; transition: background 0.2s; }
 .ui-guide__close:hover { background: rgba(22, 24, 29, 0.06); }
+.ui-guide__close:focus-visible { outline: 2px solid var(--ai); outline-offset: 2px; }
 .ui-guide__close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-.ui-guide__quick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 16px 0 12px; }
+
+/* places: three equal columns that can shrink (minmax 0) — six cards, two even rows */
+.ui-guide__quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: var(--g-gap); margin: var(--g-block) 0 0; }
 .ui-guide__quick button {
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  padding: 12px 4px 10px;
+  min-width: 0;
+  min-height: 78px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px 8px;
   border-radius: 14px;
   box-shadow: inset 0 0 0 1px var(--hair);
+  text-align: center;
   font-size: 11px;
   font-weight: 650;
-  letter-spacing: 0.08em;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  overflow-wrap: normal;
   transition: background 0.2s, transform 0.3s var(--ease-out), box-shadow 0.2s;
 }
 .ui-guide__quick button:hover { background: #fff; transform: translateY(-2px); box-shadow: inset 0 0 0 1px var(--ai), 0 8px 18px -12px rgba(236, 122, 44, 0.6); }
-.ui-guide__quick svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.ui-guide__ask { display: flex; gap: 6px; align-items: center; padding: 4px 4px 4px 14px; border-radius: 999px; background: rgba(22, 24, 29, 0.05); box-shadow: inset 0 0 0 1px var(--hair); }
-.ui-guide__ask:focus-within { box-shadow: inset 0 0 0 1.5px var(--ai); }
-.ui-guide__ask input { flex: 1; min-width: 0; height: 38px; border: 0; background: none; font: inherit; font-size: 14px; color: inherit; outline: none; pointer-events: auto; user-select: text; }
-.ui-guide__ask button { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--ink-1); color: var(--paper-1); }
-.ui-guide__ask button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.ui-guide__hint { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 10px 0 0; font-size: 12px; color: var(--ink-3); }
-.ui-guide__hint.is-miss { color: #9a4c14; }
-.ui-guide__chip { padding: 3px 8px; border-radius: 999px; background: rgba(22, 24, 29, 0.05); font-size: 12px; color: var(--ink-2); }
-.ui-guide__chip:hover { background: rgba(236, 122, 44, 0.14); color: #9a4c14; }
-@media (max-width: 640px) {
-  .ui-guide { top: auto; bottom: calc(12px + var(--safe-bottom)); left: 12px; right: 12px; width: auto; transform-origin: bottom center; }
-  .ui-guide__quick { grid-template-columns: repeat(5, 1fr); }
-  .ui-guide__quick button { font-size: 9.5px; letter-spacing: 0.04em; }
-}
+.ui-guide__quick button:focus-visible { outline: 2px solid var(--ai); outline-offset: 2px; }
+.ui-guide__quick svg { flex: none; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 
+.ui-guide__ask { display: flex; gap: 6px; align-items: center; margin-top: var(--g-block); padding: 4px 4px 4px 16px; border-radius: 999px; background: rgba(22, 24, 29, 0.05); box-shadow: inset 0 0 0 1px var(--hair); }
+.ui-guide__ask:focus-within { box-shadow: inset 0 0 0 1.5px var(--ai); }
+.ui-guide__ask input { flex: 1; min-width: 0; height: 40px; border: 0; background: none; font: inherit; font-size: 14px; color: inherit; outline: none; pointer-events: auto; user-select: text; }
+.ui-guide__ask button { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--ink-1); color: var(--paper-1); }
+.ui-guide__ask button:focus-visible { outline: 2px solid var(--ai); outline-offset: 2px; }
+.ui-guide__ask button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ui-guide__hint { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 12px; line-height: 1.3; color: var(--ink-3); }
+.ui-guide__hint.is-miss { color: #9a4c14; }
+.ui-guide__chip { padding: 4px 9px; border-radius: 999px; background: rgba(22, 24, 29, 0.05); font-size: 12px; line-height: 1.3; color: var(--ink-2); text-align: left; transition: background 0.2s, color 0.2s; }
+.ui-guide__chip:hover { background: rgba(236, 122, 44, 0.14); color: #9a4c14; }
+.ui-guide__chip:focus-visible { outline: 2px solid var(--ai); outline-offset: 2px; }
+@media (max-width: 640px) {
+  /* sits above the guide's orb in the corner; scrolls inside itself on short screens */
+  .ui-guide { --g-pad: 16px; --g-block: 14px; top: auto; bottom: calc(80px + var(--safe-bottom)); left: 12px; right: 12px; width: auto; max-height: calc(100svh - 160px - var(--safe-bottom)); overflow-y: auto; overscroll-behavior: contain; transform-origin: bottom center; }
+  .ui-guide__quick button { min-height: 72px; font-size: 10.5px; }
+}
 /* ── NPC greetings ───────────────────────────────────────────────────── */
 .ui-greet-anchor { position: absolute; left: 0; top: 0; will-change: transform; pointer-events: none; }
 .ui-greet {

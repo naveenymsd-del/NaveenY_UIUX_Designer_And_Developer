@@ -129,8 +129,8 @@
 }
 
 /* guide: jump straight to a project */
-.ui-guide__label { margin: 0 0 6px; font-size: var(--text-2xs); font-weight: 650; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-3); }
-.ui-guide__projects { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.ui-guide__label { margin: var(--g-block, 16px) 0 var(--g-gap, 8px); font-size: var(--text-2xs); font-weight: 650; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink-3); }
+.ui-guide__projects { display: flex; flex-wrap: wrap; gap: var(--g-gap, 8px) 6px; margin: 0; }
 .ui-guide__projects button {
   display: inline-flex;
   align-items: center;
