@@ -1,4 +1,4 @@
-// Project Studio QA: every bay → E → Overview + Challenges + prototype link → Esc;
+// Project Studio QA: every bay → E → editorial case study (sections, links, screens) → Esc;
 // previous/next; AI guide project commands; movement after closing.
 // Usage: node scripts/qa-projects.mjs [1440x900] [baseUrl]
 import { chromium } from 'playwright-core'
@@ -54,8 +54,11 @@ for (const [i, pr] of PROJECTS.entries()) {
     const a = c?.querySelector('.ui-case__titlerow a.ui-case__proto:not(.ui-case__proto--case)')
     const cs = c?.querySelector('.ui-case__titlerow a.ui-case__proto--case')
     return {
-      tabs: [...(c?.querySelectorAll('[role=tab]') ?? [])].map((t) => t.textContent.trim()),
-      heads: [...(c?.querySelectorAll('.ui-case__section h3') ?? [])].map((h) => h.textContent.trim()),
+      heads: [...(c?.querySelectorAll('.ui-pc-row > h3') ?? [])].map((h) => h.textContent.trim()),
+      endLinks: [...(c?.querySelectorAll('.ui-pc-end a') ?? [])].map((a) => a.getAttribute('href')),
+      back: !!c?.querySelector('.ui-case__walk'),
+      wide: Math.round((c?.getBoundingClientRect().width ?? 0) / innerWidth * 100),
+      font: getComputedStyle(c?.querySelector('.ui-case__title') ?? document.body).fontFamily,
       href: a?.getAttribute('href') ?? '',
       target: a?.getAttribute('target') ?? '',
       label: a?.textContent.trim() ?? '',
@@ -66,29 +69,31 @@ for (const [i, pr] of PROJECTS.entries()) {
       brackets: /\[[^\]]+\]/.test(c?.textContent ?? ''),
     }
   })
-  expect(r.tabs.join('|') === 'Overview|Challenges', `  tabs: ${r.tabs.join(' | ')}`)
-  expect(r.heads.join('|') === '01 Project overview|02 My approach|03 Key user flows|04 Information architecture|05 UI & design system|06 Key screens', `  overview sections: ${r.heads.join(' | ')}`)
+  expect(r.heads.join('|') === 'Project overview|Project information|Challenge|Objective|Design approach|Final design', `  sections: ${r.heads.join(' | ')}`)
+  expect(/Open Sauce Sans/.test(r.font), `  title font: ${r.font.split(',')[0]}`)
+  if (!mobile) expect(vp[0] > 1100 ? r.wide >= 38 && r.wide <= 56 : r.wide <= 66, `  panel width ${r.wide}% of the viewport`)
+  expect(r.endLinks.join(' ') === [pr.ui, pr.proto].filter(Boolean).join(' '), '  closing links = the same verified Figma links')
   if (pr.ui) expect(r.href === pr.ui && r.target === '_blank' && r.label === 'View prototype', `  "View prototype" beside the title = the UI prototype (new tab: ${r.target === '_blank'})`)
   else expect(r.href === '', '  no UI prototype button (none supplied)')
   expect(r.caseHref === pr.proto && r.caseTarget === '_blank' && r.caseLabel === 'Case study', `  "Case study" beside the title = the Figma case study (new tab: ${r.caseTarget === '_blank'})`)
   // screens are lazy-loaded: scroll to them first, and photograph that part of the case study
-  await p.locator('.ui-case.is-visible .ui-case__shots').scrollIntoViewIfNeeded()
+  await p.locator('.ui-case.is-visible #case-s-final').scrollIntoViewIfNeeded()
   await sleep(1500)
   await shot(`1${i}-${pr.title}-screens`)
   // (lazy images load once each is near the viewport: bring each into view and give it a moment — a broken one stays at 0 px)
-  for (const img of await p.locator('.ui-case.is-visible .ui-case__shots img').all()) {
+  for (const img of await p.locator('.ui-case.is-visible .ui-pc-shot img').all()) {
     await img.scrollIntoViewIfNeeded()
     await img.evaluate((el) => (el.complete ? null : new Promise((r) => { el.onload = el.onerror = r; setTimeout(r, 6000) })))
   }
-  const imgs = await p.evaluate(() => [...document.querySelectorAll('.ui-case.is-visible .ui-case__shots img')].map((i) => i.complete && i.naturalWidth > 0))
+  const imgs = await p.evaluate(() => [...document.querySelectorAll('.ui-case.is-visible .ui-pc-shot img')].map((i) => i.complete && i.naturalWidth > 0))
   expect(imgs.length === 2 && imgs.every(Boolean), `  key screens load (${imgs.filter(Boolean).length}/${imgs.length})`)
-  expect(r.count === `Project 0${i + 1} / 0${PROJECTS.length}`, `  count "${r.count}"`)
+  expect(r.back, '  \u0022Back to Project Studio\u0022 in the footer')
   expect(!r.brackets, '  no placeholders')
+  await p.locator('.ui-case.is-visible .ui-case__scroll').evaluate((el) => el.scrollTo({ top: 0, behavior: 'instant' }))
+  await sleep(500)
   await shot(`1${i}-${pr.title}`)
-  await p.getByRole('tab', { name: 'Challenges' }).click()
+  await p.locator('.ui-case.is-visible #case-s-challenge').scrollIntoViewIfNeeded()
   await sleep(700)
-  const ch = await p.evaluate(() => [...document.querySelectorAll('.ui-case.is-visible .ui-case__section h3')].map((h) => h.textContent.trim()))
-  expect(ch.join('|') === '01 The challenge|02 UX & product thinking|03 Design decisions', `  challenges sections: ${ch.join(' | ')}`)
   await shot(`1${i}-${pr.title}-challenges`)
   await p.keyboard.press('Escape')
   await sleep(1500)
