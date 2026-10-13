@@ -91,7 +91,7 @@ export function IntroOverlay() {
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
           </button>
           {/* the spatial portfolio (/mindspace) — a full page load, so the city is never kept running behind it */}
-          <a className="ui-intro__work" href={`${BASE}mindspace`} tabIndex={tab}>
+          <a className="ui-intro__work ui-intro__classic" href={`${BASE}mindspace`} tabIndex={tab}>
             Explore the Classic Portfolio
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
           </a>

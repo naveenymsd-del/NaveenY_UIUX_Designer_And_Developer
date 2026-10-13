@@ -124,6 +124,71 @@
 .ui-intro__work:hover { color: #fff; border-color: #fff; }
 .ui-intro__links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 26px; }
 a.ui-intro__work { text-decoration: none; }
+/* "Explore the Classic Portfolio" — a small liquid-glass invitation into Mindspace:
+   a lit top edge, a thin warm rim, one light sweep after the hero appears (and once on hover) */
+.ui-intro__links { align-items: center; }
+a.ui-intro__classic {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  height: 42px;
+  gap: 8px;
+  padding: 0 16px 0 20px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 14.5px;
+  letter-spacing: 0.005em;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -1px 0 rgba(255, 255, 255, 0.08), 0 12px 28px -14px rgba(236, 122, 44, 0.7), 0 4px 12px -6px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out), background 0.25s;
+}
+/* the warm glass rim */
+a.ui-intro__classic::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1.2px;
+  border-radius: inherit;
+  background: linear-gradient(120deg, rgba(255, 214, 170, 0.95), rgba(236, 122, 44, 0.55) 40%, rgba(255, 255, 255, 0.18) 70%, rgba(255, 196, 140, 0.7));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+/* the light sweep */
+a.ui-intro__classic::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.5) 48%, rgba(255, 255, 255, 0.12) 56%, transparent 70%);
+  transform: translateX(-120%);
+}
+.ui-intro.is-hero a.ui-intro__classic::after { animation: classic-sweep 1.5s cubic-bezier(0.4, 0, 0.2, 1) 2.4s 1 both; }
+.ui-intro.is-hero a.ui-intro__classic:hover::after { animation: classic-sweep-again 1.1s cubic-bezier(0.4, 0, 0.2, 1) 1 both; }
+@keyframes classic-sweep { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
+@keyframes classic-sweep-again { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
+a.ui-intro__classic svg { transition: transform 0.3s var(--ease-out); }
+a.ui-intro__classic:hover {
+  color: #fff;
+  transform: translateY(-1.5px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.12));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(255, 255, 255, 0.1), 0 16px 32px -14px rgba(236, 122, 44, 0.85), 0 6px 14px -6px rgba(0, 0, 0, 0.35);
+}
+a.ui-intro__classic:hover svg { transform: translateX(3px); }
+a.ui-intro__classic:active { transform: scale(0.97); transition-duration: 0.1s; }
+a.ui-intro__classic:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+@media (max-width: 640px) {
+  a.ui-intro__classic { height: 44px; font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  a.ui-intro__classic::after { display: none; }
+  a.ui-intro__classic, a.ui-intro__classic svg { transition: none; }
+}
 .ui-intro__work svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .ui-intro.is-hero .ui-intro__hero > :nth-child(6) { animation: hero-in 1.2s var(--ease-out) both 0.85s; }
 @media (max-width: 640px) {
