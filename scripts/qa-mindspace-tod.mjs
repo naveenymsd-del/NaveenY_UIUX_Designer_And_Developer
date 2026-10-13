@@ -60,7 +60,7 @@ for (const tod of ['morning', 'afternoon', 'evening', 'night']) {
   expect(muted >= 3, `${tod}: secondary text — contrast ${muted.toFixed(1)}:1 (≥ 3, large/secondary)`)
   await p.keyboard.press('Escape'); await sleep(600)
   // the launcher labels over the room
-  const lab = await p.evaluate(() => { const l = document.querySelector('.ms-icon:nth-child(3) .ms-icon__label').getBoundingClientRect(); return { x: l.x, y: l.y, width: l.width, height: l.height } })
+  const lab = await p.evaluate(() => { const l = document.querySelectorAll('.ms-icon__label')[2].getBoundingClientRect(); return { x: l.x, y: l.y, width: l.width, height: l.height } })
   const LL = await regionLuma(p, lab)
   expect(errors.length === 0, `${tod}: no page errors`)
   console.log(`   (label backing luminance avg ${LL.avg.toFixed(2)})`)

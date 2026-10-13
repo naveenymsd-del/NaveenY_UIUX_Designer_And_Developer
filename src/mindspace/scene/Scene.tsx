@@ -2,7 +2,7 @@ import { createPortal, useFrame, useThree } from '@react-three/fiber'
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { Scene as ThreeScene } from 'three'
 import { useMindspace } from '../store'
-import { AnchorProjector, CameraRig } from './CameraRig'
+import { CameraRig, CssLayer } from './CameraRig'
 import { IntroDirector } from './IntroDirector'
 import { LivingRoom, roomTextures } from './LivingRoom'
 
@@ -35,7 +35,7 @@ export default function Scene({ quality, onReady }: { quality: 'high' | 'low'; o
         <>
           <LivingRoom quality={quality} />
           <CameraRig enabled={!app} />
-          <AnchorProjector />
+          <CssLayer />
         </>
       )}
     </>

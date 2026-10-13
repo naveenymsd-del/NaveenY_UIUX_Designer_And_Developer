@@ -1,27 +1,37 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
-import { MathUtils, type PerspectiveCamera, Vector3 } from 'three'
+import { Euler, MathUtils, type PerspectiveCamera, Quaternion, Vector3 } from 'three'
 import { useMindspace } from '../store'
+import { motion } from './motion'
+import { cssRenderer, cssScene, disposeCssRenderer, gesture } from './spatial'
 
 /**
- * Look-around camera for the room. Drag (mouse or one finger) turns the view,
- * the wheel or a pinch zooms (field of view, so the camera never moves into
- * anything), WASD / arrow keys take a few steps inside a safe area clear of
- * the furniture. Everything eases; nothing jumps or rolls.
+ * Look-around camera for the room — one model for every input:
+ *   drag (mouse or one finger, anywhere on the room, even starting on an icon)  turn the view
+ *   arrow keys                                                                  look left / right / up / down
+ *   W A S D                                                                     a few steps, inside a safe area
+ *   wheel / pinch                                                               zoom (field of view: the camera never moves into anything)
+ *   motion controls (phones, opt-in)                                            the phone's orientation turns the view
+ * Vertical look is clamped; everything eases; nothing jumps or rolls.
  */
 export const HOME = { pos: new Vector3(0, 1.58, 3.15), yaw: 0, pitch: -0.06 }
 const LIMIT = { yaw: 2.6, pitchDown: -0.62, pitchUp: 0.66, fovMin: 32, fovMax: 70 }
 /** where the visitor may step: in front of the coffee table, away from the chair and walls */
 const AREA = { x0: -2.4, x1: 1.9, z0: 0.55, z1: 3.9 }
+/** a pointer gesture becomes a look-around drag after moving this far (px) */
+const DRAG_PX = 6
 
 export const homeFov = (aspect: number) => (aspect < 0.8 ? 66 : aspect < 1.2 ? 58 : 50)
 /** tall screens see more ceiling: look a little lower by default */
 export const homePitch = (aspect: number) => (aspect < 0.8 ? -0.17 : HOME.pitch)
 
+/** gestures start on the room or on an icon — never inside a window, the controls or the intro */
+const NOT_THE_ROOM = '.ms-window-layer, .ms-controls, .ms-pill, .ms-intro, .ms-hint, input, textarea'
+
 export function CameraRig({ enabled }: { enabled: boolean }) {
-  const { camera, gl, size } = useThree()
+  const { camera, size } = useThree()
   const cam = camera as PerspectiveCamera
-  const s = useRef({ yaw: HOME.yaw, pitch: homePitch(size.width / size.height), fov: homeFov(size.width / size.height), pos: HOME.pos.clone(), cur: { yaw: HOME.yaw, pitch: HOME.pitch, fov: 50 }, keys: new Set<string>() })
+  const s = useRef({ yaw: HOME.yaw, pitch: homePitch(size.width / size.height), fov: homeFov(size.width / size.height), pos: HOME.pos.clone(), cur: { yaw: HOME.yaw, pitch: HOME.pitch, fov: 50 }, keys: new Set<string>(), motionBase: null as null | { device: number; yaw: number } })
   const enabledRef = useRef(enabled)
   enabledRef.current = enabled
   const resetTick = useMindspace((m) => m.resetTick)
@@ -38,7 +48,7 @@ export function CameraRig({ enabled }: { enabled: boolean }) {
     cam.updateProjectionMatrix()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  // reset view
+  // reset view (motion controls re-centre on the phone's current direction)
   useEffect(() => {
     if (!resetTick) return
     const st = s.current
@@ -46,21 +56,22 @@ export function CameraRig({ enabled }: { enabled: boolean }) {
     st.pitch = homePitch(size.width / size.height)
     st.fov = homeFov(size.width / size.height)
     st.pos.copy(HOME.pos)
+    st.motionBase = null
   }, [resetTick, size.width, size.height])
   // a new screen shape gets the matching home field of view
   useEffect(() => { s.current.fov = MathUtils.clamp(homeFov(size.width / size.height), LIMIT.fovMin, LIMIT.fovMax) }, [size.width, size.height])
 
   useEffect(() => {
-    const el = gl.domElement
-    const pointers = new Map<number, { x: number; y: number }>()
+    const pointers = new Map<number, { x: number; y: number; x0: number; y0: number }>()
     let pinch = 0
     const down = (e: PointerEvent) => {
-      if (!enabledRef.current) return
-      el.setPointerCapture(e.pointerId)
-      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      if (!enabledRef.current || (e.target as Element)?.closest?.(NOT_THE_ROOM)) return
+      if (pointers.size === 0) gesture.dragged = false
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY })
       if (pointers.size === 2) {
         const [a, b] = [...pointers.values()]
         pinch = Math.hypot(a.x - b.x, a.y - b.y)
+        gesture.dragged = true
       }
     }
     const move = (e: PointerEvent) => {
@@ -68,10 +79,14 @@ export function CameraRig({ enabled }: { enabled: boolean }) {
       if (!p || !enabledRef.current) return
       const st = s.current
       if (pointers.size === 1) {
+        if (!gesture.dragged && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < DRAG_PX) return
+        gesture.dragged = true
         const k = 0.0024 * (st.fov / 50)
         // grab the scene: it follows the finger / pointer (as in 360° viewers)
-        st.yaw = MathUtils.clamp(st.yaw + (e.clientX - p.x) * k, -LIMIT.yaw, LIMIT.yaw)
-        st.pitch = MathUtils.clamp(st.pitch + (e.clientY - p.y) * k, LIMIT.pitchDown, LIMIT.pitchUp)
+        const dyaw = (e.clientX - p.x) * k
+        st.yaw = MathUtils.clamp(st.yaw + dyaw, -LIMIT.yaw, LIMIT.yaw)
+        if (st.motionBase) st.motionBase.yaw += dyaw
+        else st.pitch = MathUtils.clamp(st.pitch + (e.clientY - p.y) * k, LIMIT.pitchDown, LIMIT.pitchUp)
       }
       p.x = e.clientX
       p.y = e.clientY
@@ -85,8 +100,10 @@ export function CameraRig({ enabled }: { enabled: boolean }) {
     const up = (e: PointerEvent) => {
       pointers.delete(e.pointerId)
       if (pointers.size < 2) pinch = 0
+      // the click that ends a drag fires right after this; the flag is cleared by the next press
     }
     const wheel = (e: WheelEvent) => {
+      if ((e.target as Element)?.closest?.('.ms-window-layer')) return // windows scroll their own content
       e.preventDefault()
       if (!enabledRef.current) return
       s.current.fov = MathUtils.clamp(s.current.fov + e.deltaY * 0.025, LIMIT.fovMin, LIMIT.fovMax)
@@ -100,48 +117,60 @@ export function CameraRig({ enabled }: { enabled: boolean }) {
       }
     }
     const keyUp = (e: KeyboardEvent) => s.current.keys.delete(e.key.toLowerCase())
-    const blur = () => s.current.keys.clear()
-    el.addEventListener('pointerdown', down)
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
-    el.addEventListener('pointercancel', up)
-    el.addEventListener('wheel', wheel, { passive: false })
+    const blur = () => { s.current.keys.clear(); pointers.clear() }
+    window.addEventListener('pointerdown', down)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+    window.addEventListener('wheel', wheel, { passive: false })
     window.addEventListener('keydown', keyDown)
     window.addEventListener('keyup', keyUp)
     window.addEventListener('blur', blur)
     return () => {
-      el.removeEventListener('pointerdown', down)
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', up)
-      el.removeEventListener('pointercancel', up)
-      el.removeEventListener('wheel', wheel)
+      window.removeEventListener('pointerdown', down)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      window.removeEventListener('wheel', wheel)
       window.removeEventListener('keydown', keyDown)
       window.removeEventListener('keyup', keyUp)
       window.removeEventListener('blur', blur)
     }
-  }, [gl])
+  }, [])
 
   const fwd = new Vector3()
   const right = new Vector3()
+  const e = new Euler()
   useFrame((_, dt) => {
     const st = s.current
     const d = Math.min(dt, 0.05)
-    // a few steps with the keys, in the direction the visitor faces
+    // keys: arrows look, W A S D step (in the direction the visitor faces)
     if (st.keys.size && enabledRef.current) {
+      const k = st.keys
       fwd.set(-Math.sin(st.yaw), 0, -Math.cos(st.yaw))
       right.set(-fwd.z, 0, fwd.x)
-      const k = st.keys
-      const f = (k.has('w') || k.has('arrowup') ? 1 : 0) - (k.has('s') || k.has('arrowdown') ? 1 : 0)
+      const f = (k.has('w') ? 1 : 0) - (k.has('s') ? 1 : 0)
       const r = (k.has('d') ? 1 : 0) - (k.has('a') ? 1 : 0)
-      const turn = (k.has('arrowleft') ? 1 : 0) - (k.has('arrowright') ? 1 : 0)
       st.pos.addScaledVector(fwd, f * 1.6 * d).addScaledVector(right, r * 1.6 * d)
       st.pos.x = MathUtils.clamp(st.pos.x, AREA.x0, AREA.x1)
       st.pos.z = MathUtils.clamp(st.pos.z, AREA.z0, AREA.z1)
+      const turn = (k.has('arrowleft') ? 1 : 0) - (k.has('arrowright') ? 1 : 0)
+      const tilt = (k.has('arrowup') ? 1 : 0) - (k.has('arrowdown') ? 1 : 0)
       st.yaw = MathUtils.clamp(st.yaw + turn * 1.4 * d, -LIMIT.yaw, LIMIT.yaw)
+      st.pitch = MathUtils.clamp(st.pitch + tilt * 0.9 * d, LIMIT.pitchDown, LIMIT.pitchUp)
     }
+    // motion controls: the phone's orientation, relative to where it pointed when they started
+    if (motion.active && motion.has) {
+      e.setFromQuaternion(motion.q as Quaternion, 'YXZ')
+      if (!st.motionBase) st.motionBase = { device: e.y, yaw: st.yaw }
+      let dy = e.y - st.motionBase.device
+      dy = Math.atan2(Math.sin(dy), Math.cos(dy))
+      st.yaw = MathUtils.clamp(st.motionBase.yaw + dy, -LIMIT.yaw, LIMIT.yaw)
+      st.pitch = MathUtils.clamp(e.x, LIMIT.pitchDown, LIMIT.pitchUp)
+    } else st.motionBase = null
     const c = st.cur
-    c.yaw = MathUtils.damp(c.yaw, st.yaw, 7, d)
-    c.pitch = MathUtils.damp(c.pitch, st.pitch, 7, d)
+    c.yaw = MathUtils.damp(c.yaw, st.yaw, motion.active ? 12 : 7, d)
+    c.pitch = MathUtils.damp(c.pitch, st.pitch, motion.active ? 12 : 7, d)
     c.fov = MathUtils.damp(c.fov, st.fov, 6, d)
     cam.position.lerp(st.pos, 1 - Math.exp(-6 * d))
     cam.rotation.set(c.pitch, c.yaw, 0, 'YXZ')
@@ -154,47 +183,34 @@ export function CameraRig({ enabled }: { enabled: boolean }) {
 }
 
 /**
- * Pins an HTML element to a point in the room: every frame it is projected
- * through the camera and given the matching 2D transform (position, scale and
- * the slant of the plane), so the launcher sits *in* the space and stays put as
- * the visitor looks around — while staying real, crisp, clickable HTML.
+ * Draws the spatial HTML (the launcher's icons) with the room's own camera
+ * (mounted after CameraRig, so the camera has already moved this frame). An icon that drifts far off the line of sight fades
+ * and is then hidden (a perspective-projected element near the edge of view
+ * would otherwise stretch) — the visitor finds the launcher again by turning
+ * back, or with Reset view.
  */
-export const anchors = new Map<string, { el: HTMLElement; pos: Vector3; width: number; px: number }>()
-const _a = new Vector3(), _x = new Vector3(), _y = new Vector3(), _f = new Vector3(), _d = new Vector3()
-export function AnchorProjector() {
+const _f = new Vector3(), _d = new Vector3(), _p = new Vector3()
+export function CssLayer() {
   const { camera, size } = useThree()
+  const host = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    host.current = document.querySelector('.ms-anchor-layer')
+    return () => disposeCssRenderer()
+  }, [])
+  useEffect(() => {
+    if (host.current) cssRenderer(host.current).setSize(size.width, size.height)
+  }, [size.width, size.height])
   useFrame(() => {
+    if (!host.current) return
     camera.getWorldDirection(_f)
-    for (const a of anchors.values()) {
-      // how far off the line of sight it is: fades out as it leaves the view, gone before the
-      // flat projection could distort (or flip) it — like a window you've turned away from
-      // measured at the nearer edge of the plane, which leaves the view first
-      const edge = (s: number) => _d.copy(a.pos).setX(a.pos.x + (s * a.width) / 2).sub(camera.position).normalize().dot(_f)
-      const cos = Math.min(edge(-1), edge(1))
-      const fade = MathUtils.clamp((cos - 0.5) / 0.18, 0, 1)
-      _a.copy(a.pos).project(camera)
-      if (fade <= 0 || _a.z > 1) {
-        a.el.style.visibility = 'hidden'
-        continue
-      }
-      a.el.style.opacity = fade < 1 ? fade.toFixed(3) : ''
-      _x.copy(a.pos).setX(a.pos.x + a.width / 2).project(camera)
-      _y.copy(a.pos).setY(a.pos.y + a.width / 2).project(camera)
-      const sx = (v: Vector3) => (v.x * 0.5 + 0.5) * size.width
-      const sy = (v: Vector3) => (-v.y * 0.5 + 0.5) * size.height
-      const cx = sx(_a), cy = sy(_a)
-      // screen-space basis of the plane, per CSS pixel of the design width
-      const k = 2 / a.px
-      const ax = (sx(_x) - cx) * k, ay = (sy(_x) - cy) * k
-      // a guard: never draw it implausibly large (it would only be a distorted sliver of the plane)
-      if (Math.hypot(ax, ay) * a.px > size.width * 1.6) {
-        a.el.style.visibility = 'hidden'
-        continue
-      }
-      const bx = -(sx(_y) - cx) * k, by = -(sy(_y) - cy) * k
-      a.el.style.visibility = 'visible'
-      a.el.style.transform = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px) matrix(${ax.toFixed(4)}, ${ay.toFixed(4)}, ${bx.toFixed(4)}, ${by.toFixed(4)}, 0, 0) translate(-50%, -50%)`
+    for (const o of cssScene.children) {
+      const cos = _d.copy(o.getWorldPosition(_p)).sub(camera.position).normalize().dot(_f)
+      const fade = MathUtils.clamp((cos - 0.42) / 0.2, 0, 1)
+      o.visible = fade > 0
+      const el = (o as unknown as { element: HTMLElement }).element
+      el.style.opacity = fade < 1 ? fade.toFixed(3) : ''
     }
+    cssRenderer(host.current).render(cssScene, camera)
   })
   return null
 }

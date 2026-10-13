@@ -27,6 +27,7 @@
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: none;
 }
 /* zero-specificity resets, so every component's own styles win */
 :where(.ms) button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
@@ -525,6 +526,32 @@
 @media (prefers-reduced-transparency: reduce) {
   .ms-window { background: rgba(36, 36, 42, 0.94); }
   .ms-icon__label { background: rgba(22, 22, 26, 0.7); }
+}
+
+/* ── spatial icons (CSS3D): each icon is an object in the room ─────────── */
+.ms-css3d, .ms-css3d > div { pointer-events: none; }
+.ms-launcher--spatial { display: block; transition: opacity 0.45s var(--ms-ease), filter 0.45s var(--ms-ease); } /* never transition the transform: CSS3D sets it every frame */
+.ms-window__body { touch-action: pan-y; }
+.ms-launcher--spatial .ms-icon { touch-action: none; }
+/* on the motion-controls button: lit while active */
+.ms-round.is-on { background: rgba(255, 159, 90, 0.55); }
+.ms-note {
+  position: absolute;
+  left: 50%;
+  bottom: calc(80px + env(safe-area-inset-bottom));
+  max-width: min(420px, calc(100vw - 32px));
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: rgba(30, 30, 34, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  font-size: 14px;
+  text-align: center;
+  color: #fff;
+  transform: translateX(-50%);
+  z-index: 30;
+  animation: ms-fade 0.3s both;
 }
 
 /* ── phones ─────────────────────────────────────────────────────────────── */

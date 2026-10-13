@@ -59,6 +59,27 @@ const windowFits = (p) => p.evaluate(() => { const r = document.querySelector('.
   await drag(900, 0); await p.screenshot({ path: 'qa-screens/ms-04-look-behind.png' })
   expect(x1 < x0 - 200, `drag turns the view; the launcher stays pinned in the room (moved ${Math.round(x0 - x1)} px)`)
   await p.getByRole('button', { name: 'Reset view' }).click(); await sleep(1500)
+  // the top-right × is gone (windows have their own close); Reset view stays
+  const ctl = await p.evaluate(() => [...document.querySelectorAll('.ms-controls button')].map((b) => b.getAttribute('aria-label')))
+  expect(ctl.join('|') === 'Reset view', `top-right controls: ${ctl.join(', ')} (no × button)`)
+  // a drag that starts ON an icon turns the view and does not open the app
+  const ib = await p.locator('.ms-icon', { hasText: 'Experience' }).boundingBox()
+  const before = await launcherX()
+  await p.mouse.move(ib.x + ib.width / 2, ib.y + 30); await p.mouse.down()
+  for (let i = 1; i <= 12; i++) await p.mouse.move(ib.x + ib.width / 2 - i * 30, ib.y + 30)
+  await p.mouse.up(); await sleep(1000)
+  const turned = Math.abs((await launcherX()) - before) > 100
+  const opened = await p.evaluate(() => !!document.querySelector('.ms-window'))
+  expect(turned && !opened, `a drag starting on an icon turns the view and opens nothing (moved: ${turned}, opened: ${opened})`)
+  // the icons are true 3D objects: perspective differs across the arc (outer icons are turned)
+  const tilt = await p.evaluate(() => [...document.querySelectorAll('.ms-launcher--spatial')].map((w) => w.style.transform.includes('matrix3d')).every(Boolean))
+  expect(tilt, 'every icon is placed with a 3D transform from the room camera (CSS3D)')
+  await p.getByRole('button', { name: 'Reset view' }).click(); await sleep(1500)
+  // arrow keys look around
+  await p.mouse.click(720, 880); const k0 = await launcherX()
+  await p.keyboard.down('ArrowLeft'); await sleep(600); await p.keyboard.up('ArrowLeft'); await sleep(700)
+  expect(Math.abs((await launcherX()) - k0) > 60, 'arrow keys turn the view')
+  await p.getByRole('button', { name: 'Reset view' }).click(); await sleep(1500)
   await drag(0, 330); await p.screenshot({ path: 'qa-screens/ms-05-look-up.png' })
   await drag(0, -700); await p.screenshot({ path: 'qa-screens/ms-06-look-down.png' })
   expect(await p.evaluate(() => { const m = document.querySelector('.ms'); return m.scrollLeft === 0 && m.scrollTop === 0 }), 'the stage never scrolls')
