@@ -231,3 +231,45 @@ export function bookSpines(seed: number, w = 512, h = 128) {
   t.wrapS = t.wrapT = 1001 // ClampToEdge
   return t
 }
+
+/** the same view at night: a navy sky, dark towers, many warmly lit windows, a soft glow on the horizon */
+export function cityNight(w = 2048, h = 1024) {
+  const r = rng(21)
+  const [c, g] = canvas(w, h)
+  const sky = g.createLinearGradient(0, 0, 0, h)
+  sky.addColorStop(0, '#0b1424')
+  sky.addColorStop(0.55, '#16243c')
+  sky.addColorStop(0.8, '#2a3550')
+  sky.addColorStop(1, '#3a3a4a')
+  g.fillStyle = sky
+  g.fillRect(0, 0, w, h)
+  // a few faint stars high up
+  for (let i = 0; i < 90; i++) {
+    g.fillStyle = `rgba(255,255,255,${0.15 + r() * 0.35})`
+    g.fillRect(r() * w, r() * h * 0.35, 1.5, 1.5)
+  }
+  const glow = g.createLinearGradient(0, h * 0.55, 0, h)
+  glow.addColorStop(0, 'rgba(255,170,110,0)')
+  glow.addColorStop(1, 'rgba(255,170,110,0.22)')
+  g.fillStyle = glow
+  g.fillRect(0, 0, w, h)
+  const layers: [number, number, string, number][] = [[0.5, 0.25, '#1b2233', 0.35], [0.62, 0.32, '#141a28', 0.5], [0.78, 0.36, '#0c111b', 0.62]]
+  for (const [horizon, maxH, col, lit] of layers) {
+    let x = -20
+    while (x < w) {
+      const bw = 40 + r() * 120
+      const bh = h * (0.06 + r() * maxH)
+      const top = h * horizon - bh + h * 0.2
+      g.fillStyle = col
+      g.fillRect(x, top, bw, h - top)
+      for (let wy = top + 10; wy < h - 6; wy += 14)
+        for (let wx = x + 6; wx < x + bw - 6; wx += 10)
+          if (r() < lit * 0.5) {
+            g.fillStyle = `rgba(255,${190 + ((r() * 50) | 0)},${120 + ((r() * 40) | 0)},${0.45 + r() * 0.5})`
+            g.fillRect(wx, wy, 4, 6)
+          }
+      x += bw + 2 + r() * 8
+    }
+  }
+  return tex(c)
+}

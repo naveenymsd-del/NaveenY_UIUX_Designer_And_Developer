@@ -160,17 +160,24 @@ export function CameraRig({ enabled }: { enabled: boolean }) {
  * the visitor looks around — while staying real, crisp, clickable HTML.
  */
 export const anchors = new Map<string, { el: HTMLElement; pos: Vector3; width: number; px: number }>()
-const _a = new Vector3(), _x = new Vector3(), _y = new Vector3()
+const _a = new Vector3(), _x = new Vector3(), _y = new Vector3(), _f = new Vector3(), _d = new Vector3()
 export function AnchorProjector() {
   const { camera, size } = useThree()
   useFrame(() => {
+    camera.getWorldDirection(_f)
     for (const a of anchors.values()) {
+      // how far off the line of sight it is: fades out as it leaves the view, gone before the
+      // flat projection could distort (or flip) it — like a window you've turned away from
+      // measured at the nearer edge of the plane, which leaves the view first
+      const edge = (s: number) => _d.copy(a.pos).setX(a.pos.x + (s * a.width) / 2).sub(camera.position).normalize().dot(_f)
+      const cos = Math.min(edge(-1), edge(1))
+      const fade = MathUtils.clamp((cos - 0.5) / 0.18, 0, 1)
       _a.copy(a.pos).project(camera)
-      const behind = _a.z > 1
-      if (behind) {
+      if (fade <= 0 || _a.z > 1) {
         a.el.style.visibility = 'hidden'
         continue
       }
+      a.el.style.opacity = fade < 1 ? fade.toFixed(3) : ''
       _x.copy(a.pos).setX(a.pos.x + a.width / 2).project(camera)
       _y.copy(a.pos).setY(a.pos.y + a.width / 2).project(camera)
       const sx = (v: Vector3) => (v.x * 0.5 + 0.5) * size.width
@@ -179,6 +186,11 @@ export function AnchorProjector() {
       // screen-space basis of the plane, per CSS pixel of the design width
       const k = 2 / a.px
       const ax = (sx(_x) - cx) * k, ay = (sy(_x) - cy) * k
+      // a guard: never draw it implausibly large (it would only be a distorted sliver of the plane)
+      if (Math.hypot(ax, ay) * a.px > size.width * 1.6) {
+        a.el.style.visibility = 'hidden'
+        continue
+      }
       const bx = -(sx(_y) - cx) * k, by = -(sy(_y) - cy) * k
       a.el.style.visibility = 'visible'
       a.el.style.transform = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px) matrix(${ax.toFixed(4)}, ${ay.toFixed(4)}, ${bx.toFixed(4)}, ${by.toFixed(4)}, 0, 0) translate(-50%, -50%)`

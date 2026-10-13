@@ -21,6 +21,9 @@ interface MindspaceState {
   resetTick: number
   /** the 3D scene could not start: the launcher is shown without the room */
   fallback: boolean
+  /** the room's time of day (from the visitor's local clock) — the UI adapts its contrast to it */
+  tod: 'morning' | 'afternoon' | 'evening' | 'night'
+  setTod: (t: MindspaceState['tod']) => void
   enterRoom: () => void
   setBeat: (t: number) => void
   open: (id: AppId, origin?: { x: number; y: number } | null) => void
@@ -32,34 +35,27 @@ interface MindspaceState {
   setFallback: () => void
 }
 
-const SEEN_KEY = 'mindspace:intro-seen'
-export function introSeen() {
-  try {
-    return sessionStorage.getItem(SEEN_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-function markSeen() {
-  try {
-    sessionStorage.setItem(SEEN_KEY, '1')
-  } catch {
-    /* storage blocked: the intro may play again, nothing breaks */
-  }
+/**
+ * The intro plays on every visit — following the link from the city or reloading the page.
+ * Only `?intro=off` in the address (used by the automated checks) starts straight in the room.
+ */
+function introOff() {
+  return new URLSearchParams(window.location.search).get('intro') === 'off'
 }
 
 export const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 
 export const useMindspace = create<MindspaceState>((set, get) => ({
-  phase: introSeen() || reducedMotion() ? 'room' : 'intro',
+  phase: introOff() || reducedMotion() ? 'room' : 'intro',
   introBeat: 0,
   app: null,
   origin: null,
   closing: false,
   resetTick: 0,
   fallback: false,
+  tod: 'afternoon',
+  setTod: (tod) => { if (get().tod !== tod) set({ tod }) },
   enterRoom: () => {
-    markSeen()
     if (get().phase !== 'room') set({ phase: 'room' })
   },
   setBeat: (t) => set({ introBeat: t }),

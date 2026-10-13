@@ -60,6 +60,7 @@ export function Launcher({ pinned }: { pinned: boolean }) {
             aria-label={`Open ${a.title}`}
           >
             <span className={`ms-icon__face ms-icon__face--${a.id}`} style={{ background: a.face }} aria-hidden="true">
+              <span className="ms-icon__rim" />
               {a.glyph}
             </span>
             <span className="ms-icon__label">{a.label}</span>

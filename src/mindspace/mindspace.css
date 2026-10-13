@@ -443,11 +443,96 @@
   .ms-viewer__fig img { max-height: calc(100vh - 300px); }
 }
 
+/* ── liquid glass: one material language for icons, windows and controls ── */
+/* a thin glass rim: a gradient ring (brighter where the light catches the top-left edge) */
+.ms-icon__rim, .ms-window::before, .ms-round::before, .ms-pill::before, .ms-window__close::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.12) 34%, rgba(255, 255, 255, 0.04) 62%, rgba(255, 255, 255, 0.32));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.ms-round, .ms-pill, .ms-window__close { position: relative; }
+
+/* icons: a dimensional disc, a soft contact shadow, a tight specular highlight, a glass rim */
+.ms-icon__face {
+  box-shadow:
+    0 24px 30px -20px rgba(0, 0, 0, 0.6),
+    0 6px 12px -8px rgba(0, 0, 0, 0.45),
+    inset 0 -10px 18px rgba(255, 255, 255, 0.1),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.18),
+    inset 0 2px 1px rgba(255, 255, 255, 0.5);
+}
+.ms-icon__face::after { inset: 7% 24% auto 20%; height: 32%; border-radius: 50%; background: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0) 72%); opacity: 0.85; }
+.ms-icon__rim { inset: -4px; padding: 1.5px; border-radius: 50%; opacity: 0.75; }
+.ms-icon__label {
+  padding: 3px 10px 4px;
+  border-radius: 999px;
+  background: rgba(22, 22, 26, var(--ms-label-back, 0.26));
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  transition: background 0.3s;
+}
+.ms-icon:hover .ms-icon__face, .ms-icon:focus-visible .ms-icon__face {
+  transform: translateY(-4px) scale(1.06);
+  box-shadow:
+    0 30px 36px -20px rgba(0, 0, 0, 0.62),
+    0 8px 14px -8px rgba(0, 0, 0, 0.45),
+    inset 0 -10px 18px rgba(255, 255, 255, 0.14),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.18),
+    inset 0 2px 1px rgba(255, 255, 255, 0.55);
+}
+.ms-icon:hover .ms-icon__rim, .ms-icon:focus-visible .ms-icon__rim { opacity: 1; }
+.ms-icon:hover .ms-icon__label { background: rgba(22, 22, 26, calc(var(--ms-label-back, 0.26) + 0.12)); }
+.ms-icon:focus-visible .ms-icon__face { outline: 2.5px solid #fff; outline-offset: 7px; }
+.ms-icon.is-pressed .ms-icon__face { transform: scale(1.12); filter: brightness(1.12); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5), 0 0 36px rgba(255, 255, 255, 0.35), 0 24px 30px -20px rgba(0, 0, 0, 0.6); }
+.ms-icon.is-pressed .ms-icon__rim { opacity: 1; }
+
+/* windows: a stable, readable surface (tinted for the time of day), a lit top edge, a specular rim */
+.ms-window {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0) 22%),
+    var(--ms-surface, rgba(46, 46, 52, 0.5));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 60px 120px -40px rgba(0, 0, 0, 0.7), 0 20px 40px -24px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(48px) saturate(1.5);
+  -webkit-backdrop-filter: blur(48px) saturate(1.5);
+}
+.ms-window::before { z-index: 2; }
+.ms-window__head { border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+.ms-window__close { background: rgba(255, 255, 255, 0.12); }
+.ms-window__close:hover { background: rgba(255, 255, 255, 0.22); }
+.ms-app .ms-muted { color: rgba(255, 255, 255, 0.66); }
+.ms-block > h3 { color: rgba(255, 255, 255, 0.62); }
+
+/* the room behind an open window: blurred and dimmed just enough for this light */
+.ms.has-app .ms-canvas { filter: blur(8px) brightness(var(--ms-dim, 0.78)) saturate(0.95); }
+
+/* time of day → the UI's contrast (the room's look comes from scene/timeOfDay.ts) */
+.ms[data-tod='morning'] { --ms-surface: rgba(44, 46, 54, 0.54); --ms-dim: 0.72; --ms-label-back: 0.3; }
+.ms[data-tod='afternoon'] { --ms-surface: rgba(44, 44, 50, 0.56); --ms-dim: 0.68; --ms-label-back: 0.32; }
+.ms[data-tod='evening'] { --ms-surface: rgba(52, 42, 38, 0.5); --ms-dim: 0.78; --ms-label-back: 0.26; }
+.ms[data-tod='night'] { --ms-surface: rgba(34, 34, 42, 0.48); --ms-dim: 0.9; --ms-label-back: 0.2; }
+@media (prefers-reduced-transparency: reduce) {
+  .ms-window { background: rgba(36, 36, 42, 0.94); }
+  .ms-icon__label { background: rgba(22, 22, 26, 0.7); }
+}
+
 /* ── phones ─────────────────────────────────────────────────────────────── */
 @media (max-width: 720px), (max-aspect-ratio: 1/1) {
-  .ms-icon { width: 120px; }
+  /* one-line labels on their frosted backing, in slightly wider cells */
+  .ms-icon { width: 140px; gap: 14px; }
   .ms-icon__face { width: 92px; height: 92px; }
-  .ms-icon__label { font-size: 17px; }
+  .ms-icon__label { max-width: none; font-size: 15.5px; white-space: nowrap; }
   .ms-launcher { gap: 30px 6px; }
   .ms-window-layer { padding: calc(74px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom)); }
   .ms-window { border-radius: 28px; height: 100%; }

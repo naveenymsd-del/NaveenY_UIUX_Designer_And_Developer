@@ -1,8 +1,11 @@
 import { Environment, Lightformer } from '@react-three/drei'
-import { useMemo } from 'react'
-import { MeshPhysicalMaterial, MeshStandardMaterial } from 'three'
+import { useFrame, useThree } from '@react-three/fiber'
+import { useEffect, useMemo, useRef } from 'react'
+import { type DirectionalLight, type HemisphereLight, MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, type PointLight } from 'three'
+import { reducedMotion, useMindspace } from '../store'
+import { currentHour, LiveLook, lookAt } from './timeOfDay'
 import { Armchair, Art, ArcLamp, CoffeeTable, Curtain, Plant, Shelving, SlatWall, Sofa, useMaterials } from './furniture'
-import { artwork, cityView, oakFloor, plaster, rug } from './textures'
+import { artwork, cityNight, cityView, oakFloor, plaster, rug } from './textures'
 
 /**
  * A contemporary living room, modelled so it holds up in every direction:
@@ -15,18 +18,33 @@ import { artwork, cityView, oakFloor, plaster, rug } from './textures'
  */
 export const ROOM = { x: 4.6, zBack: -3.8, zFront: 4.6, h: 3.1 }
 
-export function LivingRoom({ quality }: { quality: 'high' | 'low' }) {
-  const m = useMaterials()
-  const t = useMemo(() => ({
+/** the painted textures, made once per quality and shared (the shader warm-up and the real room use the same) */
+const textureCache = new Map<string, ReturnType<typeof paintTextures>>()
+function paintTextures(quality: 'high' | 'low') {
+  return {
     floor: oakFloor(quality === 'high' ? 1024 : 512),
     wall: plaster([226, 218, 206], 3),
     ceiling: plaster([240, 236, 230], 8),
     rug: rug(quality === 'high' ? 1024 : 512),
     city: cityView(quality === 'high' ? 2048 : 1024, quality === 'high' ? 1024 : 512),
+    cityNight: cityNight(quality === 'high' ? 2048 : 1024, quality === 'high' ? 1024 : 512),
     artA: artwork(4),
     artB: artwork(19, 640, 420),
     artC: artwork(27, 420, 560),
-  }), [quality])
+  }
+}
+export function roomTextures(quality: 'high' | 'low') {
+  if (!textureCache.has(quality)) textureCache.set(quality, paintTextures(quality))
+  return textureCache.get(quality)!
+}
+
+/**
+ * `preview`: a silent copy used only to compile the room's shaders during the intro
+ * (see RoomWarmup) — it doesn't drive the time of day or touch the renderer.
+ */
+export function LivingRoom({ quality, preview = false }: { quality: 'high' | 'low'; preview?: boolean }) {
+  const m = useMaterials()
+  const t = useMemo(() => roomTextures(quality), [quality])
   const mat = useMemo(() => ({
     floor: new MeshPhysicalMaterial({ map: t.floor, roughness: 0.42, clearcoat: 0.35, clearcoatRoughness: 0.35 }),
     wall: new MeshStandardMaterial({ map: t.wall, roughness: 0.95 }),
@@ -39,7 +57,68 @@ export function LivingRoom({ quality }: { quality: 'high' | 'low' }) {
     // satin-silvered glass: it catches the room's light without mirroring an empty environment
     mirror: new MeshStandardMaterial({ color: '#c8c6c2', roughness: 0.22, metalness: 0.35, envMapIntensity: 1.4 }),
     hall: new MeshStandardMaterial({ color: '#5a4c41', roughness: 1 }),
+    city: new MeshBasicMaterial({ map: t.city, toneMapped: false }),
+    cityNight: new MeshBasicMaterial({ map: t.cityNight, toneMapped: false, transparent: true, opacity: 0, depthWrite: false }),
   }), [t])
+
+  // ── time of day: the existing lights and materials, eased toward the look for the local hour ──
+  const hemi = useRef<HemisphereLight>(null)
+  const sun = useRef<DirectionalLight>(null)
+  const ceilA = useRef<PointLight>(null)
+  const ceilB = useRef<PointLight>(null)
+  const lamp = useRef<PointLight>(null)
+  const lampGlow = useRef<MeshStandardMaterial>(null)
+  const { gl, scene } = useThree()
+  const live = useMemo(() => new LiveLook(), [])
+  const target = useMemo(() => new LiveLook(), [])
+  const first = useRef(true)
+  useEffect(() => {
+    if (preview) return
+    // the target changes slowly: recompute it once a minute, and whenever the tab comes back
+    const update = () => {
+      const { look, period } = lookAt(currentHour())
+      target.set(look)
+      useMindspace.getState().setTod(period)
+    }
+    update()
+    const id = window.setInterval(update, 60_000)
+    const onVis = () => { if (document.visibilityState === 'visible') update() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [target, preview])
+  useFrame((_, dt) => {
+    if (preview) return
+    // first frame: start exactly on the look; afterwards ease (~3 s), or snap with reduced motion
+    live.approach(target, first.current || reducedMotion() ? 1 : 1 - Math.exp(-1.2 * Math.min(dt, 0.1)))
+    first.current = false
+    const L = live
+    if (hemi.current) {
+      hemi.current.color.copy(L.sky)
+      hemi.current.groundColor.copy(L.ground)
+      hemi.current.intensity = L.hemi
+    }
+    if (sun.current) {
+      sun.current.color.copy(L.sun)
+      sun.current.intensity = L.sunI
+      sun.current.position.copy(L.sunDir)
+    }
+    const k = L.interior
+    if (ceilA.current) ceilA.current.intensity = 0.25 + 3.2 * k
+    if (ceilB.current) ceilB.current.intensity = 0.15 + 2.2 * k
+    if (lamp.current) lamp.current.intensity = 6 * k
+    if (lampGlow.current) lampGlow.current.emissiveIntensity = 0.15 + 2.6 * k
+    mat.cove.emissiveIntensity = 0.35 + 2.2 * k
+    mat.downlight.emissiveIntensity = 0.5 + 3.5 * k
+    mat.ceiling.emissiveIntensity = L.ceiling
+    mat.city.color.copy(L.cityTint)
+    mat.cityNight.opacity = L.night
+    mat.glass.opacity = 0.12 + 0.1 * L.night
+    scene.environmentIntensity = L.env
+    gl.toneMappingExposure = L.exposure * 1.03
+  })
   const { x: X, zBack: ZB, zFront: ZF, h: H } = ROOM
   const W = X * 2, D = ZF - ZB, zMid = (ZF + ZB) / 2
   // the window opening in the back wall
@@ -56,8 +135,9 @@ export function LivingRoom({ quality }: { quality: 'high' | 'low' }) {
       </Environment>
 
       {/* daylight: a low warm sun through the glazing, plus sky fill */}
-      <hemisphereLight args={['#e6edf3', '#b08a68', 0.75]} />
+      <hemisphereLight ref={hemi} args={['#e6edf3', '#b08a68', 0.75]} />
       <directionalLight
+        ref={sun}
         position={[-6, 6.5, -11]}
         color="#ffe0b8"
         intensity={2.6}
@@ -72,8 +152,8 @@ export function LivingRoom({ quality }: { quality: 'high' | 'low' }) {
         shadow-camera-near={1}
         shadow-camera-far={30}
       />
-      <pointLight position={[0.2, 2.75, 0.6]} color="#ffe7c6" intensity={2.2} distance={6} decay={2} />
-      <pointLight position={[2.6, 2.75, 2.8]} color="#ffe7c6" intensity={1.4} distance={5} decay={2} />
+      <pointLight ref={ceilA} position={[0.2, 2.75, 0.6]} color="#ffe7c6" intensity={2.2} distance={7} decay={2} />
+      <pointLight ref={ceilB} position={[2.6, 2.75, 2.8]} color="#ffe7c6" intensity={1.4} distance={6} decay={2} />
 
       {/* floor, ceiling, walls */}
       <mesh rotation-x={-Math.PI / 2} position={[0, 0, zMid]} material={mat.floor} receiveShadow>
@@ -146,9 +226,12 @@ export function LivingRoom({ quality }: { quality: 'high' | 'low' }) {
       <mesh position={[(win.x0 + win.x1) / 2, (win.y0 + win.y1) / 2, ZB + 0.01]} material={mat.glass}>
         <planeGeometry args={[win.x1 - win.x0, win.y1 - win.y0]} />
       </mesh>
-      <mesh position={[-1.2, 2.2, -14]}>
+      {/* the view: the day picture, with the night picture fading in over it */}
+      <mesh position={[-1.2, 2.2, -14]} material={mat.city}>
         <planeGeometry args={[30, 15]} />
-        <meshBasicMaterial map={t.city} toneMapped={false} />
+      </mesh>
+      <mesh position={[-1.2, 2.2, -13.98]} material={mat.cityNight}>
+        <planeGeometry args={[30, 15]} />
       </mesh>
       <Curtain position={[win.x0 + 0.45, 1.5, ZB + 0.18]} width={0.9} height={2.95} />
       <Curtain position={[win.x1 - 0.35, 1.5, ZB + 0.18]} width={0.7} height={2.95} />
@@ -195,7 +278,7 @@ export function LivingRoom({ quality }: { quality: 'high' | 'low' }) {
       <mesh position={[-X + 0.3, 0.5, 0.35]} material={m.ceramic} castShadow>
         <sphereGeometry args={[0.11, 32, 20]} />
       </mesh>
-      <ArcLamp position={[-2.25, 0, -1.6]} rotation={-0.35} m={m} />
+      <ArcLamp position={[-2.25, 0, -1.6]} rotation={-0.35} m={m} lightRef={lamp} glowRef={lampGlow} />
       <Plant position={[-3.9, 0, 3.6]} height={1.5} leaves={280} seed={14} m={m} />
 
       {/* right wall: shelving, the lounge chair, a plant */}

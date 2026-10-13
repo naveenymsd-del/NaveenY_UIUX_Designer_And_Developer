@@ -1,5 +1,5 @@
 // Mindspace intro: frames through the opening, the hand-over to the room, Skip intro, and
-// that a second visit in the same session goes straight to the room.
+// that it plays again on every visit (reload), with ?intro=off as the only way to start in the room.
 import { chromium } from 'playwright-core'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const base = process.argv[2] ?? 'http://localhost:5173'
@@ -29,10 +29,14 @@ const expect = (ok, msg) => { if (!ok) problems.push(msg); console.log(`${ok ? '
   expect(skip, 'Skip intro is offered during the opening')
   expect(secs >= 4.5 && secs <= 9, `intro hands over to the room after ${secs.toFixed(1)} s`)
   expect(icons === 9, `icons appear in the room (${icons}/9)`)
-  // same session, reload: no intro
+  // reload: the intro plays again (every visit, not once per session)
   await p.reload()
   await p.waitForSelector('.ms.is-ready', { timeout: 30000 })
-  expect(!(await p.evaluate(() => !!document.querySelector('.ms.is-intro'))), 'second visit in the session: straight into the room')
+  expect(await p.evaluate(() => !!document.querySelector('.ms.is-intro') && !!document.querySelector('.ms-intro__skip')), 'reload: the intro plays again, with Skip intro')
+  // ?intro=off (used by the automated checks) starts in the room
+  await p.goto(`${base}/mindspace?intro=off`)
+  await p.waitForSelector('.ms.is-ready', { timeout: 30000 })
+  expect(!(await p.evaluate(() => !!document.querySelector('.ms.is-intro'))), '?intro=off: straight into the room')
   expect(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors) : ''}`)
   await ctx.close()
 }

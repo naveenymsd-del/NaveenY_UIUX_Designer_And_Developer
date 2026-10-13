@@ -15,8 +15,7 @@ async function room(ctxOpts) {
   p.errors = []
   p.on('pageerror', (e) => p.errors.push(e.message))
   p.on('console', (m) => m.type() === 'error' && p.errors.push(m.text()))
-  await p.addInitScript(() => sessionStorage.setItem('mindspace:intro-seen', '1'))
-  await p.goto(`${base}/mindspace`)
+  await p.goto(`${base}/mindspace?intro=off`)
   await p.waitForSelector('.ms.is-ready', { timeout: 30000 })
   await sleep(2600)
   return p
@@ -234,7 +233,7 @@ const windowFits = (p) => p.evaluate(() => { const r = document.querySelector('.
   const p = await (await nb.newContext({ viewport: { width: 1280, height: 800 } })).newPage()
   const errs = []
   p.on('pageerror', (e) => errs.push(e.message))
-  await p.goto(`${base}/mindspace`)
+  await p.goto(`${base}/mindspace?intro=off`)
   await p.waitForSelector('.ms.is-fallback', { timeout: 20000 })
   await sleep(1500)
   await p.screenshot({ path: 'qa-screens/ms-30-no-webgl.png' })

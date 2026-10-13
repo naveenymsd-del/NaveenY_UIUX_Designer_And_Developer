@@ -22,6 +22,7 @@ export default function MindspaceApp() {
   const fallback = useMindspace((s) => s.fallback)
   const app = useMindspace((s) => s.app)
   const phase = useMindspace((s) => s.phase)
+  const tod = useMindspace((s) => s.tod)
   const setFallback = useMindspace((s) => s.setFallback)
   const [ready, setReady] = useState(false)
   const quality = useMemo(() => (matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency ?? 8) <= 4 ? 'low' : 'high') as 'high' | 'low', [])
@@ -38,7 +39,7 @@ export default function MindspaceApp() {
   }, [])
 
   return (
-    <div className={`ms ${app ? 'has-app' : ''} ${phase === 'intro' ? 'is-intro' : ''} ${fallback ? 'is-fallback' : ''} ${ready || fallback ? 'is-ready' : ''}`}>
+    <div data-tod={tod} className={`ms ${app ? 'has-app' : ''} ${phase === 'intro' ? 'is-intro' : ''} ${fallback ? 'is-fallback' : ''} ${ready || fallback ? 'is-ready' : ''}`}>
       <div className="ms-stage" aria-hidden="true">
         {!fallback && (
           <SceneBoundary onError={setFallback}>

@@ -1,13 +1,18 @@
 import { RoundedBox } from '@react-three/drei'
-import { useLayoutEffect, useMemo, useRef } from 'react'
-import { CatmullRomCurve3, Color, DoubleSide, type InstancedMesh, MeshStandardMaterial, Object3D, PlaneGeometry, Shape, ShapeGeometry, TubeGeometry, Vector3 } from 'three'
+import { type RefObject, useLayoutEffect, useMemo, useRef } from 'react'
+import { CatmullRomCurve3, Color, DoubleSide, type InstancedMesh, MeshStandardMaterial, Object3D, type PointLight, PlaneGeometry, Shape, ShapeGeometry, TubeGeometry, Vector3 } from 'three'
 import { bookSpines, fabric } from './textures'
 
 type V3 = [number, number, number]
 
 /* ── shared materials (one instance each, reused by every piece) ────────── */
+/** made once and shared: the shader warm-up and the real room use the very same materials */
+let sharedMaterials: ReturnType<typeof makeMaterials> | null = null
 export function useMaterials() {
-  return useMemo(() => {
+  return useMemo(() => (sharedMaterials ??= makeMaterials()), [])
+}
+function makeMaterials() {
+  return (() => {
     const boucle = new MeshStandardMaterial({ color: '#efe8dc', map: fabric([236, 229, 216], 5), roughness: 0.95 })
     return {
       boucle,
@@ -26,7 +31,7 @@ export function useMaterials() {
       soil: new MeshStandardMaterial({ color: '#3b2b20', roughness: 1 }),
       trunk: new MeshStandardMaterial({ color: '#6b5440', roughness: 0.9 }),
     }
-  }, [])
+  })()
 }
 export type Mats = ReturnType<typeof useMaterials>
 
@@ -166,9 +171,11 @@ export function Plant({ position, height = 1.7, leaves = 260, seed = 1, scale = 
 }
 
 /** an arc floor lamp: marble base, brushed arc, a dome shade that glows warm */
-export function ArcLamp({ position, rotation = 0, m, on = true }: { position: V3; rotation?: number; m: Mats; on?: boolean }) {
+export function ArcLamp({ position, rotation = 0, m, on = true, lightRef, glowRef }: { position: V3; rotation?: number; m: Mats; on?: boolean; lightRef?: RefObject<PointLight | null>; glowRef?: RefObject<MeshStandardMaterial | null> }) {
   const tube = useMemo(() => new TubeGeometry(new CatmullRomCurve3([new Vector3(0, 0.05, 0), new Vector3(0, 1.4, 0), new Vector3(0.25, 2.05, 0), new Vector3(0.9, 2.15, 0), new Vector3(1.3, 1.95, 0)]), 40, 0.014, 8), [])
   const glow = useMemo(() => new MeshStandardMaterial({ color: '#fff3dc', emissive: '#ffd9a0', emissiveIntensity: on ? 2.4 : 0, side: DoubleSide }), [on])
+  // the time of day dims the lamp through these handles
+  useLayoutEffect(() => { if (glowRef) glowRef.current = glow }, [glow, glowRef])
   return (
     <group position={position} rotation={[0, rotation, 0]}>
       <mesh position={[0, 0.03, 0]} material={m.travertine} castShadow receiveShadow>
@@ -181,7 +188,7 @@ export function ArcLamp({ position, rotation = 0, m, on = true }: { position: V3
       <mesh position={[1.3, 1.9, 0]} rotation={[Math.PI / 2, 0, 0]} material={glow}>
         <circleGeometry args={[0.17, 32]} />
       </mesh>
-      {on && <pointLight position={[1.3, 1.7, 0]} color="#ffcf94" intensity={4} distance={4.5} decay={2} />}
+      {on && <pointLight ref={lightRef} position={[1.3, 1.7, 0]} color="#ffcf94" intensity={4} distance={4.5} decay={2} />}
     </group>
   )
 }
