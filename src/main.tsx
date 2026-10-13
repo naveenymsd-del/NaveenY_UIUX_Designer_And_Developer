@@ -11,12 +11,17 @@ import './styles/splash.css'
 import './styles/rain.css'
 import './styles/layers.css'
 import './styles/project-case.css'
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
-import { App } from './app/App'
+
+// /mindspace is a separate experience (the spatial portfolio): its own bundle,
+// and the 3D city is never mounted alongside it
+const isMindspace = /\/mindspace\/?$/.test(window.location.pathname)
+const Mindspace = lazy(() => import('./mindspace/MindspaceApp'))
+const City = lazy(() => import('./app/App').then((m) => ({ default: m.App })))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <Suspense fallback={null}>{isMindspace ? <Mindspace /> : <City />}</Suspense>
   </StrictMode>,
 )
