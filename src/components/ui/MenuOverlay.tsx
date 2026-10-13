@@ -10,6 +10,7 @@ import { type MenuSection, useUIStore } from '@/stores/uiStore'
 import { ContactLinks } from './ContactLinks'
 import { FeedbackForm } from './FeedbackForm'
 import { STOP_ICONS } from './stopIcons'
+import { BASE } from '@/utils/basePath'
 
 /** what each place is for, in a few words */
 const ABOUT: Record<string, string> = {
@@ -109,6 +110,7 @@ export function MenuOverlay() {
             {SECTIONS.map((s) => (
               <button key={s.id} className={section === s.id ? 'is-active' : ''} onClick={() => { soundManager.play('click'); setSection(s.id) }} tabIndex={tab}>{s.label}</button>
             ))}
+            <a className="ui-explore__classic" href={`${BASE}mindspace`} tabIndex={tab}>Explore the Classic Portfolio ↗</a>
           </div>
         </nav>
         <section className="ui-menu__content" aria-live="polite">

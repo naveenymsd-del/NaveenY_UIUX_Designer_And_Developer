@@ -9,6 +9,7 @@ import { SoundButton } from './SoundButton'
 import { DayNightToggle } from './DayNightToggle'
 import { WorldStatus } from './WorldStatus'
 import { PROFILE } from '@/data/portfolioContent'
+import { BASE } from '@/utils/basePath'
 
 /** once the camera has settled behind the avatar, do this */
 function whenPlaying(fn: () => void) {
@@ -84,10 +85,17 @@ export function IntroOverlay() {
             Explore the map
           </button>
         </div>
-        <button className="ui-intro__work" onClick={() => beginJourney('work')} tabIndex={tab}>
-          View my work
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
-        </button>
+        <div className="ui-intro__links">
+          <button className="ui-intro__work" onClick={() => beginJourney('work')} tabIndex={tab}>
+            View my work
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
+          </button>
+          {/* the spatial portfolio (/mindspace) — a full page load, so the city is never kept running behind it */}
+          <a className="ui-intro__work" href={`${BASE}mindspace`} tabIndex={tab}>
+            Explore the Classic Portfolio
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
+          </a>
+        </div>
       </section>
 
       <div className={`ui-intro__status ${hero && !leaving ? 'is-visible' : ''}`}>
