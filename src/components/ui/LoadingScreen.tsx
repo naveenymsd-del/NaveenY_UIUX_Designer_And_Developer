@@ -57,7 +57,7 @@ function DirectStart() {
   if (gone) return null
   return (
     <div
-      className={`ui-loading ui-start ${phase !== 'loading' ? 'is-done' : ''}`}
+      className={`ui-loading ui-start ${phase !== 'loading' || (onboarding && done) ? 'is-done' : ''}`}
       role="status"
       aria-live="polite"
       aria-label={done ? 'Naveen’s interactive portfolio is ready.' : 'Loading Naveen’s interactive portfolio.'}

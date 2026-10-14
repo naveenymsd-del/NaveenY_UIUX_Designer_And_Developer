@@ -9,6 +9,9 @@ import { TRAVEL } from '@/core/navigation'
 import { INTERIORS, roomToWorld, type InteriorId } from '@/data/interiors'
 import { getProject, PROJECTS_OVERVIEW_CAMERA } from '@/data/projects'
 import { useGameStore } from '@/stores/gameStore'
+import { CITY_CENTER, CITY_SPAN, previewRuntime } from '@/core/preview'
+
+const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
 import { clamp, damp, dampAngle, easeInOutCubic, smoothstep, wrapAngle } from '@/utils/movement'
 
 /** Camera ray only hits static geometry in group 0 (walls live in group 1). */
@@ -21,6 +24,8 @@ interface CamPose {
 
 function shotKey(): string {
   const g = useGameStore.getState()
+  // the welcome screen: an overview of the whole city (above every other shot)
+  if (previewRuntime.active) return 'preview'
   if (g.shotOverride) return 'override'
   if (g.travel) return 'travel'
   if (g.phase === 'loading' || g.phase === 'intro') return introRuntime.t >= INTRO.heroAt ? 'hero' : 'intro'
@@ -35,6 +40,10 @@ function shotKey(): string {
 function durationFor(from: string, to: string) {
   // cut instantly into a room (we are behind a fade), then ease out of the establishing shot
   if (to.startsWith('establish')) return 0.001
+  // the welcome screen opens over the loading cover and closes behind a fade: cut, don't glide
+  if (from === 'preview' && (to === 'intro' || to === 'hero')) return 0.001
+  if (from === '' || (to === 'preview' && from === 'intro')) return 0.001
+  if (from === 'preview' || to === 'preview') return 1.6
   if (from.startsWith('establish')) return 1.8
   // the flight lands exactly on the hero pose; a skip glides there instead of cutting
   if (from === 'intro' && to === 'hero') return introRuntime.skipped ? 1.7 : 0.001
@@ -78,6 +87,8 @@ export function GameCamera() {
     live: { pos: new Vector3(), target: new Vector3() } as CamPose,
     follow: { pos: new Vector3(), target: new Vector3(), init: false, dist: CAMERA_DEFAULTS.distance, look: new Vector3() },
     time: 0,
+    shiftX: 0,
+    shiftY: 0,
   })
 
   useFrame((_, rawDt) => {
@@ -188,6 +199,26 @@ export function GameCamera() {
         dz /= len
       }
       live.pos.set(gx - dx * TRAVEL.back, TRAVEL.height, gz - dz * TRAVEL.back)
+    } else if (key === 'preview') {
+      // a high, slow-drifting overview of the real city, framed into the welcome screen's stage
+      const stg = previewRuntime.stage
+      const vw = size.width
+      const vh = size.height
+      const stageW = stg.w || vw
+      const stageH = stg.h || vh
+      const still = reducedMotion()
+      // seen from the east-southeast: the avenue (the long north-south axis) runs across the stage
+      const a = 1.18 + (still ? 0 : Math.sin(s.time * 0.05) * 0.06)
+      const el = 0.74
+      // the destinations' footprint on screen (world units), plus room for the buildings and markers
+      const across = CITY_SPAN.z * Math.sin(a) + CITY_SPAN.x * Math.abs(Math.cos(a)) + 18
+      const deep = (CITY_SPAN.x * Math.sin(a) + CITY_SPAN.z * Math.abs(Math.cos(a))) * Math.sin(el) + 14
+      // the distance at which that footprint fits the stage (the stage is part of the full view)
+      const halfV = (camera.fov * Math.PI) / 360
+      const halfH = Math.atan(Math.tan(halfV) * (vw / vh))
+      const r = Math.max(across / 2 / (Math.tan(halfH) * (stageW / vw)), deep / 2 / (Math.tan(halfV) * (stageH / vh))) * 1.04
+      live.target.copy(CITY_CENTER)
+      live.pos.set(CITY_CENTER.x + Math.sin(a) * Math.cos(el) * r, Math.sin(el) * r, CITY_CENTER.z + Math.cos(a) * Math.cos(el) * r)
     } else if (key === 'override' && game.shotOverride) {
       live.pos.set(...game.shotOverride.position)
       live.target.set(...game.shotOverride.target)
@@ -238,6 +269,18 @@ export function GameCamera() {
 
     camera.position.copy(s.cur.pos)
     camera.lookAt(s.cur.target)
+    // the overview is centred on the stage, not the screen: shift the image (eased in and out with the shot)
+    const stg = previewRuntime.stage
+    const framed = key === 'preview' && stg.w > 0
+    const fast = s.duration < 0.01 // a cut moves the image at once
+    s.shiftX = fast ? (framed ? size.width / 2 - (stg.x + stg.w / 2) : 0) : damp(s.shiftX, framed ? size.width / 2 - (stg.x + stg.w / 2) : 0, 4, dt)
+    s.shiftY = fast ? (framed ? size.height / 2 - (stg.y + stg.h / 2) : 0) : damp(s.shiftY, framed ? size.height / 2 - (stg.y + stg.h / 2) : 0, 4, dt)
+    if (Math.abs(s.shiftX) > 0.5 || Math.abs(s.shiftY) > 0.5) {
+      camera.setViewOffset(size.width, size.height, s.shiftX, s.shiftY, size.width, size.height)
+    } else if (camera.view?.enabled) {
+      s.shiftX = s.shiftY = 0
+      camera.clearViewOffset()
+    }
     cameraRuntime.position.copy(camera.position)
 
     if (game.phase === 'transition' && key === 'follow' && s.t >= 1) {

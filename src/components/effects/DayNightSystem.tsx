@@ -6,6 +6,7 @@ import { introClearness, introRuntime } from '@/core/intro'
 import { BUILDINGS, footprint } from '@/data/cityLayout'
 import { vehicleShared } from '@/components/vehicles/ProceduralVehicle'
 import { useGameStore } from '@/stores/gameStore'
+import { previewRuntime } from '@/core/preview'
 import { getMaterial, nightUniforms } from '@/utils/materials'
 
 const VIEW_NIGHT = new Color(0.17, 0.2, 0.32)
@@ -71,13 +72,19 @@ export function DayNightSystem() {
     // atmosphere (the intro haze lifts as the camera descends)
     const fog = scene.fog as Fog | null
     if (fog) {
-      const c = g.phase === 'loading' ? 0 : g.phase === 'intro' ? introClearness(introRuntime.t) : 1
+      // the welcome screen's city preview sees the whole city: clear air (and a little farther than in play, for the high view)
+      const preview = previewRuntime.active
+      const c = preview ? 1 : g.phase === 'loading' ? 0 : g.phase === 'intro' ? introClearness(introRuntime.t) : 1
       fog.color.copy(s.fog)
       // the opening haze is lighter at night: dark fog over a lit city reads as a bowl from above
       const n0 = 18 + 50 * s.lights
       const f0 = 175 + 170 * s.lights
       fog.near = n0 + (s.fogNear - n0) * c
       fog.far = f0 + (s.fogFar - f0) * c
+      if (preview) {
+        fog.near += 60
+        fog.far += 220
+      }
     }
     if (scene.background instanceof Color) scene.background.copy(s.fog)
     scene.environmentIntensity = g.interior ? 0.7 : s.env

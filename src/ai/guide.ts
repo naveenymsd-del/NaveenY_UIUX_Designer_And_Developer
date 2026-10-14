@@ -14,6 +14,8 @@ import { RealtimeVoice, realtimeSupported } from './voice/realtime'
 import type { VoiceErrorCode, VoiceProvider } from './voice/types'
 import { useVoiceStore } from './voiceStore'
 import { worldContext } from './worldState'
+import { useGameStore } from '@/stores/gameStore'
+import { getProject } from '@/data/projects'
 
 /**
  * The conversational guide. One conversation, three engines:
@@ -93,8 +95,58 @@ export async function narrate(text: string) {
   respond(text)
 }
 
+// ── before the city: the welcome screen ─────────────────────────────────
+// The guide already chats on the welcome screen, but there is no one to walk yet. Anything that
+// moves the visitor (a walk, a project trip, a tour) is kept and carried out once the city is
+// playable — and the visitor is told so, instead of nothing happening.
+const MOVES = new Set<GuideAction['type']>(['navigate', 'navigateProject', 'goBack', 'present', 'showSection', 'tour'])
+let pending: { actions: GuideAction[]; say?: string } | null = null
+const inCity = () => useGameStore.getState().phase === 'playing'
+/** split off what has to wait for the city; returns what can run now */
+function holdMoves(actions: GuideAction[]): { now: GuideAction[]; held: GuideAction[] } {
+  if (inCity()) return { now: actions, held: [] }
+  const held = actions.filter((a) => MOVES.has(a.type) && !(a.type === 'tour' && a.op === 'stop'))
+  return { now: actions.filter((a) => !held.includes(a)), held }
+}
+/** how the guide words a trip that will happen on entry */
+function laterLine(held: GuideAction[]): string {
+  const a = held[0]
+  if (a.type === 'tour') return 'Happy to give you the tour — I’ll start it as soon as you enter the city.'
+  const where =
+    a.type === 'navigate' || a.type === 'present' ? PLACE_NAMES[a.destination]
+    : a.type === 'navigateProject' ? getProject(a.projectId)?.title
+    : undefined
+  return where ? `Sure — I’ll take you to ${where} as soon as you enter the city.` : 'I’ll do that as soon as you enter the city.'
+}
+/** the welcome screen's "Explore this destination": go there once the city is ready */
+export function goAfterEntry(stop: string | null) {
+  if (!stop || stop === 'start') {
+    pending = null
+    return
+  }
+  const destination = STOP_TO_DEST[stop] ?? (stop as DestinationId)
+  pending = { actions: [{ type: 'navigate', destination }], say: `Let’s walk to ${PLACE_NAMES[destination] ?? 'there'}.` }
+}
+/** "Explore without the guide": nothing is carried out on entry */
+export function clearAfterEntry() {
+  pending = null
+}
+export const hasPendingTrip = () => !!pending
+useGameStore.subscribe((g, prev) => {
+  if (g.phase !== 'playing' || prev.phase === 'playing' || !pending) return
+  const p = pending
+  pending = null
+  // let the camera settle behind the visitor first
+  setTimeout(() => {
+    if (p.say) respond(p.say)
+    startActions(p.actions)
+  }, 1200)
+})
+
 // ── tours and other actions, shared by every engine ─────────────────────
-function startActions(actions: GuideAction[]) {
+function startActions(all: GuideAction[]) {
+  const { now: actions, held } = holdMoves(all)
+  if (held.length) pending = { actions: held }
   const nav = actions.some((a) => a.type === 'navigate' || a.type === 'navigateProject' || a.type === 'goBack')
   // going somewhere else ends a tour; stopping just pauses it
   if (nav && tourActive()) leaveTour()
@@ -180,6 +232,8 @@ export async function submit(raw: string) {
     settle()
   }
   reply = withTourPrompt(reply)
+  const later = holdMoves(reply.actions).held
+  if (later.length) reply = { ...reply, text: laterLine(later) }
   rememberReply(reply)
   respond(reply.text)
   settle()

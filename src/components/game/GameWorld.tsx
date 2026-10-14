@@ -19,6 +19,7 @@ import { LOCATIONS } from '@/data/locations'
 import { useGameStore } from '@/stores/gameStore'
 import { useUIStore } from '@/stores/uiStore'
 import { offFlags, qualitySettings } from '@/utils/performance'
+import { PreviewProjector } from './PreviewProjector'
 import { GameCamera } from './GameCamera'
 
 export const FOG_COLOR = '#dcdad4'
@@ -46,6 +47,7 @@ export function GameWorld() {
       <InteractiveObjects defs={LOCATIONS} />
       <InteractionManager />
       <GameCamera />
+      <PreviewProjector />
       {!off.has('particles') && <AmbientParticles count={q.particleCount} />}
       <FountainSpray />
       <DustPuffs />
