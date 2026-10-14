@@ -575,3 +575,22 @@
   .ms-canvas { transition: none; }
 }
 @keyframes ms-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── windows never sit under the music player ─────────────────────────────
+   The mini-player publishes the height it occupies (--ms-player-space: its
+   height + bottom offset + a gap; 0 when hidden). Every app window shares this
+   layer, so all of them end above it; the window's body scrolls on its own. */
+.ms-window-layer { padding-bottom: max(calc(28px + env(safe-area-inset-bottom)), var(--ms-player-space, 0px)); }
+@media (max-width: 720px), (max-aspect-ratio: 1/1) {
+  .ms-window-layer { padding-top: calc(74px + env(safe-area-inset-top)); padding-bottom: max(calc(10px + env(safe-area-inset-bottom)), var(--ms-player-space, 0px)); }
+  .ms-window__body { padding-bottom: 28px; }
+}
+/* very short screens (phones in landscape): the player slims down while a window is open */
+@media (max-height: 520px) {
+  .ms.has-app .ms-mini { padding-block: 3px; }
+  .ms.has-app .ms-mini .mu-art, .ms.has-app .ms-mini__track small { display: none; }
+}
+
+/* a long email address breaks after the @ (never mid-domain, as in "gmail.c / om") */
+.ms-contact__item > span { min-width: 0; }
+.ms-contact__item b { overflow-wrap: break-word; }

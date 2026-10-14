@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Artwork } from '../music/Artwork'
 import { next, play, toggle, toggleMute, usePlayer, usePosition } from '../music/engine'
 import { albumOf, TRACKS, trackById } from '../music/library'
@@ -21,6 +21,7 @@ export function MiniPlayer() {
   const swap = useMindspace((m) => m.swap)
   const [invite, setInvite] = useState(false)
   const pos = usePosition()
+  const ref = useRef<HTMLDivElement>(null)
 
   // the invitation arrives once the room has settled (after the first hint)
   useEffect(() => {
@@ -30,15 +31,36 @@ export function MiniPlayer() {
   }, [phase, s.started])
   // the invitation only shows in the room itself; once music is playing the mini-player stays everywhere (except the lounge)
   const visible = phase === 'room' && app !== 'music' && (s.started || (invite && !app))
-  useEffect(() => {
-    document.querySelector('.ms')?.classList.toggle('has-mini', visible)
-  }, [visible])
+  // windows keep clear of the player: publish the room it takes at the bottom (its height + its
+  // offset + a small gap) as a CSS variable. A variable on <html>, not a class on the app root —
+  // React rewrites the root's className whenever a window opens, which used to drop the reservation.
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    const el = ref.current
+    if (!visible || !el) {
+      root.style.setProperty('--ms-player-space', '0px')
+      return
+    }
+    const update = () => {
+      const bottom = parseFloat(getComputedStyle(el).bottom) || 0
+      root.style.setProperty('--ms-player-space', `${Math.ceil(el.offsetHeight + bottom + 10)}px`)
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    window.addEventListener('resize', update)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', update)
+      root.style.setProperty('--ms-player-space', '0px')
+    }
+  }, [visible, s.started])
   if (!visible) return null
   const openLounge = () => (app ? swap('music') : open('music'))
 
   if (!s.started) {
     return (
-      <div className="ms-mini ms-mini--invite" role="region" aria-label="Music">
+      <div ref={ref} className="ms-mini ms-mini--invite" role="region" aria-label="Music">
         <span className="ms-mini__note" aria-hidden="true">♪</span>
         <span className="ms-mini__text"><b>Set the mood</b><small>Original music, made for this room</small></span>
         <button className="ms-mini__cta" onClick={() => void play(usePlayer.getState().trackId ?? TRACKS[0].id)}>
@@ -55,7 +77,7 @@ export function MiniPlayer() {
   const a = albumOf(t)
   const playing = s.status === 'playing' || s.status === 'loading'
   return (
-    <div className="ms-mini" role="region" aria-label="Music player">
+    <div ref={ref} className="ms-mini" role="region" aria-label="Music player">
       <button className="ms-mini__track" onClick={openLounge} aria-label={`${t.title} — open the Music Lounge`}>
         <Artwork album={a} />
         <span><b>{t.title}</b><small>{s.status === 'error' ? s.error : a.title}</small></span>

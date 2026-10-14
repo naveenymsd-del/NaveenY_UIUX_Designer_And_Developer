@@ -282,7 +282,7 @@
 .ms-mini__x { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; flex: none; }
 .ms-mini__x:hover { background: rgba(255, 255, 255, 0.12); }
 .ms-mini__x svg { width: 16px; height: 16px; }
-.ms.has-mini .ms-window-layer { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
+/* (the space windows keep clear for the player is reserved in mindspace.css, from --ms-player-space) */
 
 /* ── wide screens: the rail and the bar float outside the window ───────── */
 @media (min-width: 1240px) and (min-aspect-ratio: 1/1) {

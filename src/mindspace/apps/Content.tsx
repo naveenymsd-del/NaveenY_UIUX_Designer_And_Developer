@@ -129,7 +129,7 @@ export function Contact() {
         {items.map((it) => (
           <a key={it.label} className="ms-contact__item" href={it.href} {...(it.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
             <span className="ms-contact__icon" aria-hidden="true"><svg viewBox="0 0 24 24">{it.icon}</svg></span>
-            <span><small>{it.label}</small><b>{it.value}</b></span>
+            <span><small>{it.label}</small><b>{it.label === 'Email' ? <>{it.value.split('@')[0]}@<wbr />{it.value.split('@')[1]}</> : it.value}</b></span>
             <Arrow />
           </a>
         ))}
