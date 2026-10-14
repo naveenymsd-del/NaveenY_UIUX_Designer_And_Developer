@@ -124,69 +124,80 @@
 .ui-intro__work:hover { color: #fff; border-color: #fff; }
 .ui-intro__links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 26px; }
 a.ui-intro__work { text-decoration: none; }
-/* "Explore the Classic Portfolio" — a small liquid-glass invitation into Mindspace:
-   a lit top edge, a thin warm rim, one light sweep after the hero appears (and once on hover) */
-.ui-intro__links { align-items: center; }
+/* "Explore the Classic Portfolio" — the liquid-glass pearl button (as in the AI Mode reference):
+   a pearl-white pill in a polished steel rim with two tiny prismatic flecks, inside a faint outer
+   track. One reflective sweep around the rim after the hero appears, and again on hover. */
+@property --classic-a {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 200deg;
+}
+.ui-intro__links { align-items: center; gap: 4px 30px !important; }
 a.ui-intro__classic {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
-  height: 42px;
+  height: 44px;
   gap: 8px;
-  padding: 0 16px 0 20px;
+  padding: 0 18px 0 22px;
   border: 0;
   border-radius: 999px;
-  color: #fff;
+  color: #1b1c20;
   font-size: 14.5px;
-  letter-spacing: 0.005em;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -1px 0 rgba(255, 255, 255, 0.08), 0 12px 28px -14px rgba(236, 122, 44, 0.7), 0 4px 12px -6px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(16px) saturate(1.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.5);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-  transition: transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out), background 0.25s;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+  text-shadow: none;
+  background: radial-gradient(130% 160% at 50% -10%, #ffffff 0%, #f6f6f8 48%, #e4e5e9 100%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5), 0 14px 30px -14px rgba(0, 0, 0, 0.55), 0 3px 8px -3px rgba(0, 0, 0, 0.3), inset 0 1px 0 #fff, inset 0 -3px 6px rgba(20, 24, 34, 0.08);
+  transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out), background 0.3s;
 }
-/* the warm glass rim */
+/* the steel rim */
 a.ui-intro__classic::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
-  padding: 1.2px;
+  padding: 2px;
   border-radius: inherit;
-  background: linear-gradient(120deg, rgba(255, 214, 170, 0.95), rgba(236, 122, 44, 0.55) 40%, rgba(255, 255, 255, 0.18) 70%, rgba(255, 196, 140, 0.7));
+  background: conic-gradient(from var(--classic-a), #1f232c 0deg, #5c6370 40deg, #e9ecf1 70deg, #8b929e 100deg, #2a2f39 140deg, #3d6bff 146deg, #ff3d9a 148deg, #ffd23f 150deg, #6a717e 154deg, #c9cdd4 190deg, #f7f8fa 215deg, #7b828e 250deg, #20242d 290deg, #5a8bff 314deg, #ff4f6e 316deg, #ffe066 318deg, #9aa1ad 322deg, #1f232c 360deg);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
 }
-/* the light sweep */
+/* the faint outer track */
 a.ui-intro__classic::after {
   content: '';
   position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.5) 48%, rgba(255, 255, 255, 0.12) 56%, transparent 70%);
-  transform: translateX(-120%);
+  inset: -6px;
+  z-index: -2;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
 }
-.ui-intro.is-hero a.ui-intro__classic::after { animation: classic-sweep 1.5s cubic-bezier(0.4, 0, 0.2, 1) 2.4s 1 both; }
-.ui-intro.is-hero a.ui-intro__classic:hover::after { animation: classic-sweep-again 1.1s cubic-bezier(0.4, 0, 0.2, 1) 1 both; }
-@keyframes classic-sweep { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
-@keyframes classic-sweep-again { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
-a.ui-intro__classic svg { transition: transform 0.3s var(--ease-out); }
-a.ui-intro__classic:hover {
-  color: #fff;
-  transform: translateY(-1.5px);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.12));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(255, 255, 255, 0.1), 0 16px 32px -14px rgba(236, 122, 44, 0.85), 0 6px 14px -6px rgba(0, 0, 0, 0.35);
+@keyframes classic-sweep { from { --classic-a: 200deg; } to { --classic-a: 560deg; } }
+.ui-intro.is-hero a.ui-intro__classic::before { animation: classic-sweep 1.6s cubic-bezier(0.22, 1, 0.36, 1) 2.4s 1 both; }
+a.ui-intro__classic svg { color: #3a3d45; transition: transform 0.3s var(--ease-out); }
+@media (hover: hover) {
+  .ui-intro.is-hero a.ui-intro__classic:hover::before { animation: classic-sweep-again 1.15s cubic-bezier(0.22, 1, 0.36, 1) 1 both; }
+  a.ui-intro__classic:hover {
+    color: #1b1c20;
+    transform: translateY(-1.5px);
+    background: radial-gradient(130% 160% at 50% -10%, #ffffff 0%, #fafafb 52%, #ebecef 100%);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7), 0 20px 36px -16px rgba(0, 0, 0, 0.55), 0 4px 10px -4px rgba(0, 0, 0, 0.3), inset 0 1px 0 #fff, inset 0 -3px 6px rgba(20, 24, 34, 0.06);
+  }
+  a.ui-intro__classic:hover svg { transform: translateX(3px); }
 }
-a.ui-intro__classic:hover svg { transform: translateX(3px); }
-a.ui-intro__classic:active { transform: scale(0.97); transition-duration: 0.1s; }
-a.ui-intro__classic:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+@keyframes classic-sweep-again { from { --classic-a: 200deg; } to { --classic-a: 560deg; } }
+a.ui-intro__classic:active { transform: translateY(0.5px) scale(0.965); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.45), 0 6px 14px -10px rgba(0, 0, 0, 0.6), inset 0 2px 5px rgba(20, 24, 34, 0.18); transition-duration: 0.09s; }
+a.ui-intro__classic:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 0 0 5px rgba(120, 150, 255, 0.5), 0 14px 30px -14px rgba(0, 0, 0, 0.55); }
 @media (max-width: 640px) {
-  a.ui-intro__classic { height: 44px; font-size: 14px; }
+  a.ui-intro__classic { height: 46px; font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  a.ui-intro__classic::after { display: none; }
+  a.ui-intro__classic::before { animation: none !important; }
   a.ui-intro__classic, a.ui-intro__classic svg { transition: none; }
 }
 .ui-intro__work svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

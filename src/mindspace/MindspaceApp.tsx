@@ -13,6 +13,7 @@ import { MiniPlayer } from './ui/MiniPlayer'
 import { setDuck } from './music/engine'
 import './music.css'
 import './mindspace.css'
+import './glass.css'
 
 const Scene = lazy(() => import('./scene/Scene'))
 

@@ -1,0 +1,208 @@
+/* ── Liquid Glass — one material system for the classic portfolio (Mindspace) ──
+   Tokens + five variants, applied centrally to the existing control classes:
+     pearl     primary actions — a pearl-white pill in a polished steel rim
+     glass     secondary actions — dark translucent glass with a light rim
+     icon      icon-only controls — compact glass circles (pearl for play)
+     field     search and text fields
+     panel     floating surfaces — a fine reflective rim
+   The rim is a masked conic gradient on ::before (steel tones with two tiny
+   prismatic flecks). Idle: static. Hover (pointer devices): a lift and one
+   reflective sweep around the edge. Press: a small compression. Every layer
+   is pointer-events: none, so nothing gets in the way of clicks or keys.
+   Selectors are prefixed with .ms so they outrank the component sheets.    */
+@property --lg-a {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 200deg;
+}
+.ms {
+  --lg-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --lg-press: cubic-bezier(0.3, 0, 0.5, 1);
+  --lg-t: 0.32s;
+  --lg-focus: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 0 0 5px rgba(120, 150, 255, 0.45);
+  /* the polished steel rim, with prismatic flecks near 40% and 88% */
+  --lg-rim-steel: conic-gradient(from var(--lg-a), #1f232c 0deg, #5c6370 40deg, #e9ecf1 70deg, #8b929e 100deg, #2a2f39 140deg, #262a33 144deg, #3d6bff 146deg, #ff3d9a 148deg, #ffd23f 150deg, #6a717e 154deg, #c9cdd4 190deg, #f7f8fa 215deg, #7b828e 250deg, #20242d 290deg, #5a8bff 314deg, #ff4f6e 316deg, #ffe066 318deg, #9aa1ad 322deg, #1f232c 360deg);
+  /* the lighter rim for dark glass */
+  --lg-rim-light: conic-gradient(from var(--lg-a), rgba(255, 255, 255, 0.75) 0deg, rgba(255, 255, 255, 0.16) 60deg, rgba(255, 255, 255, 0.06) 120deg, rgba(120, 160, 255, 0.5) 146deg, rgba(255, 90, 160, 0.45) 150deg, rgba(255, 255, 255, 0.1) 160deg, rgba(255, 255, 255, 0.55) 215deg, rgba(255, 255, 255, 0.12) 280deg, rgba(255, 220, 120, 0.4) 316deg, rgba(255, 255, 255, 0.75) 360deg);
+  --lg-pearl: radial-gradient(130% 160% at 50% -10%, #ffffff 0%, #f6f6f8 48%, #e6e7eb 100%);
+  --lg-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.07));
+  --lg-glass-hover: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.11));
+}
+
+/* ── shared mechanics ─────────────────────────────────────────────────────── */
+.ms :is(.ms-btn, .mu-btn, .jl-play, .jl-ghost, .ms-mini__cta, .jl-back, .mu-back, .ms-back-link, .mu-else a, .ms-filters button, .mu-chips button,
+  .ms-round, .ms-pill, .ms-window__close, .jl-hud__ctl button, .mu-bar__ctl button, .mu-bar__vol button, .mu-card__ctl button, .ms-mini__btn, .ms-mini__x, .ms-round-btn, .mu-rail button, .ms-dpad button, .mu-mini-play, .ms-intro__skip) {
+  isolation: isolate;
+  transition: transform var(--lg-t) var(--lg-ease), box-shadow var(--lg-t) var(--lg-ease), background var(--lg-t) var(--lg-ease), color 0.2s, opacity 0.2s;
+}
+/* a positioning context for the rim — except the controls that are already absolutely placed */
+.ms :is(.ms-btn, .mu-btn, .jl-play, .jl-ghost, .ms-mini__cta, .jl-back, .mu-back, .ms-back-link, .mu-else a, .ms-filters button, .mu-chips button,
+  .ms-round, .ms-window__close, .jl-hud__ctl button, .mu-bar__ctl button, .mu-bar__vol button, .mu-card__ctl button, .ms-mini__btn, .ms-mini__x, .ms-round-btn, .mu-rail button, .ms-dpad button) { position: relative; }
+/* the rim */
+.ms :is(.ms-btn, .mu-btn, .jl-play, .jl-ghost, .ms-mini__cta, .jl-back, .mu-back, .ms-back-link, .mu-else a, .ms-filters button, .mu-chips button,
+  .ms-round, .ms-pill, .ms-window__close, .jl-hud__ctl button, .mu-bar__ctl button, .mu-bar__vol button, .mu-card__ctl button, .ms-mini__btn, .ms-mini__x, .ms-round-btn, .mu-rail button, .ms-dpad button, .mu-mini-play, .ms-intro__skip)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: var(--lg-rim-w, 1.2px);
+  border-radius: inherit;
+  background: var(--lg-rim, var(--lg-rim-light));
+  opacity: var(--lg-rim-o, 0.75);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+  transition: opacity var(--lg-t) var(--lg-ease);
+}
+@keyframes lg-sweep { from { --lg-a: 200deg; } to { --lg-a: 560deg; } }
+@media (hover: hover) {
+  .ms :is(.ms-btn, .mu-btn, .jl-play, .jl-ghost, .ms-mini__cta, .jl-back, .mu-back, .ms-back-link, .mu-else a, .ms-filters button, .mu-chips button,
+    .ms-round, .ms-pill, .ms-window__close, .jl-hud__ctl button, .mu-bar__ctl button, .mu-bar__vol button, .mu-card__ctl button, .ms-mini__btn, .ms-mini__x, .ms-round-btn, .mu-rail button, .ms-dpad button, .mu-mini-play, .ms-intro__skip):hover:not(:disabled)::before {
+    --lg-rim-o: 1;
+    animation: lg-sweep 1.15s var(--lg-ease) 1 both;
+  }
+}
+.ms :is(.ms-btn, .mu-btn, .jl-play, .jl-ghost, .ms-mini__cta, .jl-back, .mu-back, .ms-back-link, .mu-else a, .ms-filters button, .mu-chips button,
+  .ms-round, .ms-pill, .ms-window__close, .jl-hud__ctl button, .mu-bar__ctl button, .mu-bar__vol button, .mu-card__ctl button, .ms-mini__btn, .ms-mini__x, .ms-round-btn, .mu-rail button, .ms-dpad button, .mu-mini-play, .ms-intro__skip):focus-visible {
+  outline: none;
+  box-shadow: var(--lg-shadow, none), var(--lg-focus);
+}
+.ms :is(.ms-btn, .mu-btn, .jl-play, .jl-ghost, .ms-mini__cta, .jl-back, .mu-back, .ms-back-link, .ms-filters button, .mu-chips button,
+  .ms-round, .ms-pill, .ms-window__close, .jl-hud__ctl button, .mu-bar__ctl button, .mu-bar__vol button, .mu-card__ctl button, .ms-mini__btn, .ms-mini__x, .ms-round-btn, .mu-rail button, .ms-dpad button, .mu-mini-play, .ms-intro__skip):active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.965);
+  transition-duration: 0.09s;
+  transition-timing-function: var(--lg-press);
+}
+.ms :is(.jl-hud__ctl button, .ms-round, .ms-btn, .mu-btn):disabled {
+  opacity: 0.4;
+  --lg-rim-o: 0.35;
+  cursor: default;
+}
+
+/* ── pearl: primary actions (the reference) ───────────────────────────────── */
+.ms :is(.ms-btn--primary, .mu-btn--primary, .jl-play, .ms-mini__cta) {
+  --lg-rim: var(--lg-rim-steel);
+  --lg-rim-w: 2px;
+  --lg-rim-o: 0.92;
+  --lg-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5), 0 12px 26px -14px rgba(0, 0, 0, 0.6), 0 3px 6px -3px rgba(0, 0, 0, 0.35), inset 0 1px 0 #fff, inset 0 -3px 6px rgba(20, 24, 34, 0.08);
+  background: var(--lg-pearl);
+  color: #1b1c20 !important;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow: var(--lg-shadow);
+  text-shadow: none;
+}
+/* the faint outer track around a primary pill (as in the reference) */
+.ms :is(.ms-btn--primary, .mu-btn--primary, .jl-play, .ms-mini__cta)::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  z-index: -2;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28), 0 1px 0 rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+.ms :is(.ms-btn--primary, .mu-btn--primary, .jl-play, .ms-mini__cta) svg { color: #3a3d45; }
+@media (hover: hover) {
+  .ms :is(.ms-btn--primary, .mu-btn--primary, .jl-play, .ms-mini__cta):hover {
+    transform: translateY(-1.5px);
+    background: radial-gradient(130% 160% at 50% -10%, #ffffff 0%, #fafafb 52%, #ebecef 100%);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7), 0 18px 32px -16px rgba(0, 0, 0, 0.6), 0 4px 8px -4px rgba(0, 0, 0, 0.3), inset 0 1px 0 #fff, inset 0 -3px 6px rgba(20, 24, 34, 0.06);
+  }
+}
+.ms :is(.ms-btn--primary, .mu-btn--primary, .jl-play, .ms-mini__cta):active {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.45), 0 6px 14px -10px rgba(0, 0, 0, 0.6), inset 0 2px 5px rgba(20, 24, 34, 0.18);
+}
+/* Joy Lab's coloured cards: the pearl button reads clearly on peach, mint and grape */
+.ms .jl-card .jl-play::after { background: rgba(255, 255, 255, 0.22); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6); }
+
+/* ── glass: secondary actions on dark surfaces ───────────────────────────── */
+.ms :is(.ms-btn:not(.ms-btn--primary), .mu-btn:not(.mu-btn--primary), .jl-back, .jl-overlay--dark .jl-ghost, .mu-else a, .ms-filters button:not(.is-on), .mu-chips button:not(.is-on)) {
+  --lg-shadow: 0 8px 18px -12px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  background: var(--lg-glass);
+  color: #fff !important;
+  box-shadow: var(--lg-shadow);
+}
+@media (hover: hover) {
+  .ms :is(.ms-btn:not(.ms-btn--primary), .mu-btn:not(.mu-btn--primary), .jl-back, .jl-overlay--dark .jl-ghost, .mu-else a, .ms-filters button:not(.is-on), .mu-chips button:not(.is-on)):hover {
+    transform: translateY(-1px);
+    background: var(--lg-glass-hover);
+  }
+}
+/* the ghost button on Joy Lab's light overlays: frosted pearl */
+.ms .jl-overlay--light .jl-ghost { --lg-rim: var(--lg-rim-steel); --lg-rim-o: 0.55; background: rgba(255, 255, 255, 0.7); color: #231815 !important; box-shadow: 0 8px 18px -12px rgba(0, 0, 0, 0.35); }
+/* selected chips / filters: pearl */
+.ms :is(.ms-filters button.is-on, .mu-chips button.is-on) { --lg-rim: var(--lg-rim-steel); --lg-rim-w: 1.6px; --lg-rim-o: 0.85; background: var(--lg-pearl); color: #1b1c20 !important; box-shadow: 0 8px 18px -12px rgba(0, 0, 0, 0.6), inset 0 1px 0 #fff; }
+/* quiet text-like links stay quiet: only a hover surface */
+.ms :is(.mu-back, .ms-back-link) { --lg-rim-o: 0; }
+@media (hover: hover) { .ms :is(.mu-back, .ms-back-link):hover { --lg-rim-o: 0.7; background: var(--lg-glass); } }
+
+/* ── icon controls ────────────────────────────────────────────────────────── */
+.ms :is(.ms-window__close, .jl-hud__ctl button, .ms-round-btn, .ms-dpad button, .mu-card__ctl button:not(.mu-card__play), .mu-bar__vol button) {
+  --lg-shadow: 0 6px 14px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: var(--lg-glass);
+  box-shadow: var(--lg-shadow);
+}
+/* floating controls over the 3D room keep their backdrop blur (already set) and gain the rim */
+.ms :is(.ms-round, .ms-pill) { --lg-rim-o: 0.8; }
+.ms .ms-mini__btn, .ms .ms-mini__x, .ms .mu-bar__ctl button:not(.mu-bar__play), .ms .mu-rail button { --lg-rim-o: 0; }
+@media (hover: hover) {
+  .ms :is(.ms-window__close, .jl-hud__ctl button, .ms-round-btn, .ms-dpad button, .mu-card__ctl button:not(.mu-card__play), .mu-bar__vol button, .ms-round, .ms-pill):hover:not(:disabled) { transform: translateY(-1px); background: var(--lg-glass-hover); }
+  .ms :is(.ms-mini__btn, .ms-mini__x, .mu-bar__ctl button:not(.mu-bar__play), .mu-rail button):hover { --lg-rim-o: 0.8; background: rgba(255, 255, 255, 0.14); }
+}
+/* the play buttons are the primary control of a player: small pearl circles */
+.ms :is(.mu-bar__play, .mu-card__play, .mu-mini-play) {
+  --lg-rim: var(--lg-rim-steel);
+  --lg-rim-w: 1.8px;
+  --lg-rim-o: 0.9;
+  --lg-shadow: 0 0 0 1px rgba(255, 255, 255, 0.45), 0 10px 20px -12px rgba(0, 0, 0, 0.65), inset 0 1px 0 #fff, inset 0 -2px 5px rgba(20, 24, 34, 0.1);
+  background: var(--lg-pearl) !important;
+  color: #1b1c20 !important;
+  box-shadow: var(--lg-shadow);
+}
+@media (hover: hover) { .ms :is(.mu-bar__play, .mu-card__play, .mu-mini-play):hover { transform: translateY(-1px) scale(1.04); } }
+/* the active tab in the music rail: a lit glass well */
+.ms .mu-rail button.is-on { --lg-rim-o: 0.9; background: rgba(255, 255, 255, 0.26); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 14px -10px rgba(0, 0, 0, 0.6); }
+
+/* ── fields ───────────────────────────────────────────────────────────────── */
+.ms .mu-search { position: relative; isolation: isolate; box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.28), inset 0 -1px 0 rgba(255, 255, 255, 0.16), 0 1px 0 rgba(255, 255, 255, 0.08); }
+.ms .mu-search::before { content: ''; position: absolute; inset: 0; z-index: -1; padding: 1px; border-radius: inherit; background: var(--lg-rim-light); opacity: 0.5; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); pointer-events: none; transition: opacity 0.25s; }
+.ms .mu-search:focus-within::before { opacity: 1; }
+
+/* ── panels: the floating player bar, rail, mini-player and HUD chips get a fine rim ── */
+.ms :is(.mu-bar, .mu-rail, .ms-mini, .mu-card) { isolation: isolate; }
+.ms :is(.mu-bar, .mu-rail, .ms-mini, .mu-card)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1.2px;
+  border-radius: inherit;
+  background: var(--lg-rim-light);
+  opacity: 0.7;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+.ms .mu-card { position: relative; }
+.ms .jl-hud__stats span { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ms :is(.ms-btn, .mu-btn, .jl-play, .jl-ghost, .ms-mini__cta, .jl-back, .mu-back, .ms-back-link, .mu-else a, .ms-filters button, .mu-chips button,
+    .ms-round, .ms-pill, .ms-window__close, .jl-hud__ctl button, .mu-bar__ctl button, .mu-bar__vol button, .mu-card__ctl button, .ms-mini__btn, .ms-mini__x, .ms-round-btn, .mu-rail button, .ms-dpad button, .mu-mini-play, .ms-intro__skip) {
+    transition: background 0.15s, box-shadow 0.15s, opacity 0.15s;
+    transform: none !important;
+  }
+  .ms :is(.ms-btn, .mu-btn, .jl-play, .jl-ghost, .ms-mini__cta, .jl-back, .mu-back, .ms-back-link, .mu-else a, .ms-filters button, .mu-chips button,
+    .ms-round, .ms-pill, .ms-window__close, .jl-hud__ctl button, .mu-bar__ctl button, .mu-bar__vol button, .mu-card__ctl button, .ms-mini__btn, .ms-mini__x, .ms-round-btn, .mu-rail button, .ms-dpad button, .mu-mini-play, .ms-intro__skip)::before { animation: none !important; }
+}
+
+/* keyboard focus last, so it shows on every variant (the variant rules set their own shadows) */
+.ms :is(.ms-btn, .mu-btn, .jl-play, .jl-ghost, .ms-mini__cta, .jl-back, .mu-back, .ms-back-link, .mu-else a, .ms-filters button, .mu-chips button,
+  .ms-round, .ms-pill, .ms-window__close, .jl-hud__ctl button, .mu-bar__ctl button, .mu-bar__vol button, .mu-card__ctl button, .ms-mini__btn, .ms-mini__x, .ms-round-btn, .mu-rail button, .ms-dpad button, .mu-mini-play, .ms-intro__skip):focus-visible {
+  outline: none;
+  box-shadow: var(--lg-shadow, 0 0 0 0 transparent), var(--lg-focus) !important;
+}
