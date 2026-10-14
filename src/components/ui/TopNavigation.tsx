@@ -7,7 +7,6 @@ import { useGameStore } from '@/stores/gameStore'
 import { MenuButton } from './MenuButton'
 import { SoundButton } from './SoundButton'
 import { DayNightToggle } from './DayNightToggle'
-import { GuideButton } from './GuidePanel'
 import { WorldStatus } from './WorldStatus'
 
 /**
@@ -40,7 +39,8 @@ export function TopNavigation() {
         <a className="ui-brand" href={`${BASE}street`} onClick={(e) => { e.preventDefault(); closePanels(); navigate('/street') }} aria-label="Naveen — interactive portfolio">
           <span className="ui-brand__word">Naveen</span>
         </a>
-        <p className="ui-where" aria-live="polite">
+        {/* at the start the hero already says "welcome": the place label only appears once there's somewhere to name */}
+        <p className={`ui-where ${place.name === 'Start' ? 'is-start' : ''}`} aria-live="polite" aria-hidden={place.name === 'Start'}>
           <b key={place.name}>{place.name}</b>
           <span>{place.sub}</span>
         </p>
@@ -51,7 +51,6 @@ export function TopNavigation() {
       </div>
       <div className="ui-top__right">
         <WorldStatus />
-        <GuideButton />
         <DayNightToggle />
         <SoundButton />
         <MenuButton />

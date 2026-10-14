@@ -135,13 +135,17 @@ await sleep(1500)
 
 // AI guide
 const ask = async (text) => {
-  await p.getByRole('button', { name: /Open your guide/ }).click()
-  await sleep(500)
-  await p.getByLabel('Ask the guide where you want to go').fill(text)
+  if (mobile) {
+    if (!(await p.locator('.ui-voice.is-open').count())) await p.locator('.ui-voice__fab').tap()
+    await sleep(500)
+    await p.locator('.ui-voice.is-open input[aria-label="Message the AI guide"]').fill(text)
+  } else {
+    if (!(await p.locator('#ag-panel').count())) await p.locator('.ag-launcher').click()
+    await sleep(500)
+    await p.locator('#ag-panel .ag-form input').fill(text)
+  }
   await p.keyboard.press('Enter')
 }
-const chips = await p.evaluate(() => [...document.querySelectorAll('.ui-guide__projects button')].map((b) => b.textContent.replace(/^\d+/, '')))
-expect(chips.join(',') === 'TASK,KidPool,Calmscient,INTA,IntelliStaff', `guide project buttons: ${chips.join(', ')}`)
 for (const cmd of ['Tell me about TASK', 'Show me KidPool', 'Tell me about Calmscient', 'Show me INTA', 'open intellistaff']) {
   await ask(cmd)
   await sleep(2800)

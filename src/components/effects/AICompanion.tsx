@@ -4,6 +4,7 @@ import {
   CapsuleGeometry, CircleGeometry, Color, type Group, type Mesh, MeshBasicMaterial, MeshStandardMaterial, SphereGeometry, Vector3,
 } from 'three'
 import { companion, emote, say, tickCompanion } from '@/core/companion'
+import { openGuide } from '@/ai/openGuide'
 import { INTRO, introCompanion, introRuntime } from '@/core/intro'
 import { tickJourney } from '@/core/journey'
 import { playerRuntime } from '@/core/runtime'
@@ -279,7 +280,7 @@ export function AICompanion() {
         onClick={(e) => {
           e.stopPropagation()
           if (useGameStore.getState().phase !== 'playing') return
-          useUIStore.getState().setGuideOpen(true)
+          openGuide()
           emote('greet', 1400)
         }}
         onPointerOver={() => { document.body.style.cursor = 'pointer' }}

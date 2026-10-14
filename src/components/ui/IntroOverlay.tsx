@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { INTRO, introRuntime, markIntroSeen, skipIntro } from '@/core/intro'
 import { beginJourney } from '@/core/journey'
-import { enableText, submit } from '@/ai/guide'
+import { openGuide } from '@/ai/openGuide'
+import { CompanionGlyph } from './CompanionGlyph'
 import { partOfDay } from '@/ai/guidePrompt'
 import { useGameStore } from '@/stores/gameStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -48,12 +49,10 @@ export function IntroOverlay() {
   const leaving = phase === 'transition'
   const tab = hero ? 0 : -1
 
-  const guideMe = () => {
+  // the AI Guide: the same panel every other entry point opens (chat ready; voice on request)
+  const askGuide = () => {
     beginJourney('street')
-    whenPlaying(() => {
-      enableText()
-      void submit('Guide me')
-    })
+    whenPlaying(() => openGuide())
   }
   const map = () => {
     beginJourney('street')
@@ -71,18 +70,20 @@ export function IntroOverlay() {
         <p className="ui-intro__eyebrow">{PROFILE.role}</p>
         <h1 id="intro-title" className="ui-intro__title">{PROFILE.name}</h1>
         <p className="ui-intro__subtitle">{PROFILE.tagline}</p>
-        <p className="ui-intro__welcome">Good {partOfDay(new Date().getHours())}. Welcome to Naveen’s world — how would you like to explore?</p>
+        <p className="ui-intro__welcome">Good {partOfDay(new Date().getHours())}. Welcome to <span className="ui-grad-text">Naveen’s world</span> — how would you like to explore?</p>
+        {/* one primary action, two equal secondary ones; then a quiet link and the classic portfolio */}
         <div className="ui-intro__actions ui-intro__ways">
-          <button className="ui-btn ui-btn--primary ui-btn--lg" onClick={() => beginJourney('street')} tabIndex={tab} autoFocus={hero}>
+          <button className="ui-btn ui-btn--primary ui-btn--lg ui-btn--hero" onClick={() => beginJourney('street')} tabIndex={tab} autoFocus={hero}>
             Start exploring
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
           </button>
-          <button className="ui-btn ui-btn--glass ui-btn--lg ui-intro__way" onClick={guideMe} tabIndex={tab} aria-label="Guide me — the AI guide walks you through Naveen’s world">
-            <span aria-hidden="true" className="ui-intro__dot" />
-            Guide me
-          </button>
-          <button className="ui-btn ui-btn--glass ui-btn--lg ui-intro__way" onClick={map} tabIndex={tab} aria-label="Explore the map — see every place">
+          <button className="ui-btn ui-btn--glass ui-btn--lg ui-intro__way" onClick={map} tabIndex={tab} aria-label="Explore the map — see every place and walk there">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 3.5 7v12L9 17l6 2 5.5-2V5L15 7 9 5zM9 5v12M15 7v12" /></svg>
             Explore the map
+          </button>
+          <button className="ui-btn ui-btn--glass ui-btn--lg ui-intro__way ui-intro__ask" onClick={askGuide} tabIndex={tab} aria-label="Ask AI Guide — chat or talk with Naveen’s AI guide">
+            <span className="ui-intro__ask-avatar" aria-hidden="true"><CompanionGlyph size={22} /></span>
+            Ask AI Guide
           </button>
         </div>
         <div className="ui-intro__links">
@@ -95,8 +96,7 @@ export function IntroOverlay() {
             Explore the Classic Portfolio
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
           </a>
-        </div>
-      </section>
+        </div>      </section>
 
       <div className={`ui-intro__status ${hero && !leaving ? 'is-visible' : ''}`}>
         <WorldStatus />

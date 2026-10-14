@@ -42,19 +42,19 @@ await sleep(5000)
 // ── minimap + guide quick links
 const markers = await p.evaluate(() => [...document.querySelectorAll('.ui-minimap__marker')].map((m) => m.textContent.trim()))
 expect(markers.join('|').includes('DESIGN JOURNEY'), `minimap stops: ${markers.join(' · ')}`)
-await p.getByRole('button', { name: /Open your guide/ }).click()
+if (!(await p.locator('#ag-panel').count())) await p.locator('.ag-launcher').click()
 await sleep(500)
-const quick = await p.evaluate(() => [...document.querySelectorAll('.ui-guide__quick button')].map((b) => b.textContent.trim()))
-expect(quick.join('|') === 'Home|Education|NFC Solutions|Projects|Design Journey|Contact Café', `guide quick links: ${quick.join(' · ')}`)
+const quick = await p.evaluate(() => [...document.querySelectorAll('#ag-panel .ag-quick button')].map((b) => b.textContent.trim()))
+expect(quick.includes('Take me to Projects') && quick.includes('How can I contact Naveen?'), `guide quick actions: ${quick.join(' · ')}`)
 await shot('00-guide')
-await p.getByRole('button', { name: 'Close guide' }).click()
+await p.locator('#ag-panel .ag-close').click()
 await sleep(400)
 
 // ── guide answers: the companion replies, then travels
 const ask = async (q) => {
-  await p.getByRole('button', { name: /Open your guide/ }).click()
+  if (!(await p.locator('#ag-panel').count())) await p.locator('.ag-launcher').click()
   await sleep(400)
-  await p.getByLabel('Ask the guide where you want to go').fill(q)
+  await p.locator('#ag-panel .ag-form input').fill(q)
   await p.keyboard.press('Enter')
 }
 const QUESTIONS = [

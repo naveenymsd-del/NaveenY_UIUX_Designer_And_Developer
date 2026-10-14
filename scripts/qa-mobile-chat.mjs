@@ -56,7 +56,7 @@ const setViewport = (p, h) => p.evaluate((h) => {
 
 for (const [w, h] of [[320, 700], [375, 812], [390, 844], [430, 932]]) {
   const p = await (await b.newContext({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 })).newPage()
-  await p.goto(`${base}/street?mode=day`)
+  await p.goto(`${base}/street?mode=day&onboarding=off`)
   await p.waitForSelector('.ui-intro.is-hero', { timeout: 120000 })
   await sleep(1000)
   await p.getByRole('button', { name: 'Start exploring' }).click()

@@ -10,7 +10,7 @@ import { useUIStore } from '@/stores/uiStore'
 const anyOpen = () => {
   const g = useGameStore.getState()
   const ui = useUIStore.getState()
-  return !!(g.activeProjectId || g.activeLocationId || ui.menuOpen || ui.guideOpen || useGallery.getState().index !== null)
+  return !!(g.activeProjectId || g.activeLocationId || ui.menuOpen || useGallery.getState().index !== null)
 }
 
 /** close the top-most panel */
@@ -20,7 +20,6 @@ function closeTop() {
   const g = useGameStore.getState()
   if (gallery.index !== null) gallery.close()
   else if (ui.menuOpen) ui.setMenuOpen(false)
-  else if (ui.guideOpen) ui.setGuideOpen(false)
   else if (g.activeProjectId || g.activeLocationId) g.closePanels()
 }
 

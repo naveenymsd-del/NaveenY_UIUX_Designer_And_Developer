@@ -8,6 +8,7 @@ import { IntroOverlay } from '@/components/ui/IntroOverlay'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 import { LocationPanel } from '@/components/ui/LocationPanel'
 import { MenuOverlay } from '@/components/ui/MenuOverlay'
+import { Onboarding } from '@/components/ui/Onboarding'
 import { Minimap } from '@/components/ui/Minimap'
 import { MobileControls } from '@/components/ui/MobileJoystick'
 import { ProjectPanel } from '@/components/ui/ProjectPanel'
@@ -20,7 +21,6 @@ import { ZoneToast } from '@/components/ui/ZoneToast'
 import { FadeOverlay } from '@/components/ui/FadeOverlay'
 import { CompanionBubble } from '@/components/ui/CompanionBubble'
 import { CafeConversation } from '@/components/ui/CafeConversation'
-import { GuidePanel } from '@/components/ui/GuidePanel'
 import { GreetBubble } from '@/components/ui/GreetBubble'
 import { JourneyChip } from '@/components/ui/JourneyChip'
 import { NameTag } from '@/components/ui/NameTag'
@@ -84,7 +84,6 @@ export function App() {
         <ProjectPanel />
         <GalleryViewer />
         <CafeConversation />
-        <GuidePanel />
         <NameTag />
         <GreetBubble />
         <JourneyChip />
@@ -95,6 +94,7 @@ export function App() {
         <IntroOverlay />
         <MenuOverlay />
         <LoadingScreen />
+        <Onboarding />
         <A11yLayer />
         <DebugHUD />
       </div>

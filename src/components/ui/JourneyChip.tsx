@@ -30,9 +30,11 @@ export function JourneyChip() {
             <b>{next.name}</b>
             <small>{next.line}</small>
           </p>
+          {/* one concise way to go there — the AI Guide has its own launcher; this is just navigation */}
           <button
-            className="ui-btn ui-btn--primary"
+            className="ui-journey-chip__go"
             tabIndex={visible ? 0 : -1}
+            aria-label={`Take me to ${next.name}`}
             onClick={() => {
               soundManager.play('click')
               // with the AI guide on, it walks you there (and narrates); otherwise the quick trip
@@ -40,7 +42,7 @@ export function JourneyChip() {
               else navigateToLocation(next.id)
             }}
           >
-            Guide me
+            Take me there
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
           </button>
         </>

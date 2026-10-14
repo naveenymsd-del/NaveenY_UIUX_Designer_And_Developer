@@ -9,8 +9,6 @@ import { enterInterior } from './interiors'
 import { playerRuntime, SPAWN_YAW } from './runtime'
 import { soundManager } from './sound/SoundManager'
 import { useDayNight } from './dayNight'
-import { useUIStore } from '@/stores/uiStore'
-import { useVoiceStore } from '@/ai/voiceStore'
 
 /**
  * The visitor journey: how the landing hands over to the world, what counts
@@ -123,11 +121,6 @@ function onStore(s: ReturnType<typeof useGameStore.getState>, prev: ReturnType<t
     // the cinematic intro has already said welcome; this is the invitation to talk
     say('I’m your AI guide. You can explore normally, or you can just <b>talk to me</b>.', { ms: 4400, emote: 'wave' })
     say('Ask me about Naveen, ask about a project, or tell me where you’d like to go.', { ms: 4200, emote: 'think' })
-    // …and offer the shortcuts once (it's non-blocking; walking closes nothing)
-    window.setTimeout(() => {
-      const g = useGameStore.getState()
-      if (g.phase === 'playing' && !g.interior && !g.activeLocationId && useVoiceStore.getState().mode === 'off') useUIStore.getState().setGuideOpen(true)
-    }, 15500)
   }
   // approaching somewhere for the first time
   if (s.visitedZones.length > prev.visitedZones.length) {

@@ -3,7 +3,8 @@ import { useGameStore } from '@/stores/gameStore'
 
 /** Brief title card when entering a named area for the first time. */
 export function ZoneToast() {
-  const toast = useGameStore((s) => s.zoneToast)
+  // the start square needs no title card: the hero has just said welcome
+  const toast = useGameStore((s) => (s.zoneToast?.name === 'Start' ? null : s.zoneToast))
   const clear = useGameStore((s) => s.clearZoneToast)
   useEffect(() => {
     if (!toast) return

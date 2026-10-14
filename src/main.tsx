@@ -11,6 +11,7 @@ import './styles/splash.css'
 import './styles/rain.css'
 import './styles/layers.css'
 import './styles/project-case.css'
+import './styles/brand.css'
 import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 

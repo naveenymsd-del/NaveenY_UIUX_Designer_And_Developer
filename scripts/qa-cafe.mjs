@@ -19,16 +19,16 @@ console.log('minimap here:', await p.evaluate(() => document.querySelector('.ui-
 await p.screenshot({ path: 'qa-screens/190-start.png' })
 await p.screenshot({ path: 'qa-screens/191-minimap.png', clip: { x: 1180, y: 600, width: 260, height: 300 } })
 // guide quick links
-await p.getByRole('button', { name: /Open your guide/ }).click()
+if (!(await p.locator('#ag-panel').count())) await p.locator('.ag-launcher').click()
 await sleep(500)
-console.log('guide quick links:', await p.evaluate(() => [...document.querySelectorAll('.ui-guide__quick button')].map((b) => b.textContent.trim()).join(' | ')))
+console.log('guide quick actions:', await p.evaluate(() => [...document.querySelectorAll('#ag-panel .ag-quick button')].map((b) => b.textContent.trim()).join(' | ')))
 await p.screenshot({ path: 'qa-screens/192-guide.png' })
-await p.getByRole('button', { name: 'Close guide' }).click()
+await p.locator('#ag-panel .ag-close').click()
 // typed commands
 for (const cmd of ['take me home', 'show my education', 'NFC', 'show projects', 'how do you design', "let's connect"]) {
-  await p.getByRole('button', { name: /Open your guide/ }).click()
+  if (!(await p.locator('#ag-panel').count())) await p.locator('.ag-launcher').click()
   await sleep(400)
-  await p.locator('.ui-guide__ask input').fill(cmd)
+  await p.locator('#ag-panel .ag-form input').fill(cmd)
   await p.keyboard.press('Enter')
   await sleep(9500)
   console.log(`"${cmd}" →`, await where())

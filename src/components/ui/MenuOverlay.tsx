@@ -3,7 +3,7 @@ import { STORY_STOPS, type StopId } from '@/data/world'
 import { soundManager } from '@/core/sound/SoundManager'
 import { AI_WORKFLOW, PROFILE } from '@/data/portfolioContent'
 import { submit, walkTo } from '@/ai/guide'
-import { useVoiceStore } from '@/ai/voiceStore'
+import { openGuide } from '@/ai/openGuide'
 import { currentLocation } from '@/ai/worldState'
 import { useGameStore } from '@/stores/gameStore'
 import { type MenuSection, useUIStore } from '@/stores/uiStore'
@@ -66,8 +66,14 @@ export function MenuOverlay() {
   const guideMe = () => {
     soundManager.play('click')
     setOpen(false)
-    if (useVoiceStore.getState().mode === 'off') useVoiceStore.getState().set({ mode: 'text', tier: 'text', state: 'idle' })
+    // the tour runs in the one AI Guide panel, so the visitor can follow (and interrupt) it there
+    openGuide()
     void submit('Guide me')
+  }
+  const howItWorks = () => {
+    soundManager.play('click')
+    setOpen(false)
+    useUIStore.getState().setOnboarding(true)
   }
 
   const tab = open ? 0 : -1
@@ -110,6 +116,7 @@ export function MenuOverlay() {
             {SECTIONS.map((s) => (
               <button key={s.id} className={section === s.id ? 'is-active' : ''} onClick={() => { soundManager.play('click'); setSection(s.id) }} tabIndex={tab}>{s.label}</button>
             ))}
+            <button onClick={howItWorks} tabIndex={tab}>How it works</button>
             <a className="ui-explore__classic" href={`${BASE}mindspace`} tabIndex={tab}>Explore the Classic Portfolio ↗</a>
           </div>
         </nav>

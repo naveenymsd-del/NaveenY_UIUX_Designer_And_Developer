@@ -5,7 +5,7 @@ const b = await chromium.launch({ executablePath: process.env.CHROME_PATH ?? 'C:
 const p = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage()
 const errors = []
 p.on('pageerror', (e) => errors.push(e.message))
-await p.goto('http://localhost:5173/street?desktop')
+await p.goto('http://localhost:5173/street?desktop&onboarding=off')
 await p.waitForFunction(() => document.querySelector('.ui-intro__skip'), null, { timeout: 90000 })
 await sleep(800)
 await p.keyboard.press('Escape')

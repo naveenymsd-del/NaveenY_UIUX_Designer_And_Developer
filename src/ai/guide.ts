@@ -307,6 +307,8 @@ function wireBrowser() {
 
 // ── turning voice on and off ────────────────────────────────────────────
 let greeted = false
+/** voice says hello once when it is first turned on — even if the chat already greeted — so the visitor hears that it works */
+let voiceGreeted = false
 
 export function initGuide() {
   store().set({ canRealtime: realtimeSupported(), canListen: browserVoice.canListen || realtimeSupported(), canSpeak: browserVoice.canSpeak || realtimeSupported() })
@@ -376,8 +378,8 @@ export async function enableVoice() {
       store().set({ session: 'connected', state: 'listening', status: null })
       companion.voice = 'listening'
       shareContext()
-      if (!greeted) {
-        greeted = true
+      if (!voiceGreeted) {
+        greeted = voiceGreeted = true
         respond('Great — I’m listening. Talk to me naturally: ask about Naveen or a project, or tell me where you’d like to go.')
       }
       return
@@ -392,8 +394,8 @@ export async function enableVoice() {
     s.set({ mode: 'voice', tier: 'browser', session: 'connected', state: 'listening', status: null })
     companion.voice = 'listening'
     await browserVoice.connect()
-    if (!greeted) {
-      greeted = true
+    if (!voiceGreeted) {
+      greeted = voiceGreeted = true
       respond('Great. Just talk to me naturally — ask me about Naveen, ask about a project, or tell me where you’d like to go.')
     }
     return

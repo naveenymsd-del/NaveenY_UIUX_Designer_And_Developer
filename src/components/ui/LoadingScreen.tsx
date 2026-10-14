@@ -1,6 +1,7 @@
 import { useProgress } from '@react-three/drei'
 import { useEffect, useRef, useState } from 'react'
 import { useGameStore } from '@/stores/gameStore'
+import { useUIStore } from '@/stores/uiStore'
 
 /**
  * The rain-covered glass opening is switched off: the site opens straight into
@@ -38,13 +39,15 @@ function DirectStart() {
   const loading = useGameStore((s) => s.loading)
   const phase = useGameStore((s) => s.phase)
   const setPhase = useGameStore((s) => s.setPhase)
+  const onboarding = useUIStore((s) => s.onboarding)
   const { active } = useProgress()
   const [gone, setGone] = useState(false)
   const done = loading.fontsReady && loading.assetsProbed && loading.worldReady && loading.physicsReady && loading.compiled && !active
 
+  // a first visit reads the "how it works" guide first; the opening flight starts when they enter
   useEffect(() => {
-    if (done && phase === 'loading') setPhase('intro')
-  }, [done, phase, setPhase])
+    if (done && !onboarding && phase === 'loading') setPhase('intro')
+  }, [done, onboarding, phase, setPhase])
   useEffect(() => {
     if (phase === 'loading') return
     const t = setTimeout(() => setGone(true), 1800)
