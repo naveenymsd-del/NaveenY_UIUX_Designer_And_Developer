@@ -148,9 +148,18 @@ const ask = async (text) => {
 }
 for (const cmd of ['Tell me about TASK', 'Show me KidPool', 'Tell me about Calmscient', 'Show me INTA', 'open intellistaff']) {
   await ask(cmd)
-  await sleep(2800)
-  const t = await title()
-  expect(!!t && cmd.toLowerCase().includes(t.toLowerCase()), `guide "${cmd}" → "${t}"`)
+  const name = cmd.split(' ').pop().toLowerCase()
+  if (/^tell me about/i.test(cmd)) {
+    // questions are answered in the AI Guide's chat (the case study is not pushed on the visitor)
+    const ok = await p.waitForFunction((n) => [...document.querySelectorAll('.ui-voice__log li.is-guide')].some((l) => l.textContent.toLowerCase().includes(n)), name, { timeout: 15000 }).then(() => true, () => false)
+    const lines = ok ? '' : await p.evaluate(() => [...document.querySelectorAll('.ui-voice__log li, .ui-voice__caption')].map((l) => `[${l.className}] ${l.textContent.slice(0, 60)}`).join(' | '))
+    expect(ok, `guide "${cmd}" → answered in the chat ${lines}`)
+    await sleep(800)
+    continue
+  }
+  // show / open: the guide takes you to the project and opens its case study
+  const opened = await p.waitForFunction((n) => (document.querySelector('.ui-case.is-visible .ui-case__title')?.textContent ?? '').toLowerCase() === n, name, { timeout: 20000 }).then(() => true, () => false)
+  expect(opened, `guide "${cmd}" → "${await title()}"`)
   await p.keyboard.press('Escape')
   await sleep(1400)
 }

@@ -131,6 +131,7 @@ await p.locator('.ui-voice__fab').tap()
 await sleep(500)
 const sheet = await box('.ui-voice__sheet')
 expect(!!sheet && sheet.h <= 844 * 0.45, `AI sheet expands, compact (under ~45% of the screen) (${sheet && Math.round((sheet.h / 844) * 100)}%)`)
+await p.getByRole('button', { name: 'Use voice' }).tap() // the orb opens the chat; voice is the mic button
 await p.getByRole('button', { name: 'Turn on voice' }).click()
 await sleep(1200)
 const head = await p.evaluate(() => document.querySelector('.ui-voice__sheet-head p span')?.textContent ?? '')

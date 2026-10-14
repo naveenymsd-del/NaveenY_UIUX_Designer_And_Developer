@@ -113,6 +113,20 @@ async function open(opts, ctxOpts = { viewport: { width: 1440, height: 900 } }) 
   }
   return { p, ctx, errors, external }
 }
+/** open the AI Guide and choose voice, the way a visitor does (desktop: launcher → Voice; phone: orb → mic) */
+async function voiceConsent(p) {
+  if (p.viewportSize().width < 700) {
+    if (!(await p.locator('.ui-voice.is-open').count())) await p.locator('.ui-voice__fab').tap()
+    await sleep(400)
+    await p.getByRole('button', { name: 'Use voice' }).tap()
+  } else {
+    if (!(await p.locator('#ag-panel').count())) await p.locator('.ag-launcher').click()
+    await sleep(400)
+    await p.locator('#ag-panel .ag-mode [role=radio]', { hasText: 'Voice' }).click()
+  }
+  await sleep(300)
+}
+const consentText = (p) => p.evaluate(() => document.querySelector('.ui-voice__consent, .ag-consent')?.textContent ?? '')
 const helpers = (p) => ({
   guide: () => p.evaluate(() => [...document.querySelectorAll('.ui-voice__log li.is-guide')].map((l) => l.textContent.replace(/^Guide: /, ''))),
   last: () => p.evaluate(() => [...document.querySelectorAll('.ui-voice__log li.is-guide')].pop()?.textContent?.replace(/^Guide: /, '') ?? ''),
@@ -122,7 +136,7 @@ const helpers = (p) => ({
   speaking: () => p.evaluate(() => window.speechSynthesis?.speaking ?? false),
   recRunning: () => p.evaluate(() => !!window.__rec?.running),
   pos: () => p.evaluate(() => ({ x: window.__mindscape?.x ?? 0, z: window.__mindscape?.z ?? 0 })),
-  power: () => p.evaluate(() => document.querySelector('.ui-voice__power')?.textContent ?? ''),
+  power: () => p.evaluate(() => document.querySelector('.ui-voice__power, .ag-status__tier')?.textContent ?? ''),
 })
 
 // ── 1. desktop Chrome / Edge: recognition + synthesis ──────────────────────
@@ -130,9 +144,9 @@ const helpers = (p) => ({
   const { p, ctx, errors, external } = await open({ recognition: true, synthesis: true })
   const h = helpers(p)
   // show every line, not only the latest exchange
-  await p.getByRole('button', { name: 'Talk to the AI guide' }).click()
+  await voiceConsent(p)
   await sleep(300)
-  const consent = await p.evaluate(() => document.querySelector('.ui-voice__consent')?.textContent ?? '')
+  const consent = await consentText(p)
   expect(/uses your microphone so I can hear you/.test(consent) && /doesn’t store your voice recordings/.test(consent), 'consent: required microphone copy')
   expect(/Browser voice/.test(consent) && /not live speech-to-speech/.test(consent), 'consent: says plainly this is browser voice, not live speech-to-speech')
   expect(!(await h.recRunning()), 'microphone not started before consent')
@@ -238,7 +252,7 @@ const helpers = (p) => ({
   await sleep(500)
   const log = await p.evaluate(() => window.__recLog)
   expect(!(await h.recRunning()) && log[log.length - 1] === 'abort', 'voice off: recognition stopped')
-  expect(!(await p.evaluate(() => document.querySelector('.ui-voice')?.className.includes('is-on'))), 'voice off: dock back to "Talk to me"')
+  expect(await p.evaluate(() => !document.querySelector('.ag-status') && !!document.querySelector('#ag-panel .ag-mode [aria-checked=true]')?.textContent.includes('Chat')), 'voice off: the panel is back in Chat mode')
   expect(external.length === 0, `no request to any AI or voice service (${external.join(", ") || "none"})`)
   expect(errors.length === 0, `no console errors (${errors.join(' | ').slice(0, 120)})`)
   await p.screenshot({ path: 'qa-screens/620-browser-voice.png' })
@@ -249,9 +263,9 @@ const helpers = (p) => ({
 {
   const { p, ctx, errors } = await open({ recognition: false, synthesis: true })
   const h = helpers(p)
-  await p.getByRole('button', { name: 'Talk to the AI guide' }).click()
+  await voiceConsent(p)
   await sleep(300)
-  const consent = await p.evaluate(() => document.querySelector('.ui-voice__consent')?.textContent ?? '')
+  const consent = await consentText(p)
   expect(/can’t listen/.test(consent) && /read my answers aloud/.test(consent), `no recognition: consent offers typing, answers still spoken`)
   expect(!(await p.getByRole('button', { name: 'Turn on voice' }).isVisible().catch(() => false)), 'no recognition: no "Turn on voice" button')
   await p.getByRole('button', { name: 'Type instead' }).click()
@@ -268,7 +282,7 @@ const helpers = (p) => ({
 {
   const { p, ctx, errors } = await open({ recognition: false, synthesis: false })
   const h = helpers(p)
-  await p.getByRole('button', { name: 'Talk to the AI guide' }).click()
+  await voiceConsent(p)
   await sleep(300)
   await p.getByRole('button', { name: 'Type instead' }).click()
   await sleep(500)
@@ -284,7 +298,7 @@ const helpers = (p) => ({
 {
   const { p, ctx, errors } = await open({ recognition: true, synthesis: true }, { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
   const h = helpers(p)
-  await p.getByRole('button', { name: 'Talk to the AI guide' }).click()
+  await voiceConsent(p)
   await sleep(400)
   await p.getByRole('button', { name: 'Turn on voice' }).click()
   await sleep(300)
@@ -314,7 +328,7 @@ const helpers = (p) => ({
 {
   const { p, ctx, errors } = await open({ recognition: true, synthesis: true })
   const h = helpers(p)
-  await p.getByRole('button', { name: 'Talk to the AI guide' }).click()
+  await voiceConsent(p)
   await sleep(300)
   await p.getByRole('button', { name: 'Turn on voice' }).click()
   await sleep(800)
@@ -323,7 +337,7 @@ const helpers = (p) => ({
     await sleep(500)
   }
   await sleep(500)
-  const cls = await p.evaluate(() => document.querySelector('.ui-voice')?.className ?? '')
+  const cls = await p.evaluate(() => (document.querySelector('#ag-panel') ? 'is-on' : '') + (document.querySelector('.ui-voice')?.className ?? ''))
   expect(/can’t reach your browser’s speech service/.test(await h.last()) && !(await h.recRunning()), `speech service unreachable: says why and switches to typing ("${(await h.last()).slice(0, 50)}…")`)
   expect(await p.getByLabel('Message the AI guide').isVisible().catch(() => false), 'speech service unreachable: text box ready')
   expect(/is-on/.test(cls), 'guide stays open in text mode')

@@ -63,7 +63,7 @@ for (const [w, h] of [[320, 700], [375, 812], [390, 844], [430, 932]]) {
   await p.waitForSelector('.ui-voice__fab', { timeout: 30000 })
   await sleep(1500)
   await p.locator('.ui-voice__fab').tap()
-  await p.getByRole('button', { name: 'Type instead' }).tap()
+  await p.getByRole('button', { name: 'Type instead' }).tap({ timeout: 1500 }).catch(() => {}) // (the orb now opens the chat directly)
   await sleep(400)
   for (const t of ['Tell me about Naveen', 'What tools does he use?']) {
     await p.locator('.ui-voice__sheet-bar input').fill(t)

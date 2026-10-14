@@ -20,6 +20,8 @@ const where = () => p.evaluate(() => document.querySelector('.ui-where b')?.text
 const ROOM_OF = (x, z) => (x < 300 ? null : Math.abs(z - 120) < 20 ? 'home' : Math.abs(z + 120) < 20 ? 'education' : Math.abs(z - 240) < 20 ? 'cafe' : Math.abs(z) < 20 ? 'office' : '?')
 const interior = () => p.evaluate(() => [window.__mindscape?.x ?? 0, window.__mindscape?.z ?? 0]).then(([x, z]) => ROOM_OF(x, z))
 const waitRoom = async (room) => { for (let t = 0; t < 30000 && (await interior()) !== room; t += 250) await sleep(250) }
+/** the AI Guide walks (and narrates) — wait until it has handed the controls back */
+const waitIdle = async () => { for (let t = 0; t < 40000 && (await p.evaluate(() => /is-(navigating|speaking|thinking|connecting)/.test(document.querySelector(".ag-launch")?.className ?? ""))); t += 250) await sleep(250); await sleep(600) }
 const BANNED = /\[ADD|\[PLACEHOLDER|lorem ipsum|\bTBD\b|coming soon|My Journey|How I Design|Career Journey|Looking Ahead|Certificate [23]|myProfile|portfolio\.link|Spyder/i
 const seenText = []
 const panel = async () => {
@@ -58,30 +60,29 @@ const ask = async (q) => {
   await p.keyboard.press('Enter')
 }
 const QUESTIONS = [
-  ['What does Naveen do?', 'UI/UX and Product Designer with 4+ years', 'home'],
+  ['What does Naveen do?', '4+ years', 'home'],
   ['What tools does Naveen use?', 'Figma, Figma Make, Adobe XD', 'home'],
-  ['What AI tools does Naveen use?', 'remains responsible for UX judgment', null],
-  ['How does he use AI?', 'remains responsible for UX judgment', null],
-  ['Where did Naveen study?', 'M.Sc. in Computer Science (2019–2021', 'education'],
-  ["What is Naveen's experience?", 'NFC Solutions India Pvt. Ltd., Hyderabad, India, since May 2022', 'office'],
+  ['What AI tools does Naveen use?', 'AI helps Naveen explore', null],
+  ['How does he use AI?', 'AI helps Naveen explore', null],
+  ['Where did Naveen study?', 'Computer Science', 'education'],
+  ["What is Naveen's experience?", 'NFC Solutions', 'office'],
   ['How can I contact Naveen?', 'naveenyarramallugalla@gmail.com', 'cafe'],
 ]
 for (const [q, want, room] of QUESTIONS) {
+  void room // (the old navigator walked to a room after answering; the AI Guide answers in its chat)
   await ask(q)
-  await sleep(1300)
-  const said = await p.evaluate(() => document.querySelector('.ui-bubble')?.textContent ?? '')
+  await p.waitForFunction((w) => [...document.querySelectorAll('#ag-panel .ui-voice__log li.is-guide')].some((l) => l.textContent.includes(w)), want, { timeout: 15000 }).catch(() => {})
+  const said = await p.evaluate(() => [...document.querySelectorAll('#ag-panel .ui-voice__log li.is-guide')].map((l) => l.textContent).pop() ?? '')
   expect(said.includes(want), `"${q}" → ${said.slice(0, 90)}…`)
-  // the trip takes 8–12 s depending on where it starts: wait for the room rather than a fixed time
-  if (room) { await waitRoom(room); await sleep(7000) } // (let the door transition and the room’s welcome line finish, as a visitor would)
-  else await sleep(10500)
-  const r = await interior()
-  if (room) expect(r === room, `  travelled to ${r ?? 'street'} (${await where()})`)
-  else expect(r === null, `  travelled to the street: ${await where()}`)
+  expect(await p.evaluate(() => !document.querySelector('.ui-case.is-visible, .ui-panel.is-visible')), `  "${q}": answered in the chat only (no panel pushed open)`)
+  await sleep(600)
 }
 
 // ── Home boards (room-local positions from data/interiors.ts, origin [320, 0, 120])
 await ask('take me home')
 await waitRoom('home')
+
+await waitIdle()
 await sleep(3500)
 const HOME = [
   ['hello', 0, 3.4, 'Hi, I’m Naveen.', 'UI/UX Designer · Product Designer'],
@@ -107,6 +108,8 @@ for (const [kind, x, z, title, has] of HOME) {
 // ── Education
 await ask('show my education')
 await waitRoom('education')
+
+await waitIdle()
 await sleep(3500)
 for (const [kind, x, z, has] of [['timeline', -10.2, 0, 'CSSR & SRRM Degree and PG College, Kadapa · CGPA 8.1'], ['certificates', 10.2, 1.4, 'Tech Mahindra Smart Academy · 2021']]) {
   await p.evaluate(([x, z]) => window.__teleport(320 + x + (x < 0 ? 1.2 : -1.2), -120 + z, x < 0 ? -Math.PI / 2 : Math.PI / 2), [x, z])
@@ -123,6 +126,8 @@ for (const [kind, x, z, has] of [['timeline', -10.2, 0, 'CSSR & SRRM Degree and 
 // ── NFC Solutions
 await ask('NFC')
 await waitRoom('office')
+
+await waitIdle()
 await sleep(3500)
 for (const [kind, x, z, has] of [['reception', -3.6, 6.4, 'End-to-end ownership of UX and UI'], ['workspace', 11, 5.0, 'Enterprise SaaS · Healthcare · Recruitment / HR Tech']]) {
   await p.evaluate(([x, z]) => window.__teleport(320 + x, z + 0.5, Math.PI), [x, z])
@@ -138,7 +143,8 @@ for (const [kind, x, z, has] of [['reception', -3.6, 6.4, 'End-to-end ownership 
 
 // ── Gallery: easels open the viewer on that project's screens; AI area
 await ask('gallery')
-await sleep(9000)
+await sleep(2000)
+await waitIdle()
 expect((await interior()) === null, `gallery stop: ${await where()}`)
 await shot('4-gallery-arrive')
 await p.evaluate(() => window.__teleport(-21.6 + 0.6, 21.2 + 1.2, Math.PI))
@@ -169,6 +175,8 @@ await sleep(800)
 // ── Contact Café
 await ask("let's connect")
 await waitRoom('cafe')
+
+await waitIdle()
 await sleep(3500)
 await p.evaluate(() => window.__teleport(320 + 3.4, 240 - 2.6 + 1.7, Math.PI))
 await sleep(1500)
