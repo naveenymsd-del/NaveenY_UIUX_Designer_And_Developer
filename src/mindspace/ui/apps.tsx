@@ -58,9 +58,14 @@ export const APPS: AppDef[] = [
     glyph: <svg viewBox="0 0 24 24" {...stroke}><path d="M14.5 6.5a4 4 0 0 0-5.3 5.2L3.8 17.1a1.6 1.6 0 0 0 2.3 2.3l5.4-5.4a4 4 0 0 0 5.2-5.3l-2.4 2.4-2.1-.4-.4-2.1z" /></svg>,
   },
   {
-    id: 'games', label: 'Games', title: 'Games',
-    face: 'radial-gradient(circle at 32% 26%, #ffc4d3, #ef4f78 55%, #b52148)',
+    id: 'games', label: 'Joy Lab', title: 'Joy Lab',
+    face: 'radial-gradient(circle at 32% 26%, rgba(255,255,255,0.55), rgba(255,255,255,0) 45%), conic-gradient(from 210deg, #ff5d8f, #ffb020, #ffd23f, #3bceac, #7b6cff, #ff5d8f)',
     glyph: <svg viewBox="0 0 24 24" {...stroke}><path d="M7.5 8h9a4.5 4.5 0 0 1 4.3 5.8l-1 3.2a2 2 0 0 1-3.4.7L14.6 16H9.4l-1.8 1.7a2 2 0 0 1-3.4-.7l-1-3.2A4.5 4.5 0 0 1 7.5 8z" /><path d="M8 11v3M6.5 12.5h3" /><circle cx="15.5" cy="11.5" r=".6" fill="currentColor" /><circle cx="17" cy="13.3" r=".6" fill="currentColor" /></svg>,
+  },
+  {
+    id: 'music', label: 'Music', title: 'Music Lounge',
+    face: 'radial-gradient(circle at 32% 26%, #ffb3c1, #fa3c64 55%, #b8133d)',
+    glyph: <svg viewBox="0 0 24 24" {...stroke}><path d="M9 18.5a2.5 2.5 0 1 1-2.5-2.5H9V5.5l10-2v12a2.5 2.5 0 1 1-2.5-2.5H19" /></svg>,
   },
   {
     id: 'contact', label: 'Contact', title: 'Contact',

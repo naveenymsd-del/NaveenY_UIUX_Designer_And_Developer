@@ -28,7 +28,7 @@ const expect = (ok, msg) => { if (!ok) problems.push(msg); console.log(`${ok ? '
   const icons = await p.evaluate(() => [...document.querySelectorAll('.ms-icon')].filter((b) => getComputedStyle(b).opacity > 0.9).length)
   expect(skip, 'Skip intro is offered during the opening')
   expect(secs >= 4.5 && secs <= 9, `intro hands over to the room after ${secs.toFixed(1)} s`)
-  expect(icons === 9, `icons appear in the room (${icons}/9)`)
+  expect(icons === 10, `icons appear in the room (${icons}/10)`)
   // reload: the intro plays again (every visit, not once per session)
   await p.reload()
   await p.waitForSelector('.ms.is-ready', { timeout: 30000 })

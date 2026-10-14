@@ -1,7 +1,8 @@
 import { type ReactNode, useEffect, useRef } from 'react'
 import { About, Contact, Education, Experience, Process, Skills } from '../apps/Content'
 import { Gallery } from '../apps/Gallery'
-import { Games } from '../apps/Games'
+import { JoyLab } from '../apps/joylab/JoyLab'
+import { Music } from '../apps/Music'
 import { Projects } from '../apps/Projects'
 import { type AppId, useMindspace } from '../store'
 import { appDef } from './apps'
@@ -14,7 +15,8 @@ const CONTENT: Record<AppId, () => ReactNode> = {
   gallery: () => <Gallery />,
   process: () => <Process />,
   skills: () => <Skills />,
-  games: () => <Games />,
+  games: () => <JoyLab />,
+  music: () => <Music />,
   contact: () => <Contact />,
 }
 
@@ -62,7 +64,8 @@ export function AppWindow() {
         aria-labelledby="ms-window-title"
         style={{ ['--ox' as string]: `${ox}px`, ['--oy' as string]: `${oy}px` }}
       >
-        <header className="ms-window__head">
+        {/* the Music Lounge draws its own header; the window keeps just its close button */}
+        <header className={`ms-window__head ${app === 'music' ? 'is-bare' : ''}`}>
           <span className="ms-window__app" style={{ background: def.face }} aria-hidden="true">{def.glyph}</span>
           <h1 id="ms-window-title">{def.title}</h1>
           <button className="ms-window__close" onClick={close} aria-label={`Close ${def.title}`}>

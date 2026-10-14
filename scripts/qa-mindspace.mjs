@@ -7,7 +7,7 @@ const base = process.argv[2] ?? 'http://localhost:5173'
 const b = await chromium.launch({ executablePath: process.env.CHROME_PATH ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe', args: ['--use-angle=d3d11'] })
 const problems = []
 const expect = (ok, msg) => { if (!ok) problems.push(msg); console.log(`${ok ? '✓' : '✗'} ${msg}`) }
-const APPS = ['About Me', 'Education', 'Experience', 'Projects', 'Gallery', 'Design Process', 'Skills & Tools', 'Games', 'Contact']
+const APPS = ['About Me', 'Education', 'Experience', 'Projects', 'Gallery', 'Design Process', 'Skills & Tools', 'Joy Lab', 'Music Lounge', 'Contact']
 
 async function room(ctxOpts) {
   const ctx = await b.newContext(ctxOpts)
@@ -21,7 +21,7 @@ async function room(ctxOpts) {
   return p
 }
 const openApp = async (p, name, tap = false) => {
-  const btn = p.getByRole('button', { name: `Open ${name}` })
+  const btn = p.getByRole('button', { name: `Open ${name}`, exact: true })
   await (tap ? btn.tap() : btn.click())
   await p.waitForSelector('.ms-window', { timeout: 5000 })
   await sleep(900)
@@ -39,7 +39,7 @@ const windowFits = (p) => p.evaluate(() => { const r = document.querySelector('.
   const p = await room({ viewport: { width: 1440, height: 900 } })
   await p.screenshot({ path: 'qa-screens/ms-01-room.png' })
   const onScreen = await p.evaluate(() => [...document.querySelectorAll('.ms-icon')].filter((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && r.top > 0 && r.bottom < innerHeight }).length)
-  expect(onScreen === 9, `launcher: ${onScreen}/9 icons on screen`)
+  expect(onScreen === 10, `launcher: ${onScreen}/10 icons on screen`)
   expect(await p.evaluate(() => !document.querySelector('.game-canvas, .ui-layer')), 'the 3D city is not mounted on /mindspace')
 
   // look around in every direction, then reset
@@ -143,55 +143,7 @@ const windowFits = (p) => p.evaluate(() => { const r = document.querySelector('.
   expect(hrefs.includes('mailto:naveenyarramallugalla@gmail.com') && hrefs.includes('tel:+917036282178') && hrefs.some((h) => h.includes('linkedin.com/in/naveen-yarramallugalla')) && hrefs.some((h) => h.endsWith('.pdf')), 'contact: email, phone, LinkedIn and résumé are working links')
   await closeApp(p)
 
-  // games (the camera's view is compared before opening and after closing)
-  const camBefore = await p.evaluate(() => document.querySelector('.ms-launcher').getBoundingClientRect().x)
-  await openApp(p, 'Games')
-  await p.getByRole('button', { name: /Memory Match/ }).click(); await sleep(300)
-  // solve memory by reading the cards' labels after flipping each once
-  const faces = []
-  for (let i = 0; i < 12; i++) {
-    await p.locator('.ms-memory__card').nth(i).click(); await sleep(60)
-    faces.push(await p.locator('.ms-memory__card').nth(i).getAttribute('aria-label'))
-    if (i % 2) await sleep(820)
-  }
-  // pair up whatever is still face down, using the shapes seen
-  const all12 = await p.evaluate(() => [...document.querySelectorAll('.ms-memory__card')].map((c) => c.classList.contains('is-found')))
-  const seenAt = {}
-  faces.forEach((f, i) => { if (!all12[i]) (seenAt[f] ??= []).push(i) })
-  for (const idx of Object.values(seenAt)) {
-    if (idx.length !== 2) continue
-    await p.locator('.ms-memory__card').nth(idx[0]).click(); await sleep(80)
-    await p.locator('.ms-memory__card').nth(idx[1]).click(); await sleep(150)
-  }
-  await sleep(300)
-  const memDone = await p.evaluate(() => document.querySelector('.ms-done b')?.textContent)
-  await p.screenshot({ path: 'qa-screens/ms-12-memory.png' })
-  expect(memDone === 'All pairs found', `memory: playable to completion ("${memDone}")`)
-  await p.getByRole('button', { name: 'All games' }).click(); await sleep(200)
-  // maze: keys move the dot and never the camera
-  await p.getByRole('button', { name: /Maze/ }).click(); await sleep(300)
-  for (const k of ['ArrowRight', 'ArrowDown', 'ArrowRight', 'ArrowDown', 'd', 's']) await p.keyboard.press(k)
-  const moves = Number(await p.evaluate(() => document.querySelector('.ms-play__stats b')?.textContent))
-  await p.getByRole('button', { name: 'Down' }).click()
-  await p.screenshot({ path: 'qa-screens/ms-13-maze.png' })
-  await p.getByRole('button', { name: 'All games' }).click(); await sleep(200)
-  // reaction: wait for green, tap
-  await p.getByRole('button', { name: /Reaction/ }).click(); await sleep(300)
-  for (let r = 0; r < 5; r++) {
-    await p.locator('.ms-reaction').dispatchEvent('pointerdown')
-    await p.waitForSelector('.ms-reaction.is-go', { timeout: 6000 })
-    await sleep(120)
-    await p.locator('.ms-reaction').dispatchEvent('pointerdown')
-    await sleep(150)
-  }
-  const react = await p.evaluate(() => document.querySelector('.ms-done b')?.textContent ?? '')
-  await p.screenshot({ path: 'qa-screens/ms-14-reaction.png' })
-  await closeApp(p)
-  await sleep(600)
-  const camAfter = await p.evaluate(() => document.querySelector('.ms-launcher').getBoundingClientRect().x)
-  expect(moves >= 1, `maze: arrow keys / W A S D move the dot (${moves} moves)`)
-  expect(/ms average/.test(react), `reaction: five rounds to a result ("${react}")`)
-  expect(Math.abs(camAfter - camBefore) < 4, 'game keys did not move the room camera')
+  // (Joy Lab's games and the Music Lounge are played in scripts/qa-joylab.mjs)
   expect(p.errors.length === 0, `desktop: no page errors ${p.errors.length ? JSON.stringify(p.errors.slice(0, 3)) : ''}`)
   await p.context().close()
 }
@@ -202,7 +154,7 @@ const windowFits = (p) => p.evaluate(() => { const r = document.querySelector('.
   await p.screenshot({ path: 'qa-screens/ms-20-phone-room.png' })
   const vis = await p.evaluate(() => [...document.querySelectorAll('.ms-icon')].filter((b) => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top > 60 && r.bottom < innerHeight }).length)
   const labels = await p.evaluate(() => Math.min(...[...document.querySelectorAll('.ms-icon__label')].map((l) => l.getBoundingClientRect().height)))
-  expect(vis === 9 && labels >= 12, `phone: all 9 icons on screen in a 3-column launcher, labels readable (${labels.toFixed(0)} px)`)
+  expect(vis === 10 && labels >= 12, `phone: all 10 icons on screen in a 3-column launcher, labels readable (${labels.toFixed(0)} px)`)
   // one-finger drag looks around
   const cdp = await p.context().newCDPSession(p)
   const lx0 = await p.evaluate(() => document.querySelector('.ms-launcher').getBoundingClientRect().x)
@@ -213,7 +165,7 @@ const windowFits = (p) => p.evaluate(() => { const r = document.querySelector('.
   const lx1 = await p.evaluate(() => document.querySelector('.ms-launcher').getBoundingClientRect().x)
   expect(Math.abs(lx1 - lx0) > 30, `phone: a one-finger drag turns the view (${Math.round(lx0 - lx1)} px)`)
   await p.getByRole('button', { name: 'Reset view' }).tap(); await sleep(1400)
-  for (const name of ['Projects', 'Games', 'Contact']) {
+  for (const name of ['Projects', 'Joy Lab', 'Contact']) {
     await openApp(p, name, true)
     const fits = await windowFits(p)
     const scrolls = await p.evaluate(() => { const b = document.querySelector('.ms-window__body'); return b.scrollHeight > b.clientHeight })
@@ -262,7 +214,7 @@ const windowFits = (p) => p.evaluate(() => { const r = document.querySelector('.
   await p.getByRole('button', { name: 'Open Education' }).click()
   await p.waitForSelector('.ms-window', { timeout: 5000 })
   const edu = await p.evaluate(() => document.querySelector('.ms-window__body')?.innerText.includes('CGPA'))
-  expect(vis === 9 && edu && errs.length === 0, `no WebGL: launcher (${vis}/9) and apps work without the room${errs.length ? ` — errors ${JSON.stringify(errs)}` : ''}`)
+  expect(vis === 10 && edu && errs.length === 0, `no WebGL: launcher (${vis}/10) and apps work without the room${errs.length ? ` — errors ${JSON.stringify(errs)}` : ''}`)
   await nb.close()
 }
 

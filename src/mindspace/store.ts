@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 /** the applications on the spatial launcher, in launcher order */
-export type AppId = 'about' | 'education' | 'experience' | 'projects' | 'gallery' | 'process' | 'skills' | 'games' | 'contact'
+export type AppId = 'about' | 'education' | 'experience' | 'projects' | 'gallery' | 'process' | 'skills' | 'games' | 'music' | 'contact'
 
 /**
  * Mindspace state, kept deliberately small and explicit:

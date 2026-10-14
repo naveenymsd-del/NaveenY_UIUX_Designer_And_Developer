@@ -9,6 +9,9 @@ import { Launcher } from './ui/Launcher'
 import { Controls } from './ui/Controls'
 import { AppWindow } from './ui/AppWindow'
 import { IntroOverlay } from './ui/IntroOverlay'
+import { MiniPlayer } from './ui/MiniPlayer'
+import { setDuck } from './music/engine'
+import './music.css'
 import './mindspace.css'
 
 const Scene = lazy(() => import('./scene/Scene'))
@@ -32,6 +35,8 @@ export default function MindspaceApp() {
     document.title = 'Mindspace — Naveen Y · Spatial portfolio'
     if (!hasWebGL()) setFallback()
   }, [setFallback])
+  // the games' sounds come through: music steps back while Joy Lab is open
+  useEffect(() => { setDuck(app === 'games' ? 0.35 : 1) }, [app])
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') useMindspace.getState().close() }
     window.addEventListener('keydown', onKey)
@@ -47,6 +52,9 @@ export default function MindspaceApp() {
               className="ms-canvas"
               shadows={{ type: PCFSoftShadowMap }}
               dpr={[1, dpr]}
+              // behind an open app the room is still (and blurred): draw it only when something changes,
+              // so the app — and the Joy Lab games — get the whole GPU
+              frameloop={app ? 'demand' : 'always'}
               gl={{ antialias: true, powerPreference: 'high-performance', alpha: false }}
               camera={{ position: HOME.pos.toArray(), fov: homeFov(innerWidth / innerHeight), near: 0.05, far: 80 }}
               onCreated={({ gl }) => {
@@ -68,6 +76,7 @@ export default function MindspaceApp() {
       </div>
       <AppWindow />
       <Controls />
+      <MiniPlayer />
       <IntroOverlay ready={ready || fallback} />
       {!ready && !fallback && <div className="ms-loading" role="status" aria-label="Preparing the room"><span /></div>}
       <a className="ms-skiplink" href={`${BASE}street`}>Back to the 3D city</a>
