@@ -176,7 +176,7 @@ for (const [w, h, touch, tag] of SIZES) {
   expect(await onTop(p, INPUT), `${tag}: composer not covered`)
   expect(!(await box(p, '.ui-where')), `${tag}: "Start · Welcome" pill hidden at the start`)
   if (!touch) {
-    expect(/Naveen.s AI Guide/.test(await p.locator('#ag-panel h2').innerText()), `${tag}: panel header`)
+    expect(/Naveen.s AI Companion/.test(await p.locator("#ag-panel h2").innerText()), `${tag}: panel header`)
     expect(await p.locator('#ag-panel .ag-mode [role=radio]').count() === 2, `${tag}: Chat / Voice modes`)
     expect(await p.locator('#ag-panel .ag-quick button').count() >= 5, `${tag}: quick actions`)
     expect(await minTarget(p, '#ag-panel .ag-close, #ag-panel .ag-mic, #ag-panel .ag-send, #ag-panel .ag-mode button') >= 40, `${tag}: panel controls large enough`)
