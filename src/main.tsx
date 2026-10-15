@@ -14,6 +14,7 @@ import './styles/project-case.css'
 import './styles/brand.css'
 import './styles/welcome.css'
 import './styles/companion.css'
+import './styles/buttons.css'
 import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 

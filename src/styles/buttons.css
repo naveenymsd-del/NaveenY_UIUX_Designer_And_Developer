@@ -1,0 +1,118 @@
+/* ── One button system for the city ─────────────────────────────────────────
+   Every button in /street is one of three things, all with the same 12px
+   rounded rectangle, hairline border, glossy top light and type:
+
+     primary    the one main action in a place — indigo gloss with a soft glow
+     secondary  everything else — dark glass with a hairline border
+     icon       secondary, square (close, menu, sound, mic …)
+     (chips are small secondaries; a selected chip turns primary)
+
+   Loaded last: it replaces the older per-component button looks.
+   /mindspace keeps its own visionOS-style glass (a separate design).        */
+:root {
+  --btn-radius: 12px;
+  --btn-text: #ececf3;
+  --btn-pri: linear-gradient(180deg, #7d8bff 0%, #5e6af5 50%, #4b55e3 100%);
+  --btn-pri-hover: linear-gradient(180deg, #8c98ff 0%, #6b76f8 50%, #5560ea 100%);
+  --btn-pri-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34), inset 0 -1px 0 rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(132, 145, 255, 0.6), 0 8px 22px -8px rgba(88, 101, 242, 0.8);
+  --btn-pri-shadow-hover: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(150, 162, 255, 0.75), 0 10px 28px -8px rgba(88, 101, 242, 0.95);
+  --btn-sec: linear-gradient(180deg, rgba(52, 53, 63, 0.94) 0%, rgba(30, 31, 39, 0.96) 100%);
+  --btn-sec-hover: linear-gradient(180deg, rgba(64, 65, 77, 0.96) 0%, rgba(38, 39, 49, 0.97) 100%);
+  --btn-sec-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.13), 0 6px 16px -8px rgba(0, 0, 0, 0.55);
+  --btn-sec-shadow-hover: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.24), 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+  --btn-focus: #9aa5ff;
+}
+
+/* ── shared shape ─────────────────────────────────────────────────────── */
+:is(.ui-btn, .ui-pc-btn, .ui-journey-chip__go, .ag-send, .wl-ai__send, .ui-voice__form button, .ui-cafe__done,
+    .ui-intro__way, .ui-intro__ask, a.ui-intro__classic, .ui-intro__skip, .ui-classic-link, .wl-dest__go, .wl-more,
+    .ui-case__proto, .ui-case__cta, .ui-case__walk, .ui-case__step, .ui-cafe__next, .ui-prompt__action, .ui-voice__link, .ag-status__off, .ag-launcher,
+    .ui-icon-btn, .ui-menu-btn, .ag-icon, .ui-panel__close, .ui-case__close, .ui-gallery__close, .ui-gallery__nav, .ui-tips__close, .wl-close, .ui-voice__x, .ag-mic, .wl-ai__mic, .ui-voice__mic,
+    .ag-quick button, .wl-ai__prompts button, .wl-dests button, .ui-explore__more button, .ui-voice__quick button, .ui-voice__chip) {
+  border: 0 !important;
+  border-radius: var(--btn-radius) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.005em !important;
+  text-decoration: none !important;
+  backdrop-filter: blur(12px) saturate(1.3) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.3) !important;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.18s ease, opacity 0.2s ease, color 0.2s ease !important;
+  animation: none !important;
+  cursor: pointer;
+}
+/* older decorations (sweeps, pseudo borders) belong to the old looks */
+a.ui-intro__classic::before, a.ui-intro__classic::after, .wl-enter::after, .ui-btn--hero::after { display: none !important; }
+
+/* ── primary ──────────────────────────────────────────────────────────── */
+:is(.ui-btn--primary, .ui-pc-btn--primary, .ui-journey-chip__go, .ag-send, .wl-ai__send, .ui-voice__form button, .ui-cafe__done,
+    .wl-dests button.is-selected, .ui-explore__more button.is-active),
+.ui-intro .ui-intro__actions .ui-btn--primary,
+.app.is-night :is(.ui-btn--primary, .ui-journey-chip__go) {
+  background: var(--btn-pri) !important;
+  color: #fff !important;
+  box-shadow: var(--btn-pri-shadow) !important;
+}
+:is(.ui-btn--primary, .ui-pc-btn--primary, .ui-journey-chip__go, .ag-send, .wl-ai__send, .ui-voice__form button, .ui-cafe__done):hover:not(:disabled),
+.ui-intro .ui-intro__actions .ui-btn--primary:hover {
+  background: var(--btn-pri-hover) !important;
+  box-shadow: var(--btn-pri-shadow-hover) !important;
+  transform: translateY(-1px);
+}
+
+/* ── secondary (dark glass) ───────────────────────────────────────────── */
+:is(.ui-btn--glass, .ui-btn--quiet, .ui-pc-btn:not(.ui-pc-btn--primary), .ui-intro__way, .ui-intro__ask, a.ui-intro__classic, .ui-intro__skip,
+    .ui-classic-link, .wl-dest__go, .wl-more, .ui-case__proto, .ui-case__cta, .ui-case__walk, .ui-case__step, .ui-cafe__next, .ui-prompt__action,
+    .ui-voice__link, .ag-status__off, .ag-launcher,
+    .ui-icon-btn, .ui-menu-btn, .ag-icon, .ui-panel__close, .ui-case__close, .ui-gallery__close, .ui-gallery__nav, .ui-tips__close, .wl-close,
+    .ui-voice__x, .ag-mic, .wl-ai__mic, .ui-voice__mic,
+    .ag-quick button, .wl-ai__prompts button, .wl-dests button:not(.is-selected), .ui-explore__more button:not(.is-active), .ui-voice__quick button, .ui-voice__chip),
+.ui-intro__ways .ui-btn--glass,
+.app.is-night :is(.ui-btn--glass, .ui-classic-link, .ag-launcher, .ui-icon-btn, .ui-menu-btn, .ag-icon) {
+  background: var(--btn-sec) !important;
+  color: var(--btn-text) !important;
+  box-shadow: var(--btn-sec-shadow) !important;
+}
+:is(.ui-btn--glass, .ui-btn--quiet, .ui-pc-btn:not(.ui-pc-btn--primary), .ui-intro__way, .ui-intro__ask, a.ui-intro__classic, .ui-intro__skip,
+    .ui-classic-link, .wl-dest__go, .wl-more, .ui-case__proto, .ui-case__cta, .ui-case__walk, .ui-case__step, .ui-cafe__next, .ui-prompt__action,
+    .ui-voice__link, .ag-status__off, .ag-launcher,
+    .ui-icon-btn, .ui-menu-btn, .ag-icon, .ui-panel__close, .ui-case__close, .ui-gallery__close, .ui-gallery__nav, .ui-tips__close, .wl-close,
+    .ui-voice__x, .ag-mic, .wl-ai__mic, .ui-voice__mic,
+    .ag-quick button, .wl-ai__prompts button, .wl-dests button:not(.is-selected), .ui-explore__more button:not(.is-active), .ui-voice__quick button, .ui-voice__chip):hover:not(:disabled) {
+  background: var(--btn-sec-hover) !important;
+  box-shadow: var(--btn-sec-shadow-hover) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+/* a live microphone: the same button, a cyan edge */
+:is(.ag-mic, .wl-ai__mic, .ui-voice__mic, .ui-voice__mic).is-live { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 1.5px #3fd2ec, 0 0 18px -4px rgba(63, 210, 236, 0.8) !important; color: #b9f3ff !important; }
+
+/* pressed, disabled, focus — the same everywhere */
+:is(.ui-btn, .ui-pc-btn, .ui-journey-chip__go, .ag-send, .wl-ai__send, .ui-voice__form button, .ui-intro__way, .ui-intro__ask, a.ui-intro__classic, .ui-classic-link, .wl-dest__go, .wl-more,
+    .ag-launcher, .ui-icon-btn, .ui-menu-btn, .ag-icon, .ag-mic, .wl-ai__mic, .ui-voice__mic, .ag-quick button, .wl-ai__prompts button, .wl-dests button, .ui-explore__more button, .ui-voice__quick button):active:not(:disabled) {
+  transform: translateY(0) scale(0.98) !important;
+}
+:is(.ui-btn, .ui-pc-btn, .ag-send, .wl-ai__send, .ui-voice__form button, .wl-dest__go):disabled { opacity: 0.45 !important; transform: none !important; cursor: default; }
+:is(.ui-btn, .ui-pc-btn, .ui-journey-chip__go, .ag-send, .wl-ai__send, .ui-voice__form button, .ui-intro__way, .ui-intro__ask, a.ui-intro__classic, .ui-intro__skip, .ui-classic-link, .wl-dest__go, .wl-more,
+    .ui-case__proto, .ui-case__cta, .ui-case__walk, .ui-case__step, .ag-launcher, .ui-icon-btn, .ui-menu-btn, .ag-icon, .ui-panel__close, .ui-case__close,
+    .ui-gallery__close, .ui-gallery__nav, .ui-tips__close, .wl-close, .ag-mic, .wl-ai__mic, .ui-voice__mic, .ag-quick button, .wl-ai__prompts button, .wl-dests button, .ui-explore__more button,
+    .ui-voice__quick button, .ag-status__off):focus-visible {
+  outline: 2px solid var(--btn-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* ── sizes: 44 regular, 52 large, 36 chips, 44 × 44 icons ─────────────── */
+.ui-btn { height: 44px; padding: 0 18px; font-size: 14px; }
+.ui-btn--lg { height: 52px !important; padding: 0 24px !important; font-size: 15px !important; }
+:is(.ui-icon-btn, .ui-menu-btn) { width: 44px; height: 44px; }
+.ui-menu-btn span { background: var(--btn-text) !important; }
+:is(.ag-quick button, .wl-ai__prompts button, .wl-dests button, .ui-explore__more button, .ui-voice__quick button) { min-height: 36px; font-size: 12.5px !important; }
+.ag-mic, .ag-send { width: 40px; height: 40px; display: grid; place-items: center; flex: none; }
+.ag-head .ag-icon { width: 40px; height: 40px; }
+.ag-head .ag-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.ag-launcher__text small { color: #c4c6d6 !important; }
+.wl-dests__icon { border-radius: 8px !important; background: rgba(255, 255, 255, 0.1) !important; color: inherit !important; }
+.ui-classic-link svg, .wl-dest__go svg { color: inherit; }
+
+.ui-voice__mic, .ui-voice__form button { width: 44px; height: 44px; display: grid; place-items: center; flex: none; }
+.ui-voice__quick button { min-height: 44px !important; font-size: 14px !important; } /* phone chips: big thumb targets */
+a.ui-intro__classic svg, .ui-intro__way svg, .ui-btn svg { color: inherit !important; }
