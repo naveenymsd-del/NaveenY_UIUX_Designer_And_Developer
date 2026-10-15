@@ -122,7 +122,7 @@ async function voiceConsent(p) {
   } else {
     if (!(await p.locator('#ag-panel').count())) await p.locator('.ag-launcher').click()
     await sleep(400)
-    await p.locator('#ag-panel .ag-mode [role=radio]', { hasText: 'Voice' }).click()
+    await p.locator('#ag-panel .ag-compose .ag-mic').click()
   }
   await sleep(300)
 }
@@ -252,7 +252,7 @@ const helpers = (p) => ({
   await sleep(500)
   const log = await p.evaluate(() => window.__recLog)
   expect(!(await h.recRunning()) && log[log.length - 1] === 'abort', 'voice off: recognition stopped')
-  expect(await p.evaluate(() => !document.querySelector('.ag-status') && !!document.querySelector('#ag-panel .ag-mode [aria-checked=true]')?.textContent.includes('Chat')), 'voice off: the panel is back in Chat mode')
+  expect(await p.evaluate(() => !document.querySelector('.ag-status') && /asks for the microphone/.test(document.querySelector('#ag-panel .ag-mic')?.getAttribute('aria-label') ?? '')), 'voice off: the panel is back to chat')
   expect(external.length === 0, `no request to any AI or voice service (${external.join(", ") || "none"})`)
   expect(errors.length === 0, `no console errors (${errors.join(' | ').slice(0, 120)})`)
   await p.screenshot({ path: 'qa-screens/620-browser-voice.png' })

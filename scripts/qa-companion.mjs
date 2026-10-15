@@ -56,7 +56,7 @@ for (const [w, h, tag] of [[1440, 900, 'desk-1440'], [1366, 768, 'desk-1366']]) 
   expect(await p.locator('#ag-panel .ag-quick button').count() === 5, `${tag}: five suggestions`)
   const tops = await p.evaluate(() => [...new Set([...document.querySelectorAll('#ag-panel .ag-quick button')].map((x) => Math.round(x.getBoundingClientRect().top)))].length)
   expect(tops === 1, `${tag}: suggestions on one row`)
-  expect(await p.locator('#ag-panel .ag-mode [role=radio]').count() === 2, `${tag}: Chat | Voice switch`)
+  expect(await p.locator('#ag-panel .ag-compose .ag-mic').count() === 1 && await p.locator('#ag-panel .ag-compose .ag-send').count() === 1, `${tag}: composer with microphone and send`)
   await p.screenshot({ path: `qa-screens/ac-${tag}-open.png` })
 
   // a suggestion is a real request: the guide answers, and explains
@@ -110,16 +110,17 @@ for (const [w, h, tag] of [[1440, 900, 'desk-1440'], [1366, 768, 'desk-1366']]) 
   // voice asks first (no microphone until the visitor agrees); chat is always one tap away
   await p.locator('.ag-launcher').click()
   await sleep(300)
-  await p.locator('#ag-panel .ag-mode [role=radio]', { hasText: 'Voice' }).click()
+  await p.locator('#ag-panel .ag-compose .ag-mic').click()
   await sleep(300)
   expect(await p.locator('#ag-panel .ag-consent').isVisible() && await p.evaluate(() => !window.__rec?.running), `${tag}: Voice → explanation first, microphone not started`)
   await p.screenshot({ path: `qa-screens/ac-${tag}-voice-consent.png` })
   await p.getByRole('button', { name: 'Not now' }).click()
   await sleep(200)
-  expect(await p.locator('#ag-panel .ag-mode [aria-checked=true]').innerText() === 'Chat', `${tag}: "Not now" → still chat`)
+  expect(await p.locator('#ag-panel .ag-status').count() === 0 && await p.locator('#ag-panel .ag-form input').isVisible(), `${tag}: "Not now" → still chat`)
 
   // a walk: navigating, then a celebration only when it actually arrives
-  await p.locator('#ag-panel .ag-quick button', { hasText: 'Take me to Projects' }).click()
+  await p.locator('#ag-panel .ag-form input').fill('Take me to Projects')
+  await p.keyboard.press('Enter')
   const nav = await p.waitForFunction(() => document.querySelector('.ag-launcher .ui-robot')?.getAttribute('data-expr') === 'navigating', null, { timeout: 8000 }).then(() => true, () => false)
   expect(nav, `${tag}: a walk → navigating`)
   if (tag === 'desk-1440') {
