@@ -71,7 +71,7 @@ export function IntroOverlay() {
         <h1 id="intro-title" className="ui-intro__title">{PROFILE.name}</h1>
         <p className="ui-intro__subtitle">{PROFILE.tagline}</p>
         <p className="ui-intro__welcome">Good {partOfDay(new Date().getHours())}. Welcome to <span className="ui-grad-text">Naveen’s world</span> — how would you like to explore?</p>
-        {/* one primary action, two equal secondary ones; then a quiet link and the classic portfolio */}
+        {/* one primary action, two equal secondary ones; then the classic portfolio */}
         <div className="ui-intro__actions ui-intro__ways">
           <button className="ui-btn ui-btn--primary ui-btn--lg ui-btn--hero" onClick={() => beginJourney('street')} tabIndex={tab} autoFocus={hero}>
             Start exploring
@@ -87,16 +87,13 @@ export function IntroOverlay() {
           </button>
         </div>
         <div className="ui-intro__links">
-          <button className="ui-intro__work" onClick={() => beginJourney('work')} tabIndex={tab}>
-            View my work
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
-          </button>
           {/* the spatial portfolio (/mindspace) — a full page load, so the city is never kept running behind it */}
           <a className="ui-intro__work ui-intro__classic" href={`${BASE}mindspace`} tabIndex={tab}>
             Explore the Classic Portfolio
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
           </a>
-        </div>      </section>
+        </div>
+      </section>
 
       <div className={`ui-intro__status ${hero && !leaving ? 'is-visible' : ''}`}>
         <WorldStatus />

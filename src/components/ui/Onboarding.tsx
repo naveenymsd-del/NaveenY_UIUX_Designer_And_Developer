@@ -10,6 +10,7 @@ import { useVoiceStore } from '@/ai/voiceStore'
 import { useGameStore } from '@/stores/gameStore'
 import { onboardingDisabled, rememberOnboarding, useUIStore } from '@/stores/uiStore'
 import { CompanionGlyph } from './CompanionGlyph'
+import { ClassicLink } from './ClassicLink'
 import { KeyCap } from './KeyCap'
 import { STOP_ICONS } from './stopIcons'
 
@@ -170,6 +171,7 @@ function Welcome() {
         <p className="wl-kicker">Interactive portfolio</p>
         <h1 id="wl-title">Welcome to <span className="ui-grad-text">Naveen’s World</span></h1>
         <p id="wl-lead">Explore the city behind my design journey. Discover my work, meet your AI Guide, and choose where to begin.</p>
+        <ClassicLink />
         {!first && (
           <button className="ag-icon wl-close" onClick={() => leave('city')} aria-label="Close the introduction">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" /></svg>
@@ -257,7 +259,7 @@ function Welcome() {
                 <li><b>Look around</b> — drag with the mouse; scroll to zoom.</li>
                 <li><b>Open a place or sign</b> — E or Enter when you’re next to it.</li>
                 <li><b>Close</b> — Esc closes panels and menus; H shows or hides the tips.</li>
-                <li><b>AI Guide</b> — the button at the bottom left: chat, or talk with the microphone.</li>
+                <li><b>AI Guide</b> — the button at the bottom right: chat, or talk with the microphone.</li>
                 <li><b>Every place</b> — the menu (top right) → Explore, then “Take me there”.</li>
               </ul>
             )}

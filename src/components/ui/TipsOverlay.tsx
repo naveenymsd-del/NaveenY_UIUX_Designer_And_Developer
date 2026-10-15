@@ -7,7 +7,7 @@ type Step = { id: 'city' | 'move' | 'ai' | 'menu'; title: string; touch: string;
 const STEPS: Step[] = [
   { id: 'city', title: 'Explore the city', touch: 'Every place here is part of Naveen’s story.', desktop: 'Every place here is part of Naveen’s story.' },
   { id: 'move', title: 'Move with the joystick', touch: 'Drag it to walk · drag anywhere to look around.', desktop: 'Walk with WASD or the arrow keys · drag to look around.' },
-  { id: 'ai', title: 'Talk to your AI guide', touch: 'Tap the orange orb — try “take me to projects”.', desktop: 'Use the guide, bottom-left — talk or type.' },
+  { id: 'ai', title: 'Talk to your AI guide', touch: 'Tap the orange orb — try “take me to projects”.', desktop: 'Use the AI Guide, bottom-right — talk or type.' },
   { id: 'menu', title: 'Open the menu to see the full journey', touch: 'Home, Education, NFC, Projects, Design Journey, Contact.', desktop: 'Home, Education, NFC, Projects, Design Journey, Contact.' },
 ]
 const STEP_MS = 3600

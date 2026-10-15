@@ -10,7 +10,7 @@ import { type MenuSection, useUIStore } from '@/stores/uiStore'
 import { ContactLinks } from './ContactLinks'
 import { FeedbackForm } from './FeedbackForm'
 import { STOP_ICONS } from './stopIcons'
-import { BASE } from '@/utils/basePath'
+import { ClassicLink } from './ClassicLink'
 
 /** what each place is for, in a few words */
 const ABOUT: Record<string, string> = {
@@ -112,12 +112,13 @@ export function MenuOverlay() {
               )
             })}
           </ol>
+          {/* the other way to see the portfolio, featured right under the places */}
+          <ClassicLink variant="card" tabIndex={tab} />
           <div className="ui-explore__more">
             {SECTIONS.map((s) => (
               <button key={s.id} className={section === s.id ? 'is-active' : ''} onClick={() => { soundManager.play('click'); setSection(s.id) }} tabIndex={tab}>{s.label}</button>
             ))}
             <button onClick={howItWorks} tabIndex={tab}>How it works</button>
-            <a className="ui-explore__classic" href={`${BASE}mindspace`} tabIndex={tab}>Explore the Classic Portfolio ↗</a>
           </div>
         </nav>
         <section className="ui-menu__content" aria-live="polite">

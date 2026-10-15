@@ -1,4 +1,5 @@
 import { getTime, setMode, setTime } from '@/core/dayNight'
+import { beginJourney } from '@/core/journey'
 import { useGameStore } from '@/stores/gameStore'
 import { introRuntime } from '@/core/intro'
 import { useFrame, useThree } from '@react-three/fiber'
@@ -38,6 +39,8 @@ export function DebugProbe() {
     ;(window as unknown as { __scene: unknown }).__scene = scene
     ;(window as unknown as { __teleport: unknown }).__teleport = (x: number, z: number, yaw: number) => requestTeleport(new Vector3(x, 0.8, z), yaw)
     ;(window as unknown as { __intro: unknown }).__intro = introRuntime
+    // QA: straight to the Project Studio from the hero (the old "View my work" shortcut)
+    ;(window as unknown as { __viewWork: unknown }).__viewWork = () => beginJourney('work')
     ;(window as unknown as { __time: unknown }).__time = (h: number, animate = false) => setTime(h, animate)
     ;(window as unknown as { __hour: unknown }).__hour = () => +getTime().toFixed(2)
     ;(window as unknown as { __mode: unknown }).__mode = setMode

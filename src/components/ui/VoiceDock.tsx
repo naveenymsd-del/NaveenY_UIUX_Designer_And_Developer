@@ -40,7 +40,7 @@ function useModalOpen() {
 }
 
 /**
- * The AI guide's controls. Desktop: a compact bar bottom-left with the latest
+ * The AI guide's controls. Desktop: a launcher bottom-right with the latest
  * exchange. Phones: an orb where the jump button used to be, opening a
  * small sheet (at most ~30% of the screen). Voice never turns on by itself —
  * the visitor opts in after a one-line explanation. Whenever a content panel
@@ -163,7 +163,7 @@ function TextForm({ inputRef, onEscape }: { inputRef: React.RefObject<HTMLInputE
   )
 }
 
-// ── desktop: one launcher bottom-left, one panel on the right ─────────────
+// ── desktop: one launcher bottom-right, its panel right above it ──────────
 /** what the guide is doing, in words (the panel's status strip and the launcher's subtitle) */
 const STATE_LINE: Partial<Record<string, string>> = {
   connecting: 'Connecting…', listening: 'Listening…', user_speaking: 'Listening…', thinking: 'Thinking…', speaking: 'Speaking…', navigating: 'On our way…', error: 'I didn’t catch that',

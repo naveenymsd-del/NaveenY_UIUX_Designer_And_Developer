@@ -216,7 +216,7 @@ export function GameCamera() {
       // the distance at which that footprint fits the stage (the stage is part of the full view)
       const halfV = (camera.fov * Math.PI) / 360
       const halfH = Math.atan(Math.tan(halfV) * (vw / vh))
-      const r = Math.max(across / 2 / (Math.tan(halfH) * (stageW / vw)), deep / 2 / (Math.tan(halfV) * (stageH / vh))) * 1.04
+      const r = Math.max(across / 2 / (Math.tan(halfH) * (stageW / vw)), deep / 2 / (Math.tan(halfV) * (stageH / vh))) * 1.1
       live.target.copy(CITY_CENTER)
       live.pos.set(CITY_CENTER.x + Math.sin(a) * Math.cos(el) * r, Math.sin(el) * r, CITY_CENTER.z + Math.cos(a) * Math.cos(el) * r)
     } else if (key === 'override' && game.shotOverride) {

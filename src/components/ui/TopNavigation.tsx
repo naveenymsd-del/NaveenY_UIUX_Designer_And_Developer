@@ -8,6 +8,7 @@ import { MenuButton } from './MenuButton'
 import { SoundButton } from './SoundButton'
 import { DayNightToggle } from './DayNightToggle'
 import { WorldStatus } from './WorldStatus'
+import { ClassicLink } from './ClassicLink'
 
 /**
  * Floating HUD header. Left: name + where you are. Right: local time, visitor
@@ -50,6 +51,7 @@ export function TopNavigation() {
         </button>
       </div>
       <div className="ui-top__right">
+        <ClassicLink hidden={!visible} />
         <WorldStatus />
         <DayNightToggle />
         <SoundButton />
