@@ -72,6 +72,7 @@ for (const [w, h, touch, tag] of SIZES) {
     await p.waitForSelector('.wl', { timeout: 30000 })
     expect(/Welcome to Naveen.s World/.test(await p.locator('.wl h1').innerText()), `${tag}: welcome headline`)
     expect(/Explore the city behind my design journey/.test(await p.locator('#wl-lead').innerText()), `${tag}: welcome message`)
+    expect(await p.locator(".wl-head .ui-classic-link").isVisible(), `${tag}: Explore the Classic Portfolio on the welcome screen`)
     expect(await p.locator('.wl-marker').count() === 7 && await p.locator('.wl-dests button').count() === 7, `${tag}: 7 destinations (markers + list)`)
     expect(await p.evaluate(() => !document.querySelector('.app.phase-intro')), `${tag}: intro waits behind the welcome`)
     await p.waitForSelector('.wl-enter:not([disabled])', { timeout: 90000 })
@@ -157,7 +158,7 @@ for (const [w, h, touch, tag] of SIZES) {
   const p = await city(w, h, touch)
   await toHero(p)
   await p.screenshot({ path: `qa-screens/ux-hero-${tag}.png` })
-  for (const [name, role] of [['Start exploring', 'button'], ['Explore the map', 'button'], ['Ask AI Guide', 'button'], ['View my work', 'button'], ['Explore the Classic Portfolio', 'link']]) {
+  for (const [name, role] of [['Start exploring', 'button'], ['Explore the map', 'button'], ['Ask AI Guide', 'button'], ['Explore the Classic Portfolio', 'link']]) {
     expect(await p.getByRole(role, { name: new RegExp('^' + name, 'i') }).count() === 1, `${tag}: hero has "${name}"`)
   }
   expect(!NO_DUPES.test(await p.locator('.ui-intro').innerText()), `${tag}: no "Talk to me" / "Guide me" in the hero`)
@@ -193,15 +194,20 @@ for (const [w, h, touch, tag] of SIZES) {
     await p.locator('#ag-panel .ag-close').click()
     await sleep(1500)
     const L = { launch: await box(p, '.ag-launcher'), hint: await box(p, '.ui-hint'), map: await box(p, '.ui-minimap'), chip: await box(p, '.ui-journey-chip.is-visible') }
-    expect(inView(L.launch, w, h) && L.launch.x < w / 3, `${tag}: AI Guide launcher visible bottom-left`)
+    expect(inView(L.launch, w, h) && L.launch.r > w * 2 / 3, `${tag}: AI Guide launcher visible bottom-right (under its panel)`)
+    expect(!!L.map && L.map.x < w / 3 && !!L.chip && L.chip.x < w / 3, `${tag}: minimap and next-stop card on the left`)
     expect(!!L.chip, `${tag}: next-stop card visible`)
     for (const [a, c] of [['launch', 'hint'], ['launch', 'map'], ['launch', 'chip'], ['chip', 'map'], ['chip', 'hint']]) expect(!overlap(L[a], L[c]), `${tag}: ${a} ↔ ${c} don't overlap`)
     expect(/Take me there/.test(await p.locator('.ui-journey-chip__go').innerText()), `${tag}: next-stop action is "Take me there"`)
     expect(!NO_DUPES.test(await p.locator('.ui-layer').innerText()), `${tag}: no duplicate "Talk to me" / "Guide me" in the HUD`)
     expect(await p.locator('.ui-guide').count() === 0, `${tag}: the old guide panel is gone`)
     await p.screenshot({ path: `qa-screens/ux-world-${tag}.png` })
+    expect(await p.locator('.ui-top .ui-classic-link').isVisible() && await onTop(p, '.ui-top .ui-classic-link'), `${tag}: Explore the Classic Portfolio in the header while exploring`)
     await p.locator('.ui-menu-btn').click()
     await sleep(800)
+    const card = await box(p, '.ui-menu.is-open .ui-classic-card')
+    expect(!!card && card.r - card.x > 260 && /Explore the Classic Portfolio/.test(await p.locator('.ui-classic-card').innerText()), `${tag}: menu features the Classic Portfolio as a card`)
+    await p.screenshot({ path: `qa-screens/ux-menu-${tag}.png` })
     await p.locator('.ui-explore__more button', { hasText: 'How it works' }).click()
     const re = await p.waitForSelector('.wl', { timeout: 5000 }).then(() => true, () => false)
     expect(re && /Back to the City/.test(await p.locator('.wl-enter').innerText()), `${tag}: How it works reopens the introduction`)
@@ -225,6 +231,9 @@ for (const [w, h, touch, tag] of SIZES) {
     expect(!!L.fab, `${tag}: AI orb visible`)
     for (const [a, c] of [['fab', 'joy'], ['fab', 'map'], ['chip', 'tips'], ['chip', 'top'], ['chip', 'map'], ['joy', 'map']]) expect(!overlap(L[a], L[c]), `${tag}: ${a} ↔ ${c} don't overlap`)
     expect(await minTarget(p, '.ui-voice__fab') >= 44, `${tag}: AI orb ≥ 44px`)
+    expect(await p.locator(".ui-top .ui-classic-link").isVisible() && await onTop(p, ".ui-top .ui-classic-link"), `${tag}: Classic Portfolio in the header (phone/tablet)`)
+    const hdr = await p.evaluate(() => { const r = [...document.querySelectorAll(".ui-top__left > *, .ui-top__right > *")].filter((e) => e.getBoundingClientRect().width > 0).map((e) => e.getBoundingClientRect()); return r.every((a, i) => r.every((c, j) => i === j || a.right <= c.left + 1 || c.right <= a.left + 1 || a.bottom <= c.top + 1 || c.bottom <= a.top + 1)) && r.every((a) => a.right <= innerWidth + 0.5) })
+    expect(hdr, `${tag}: header items fit without overlapping`)
     await p.screenshot({ path: `qa-screens/ux-world-${tag}.png` })
   }
   expect(p.errors.length === 0, `${tag}: no page errors ${p.errors.join(' | ')}`)

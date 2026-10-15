@@ -8,7 +8,7 @@ for (const [w, h] of [[390, 844], [360, 740]]) {
   await p.waitForFunction(() => window.__intro && window.__intro.running, null, { timeout: 90000 })
   await p.keyboard.press('Escape')
   await sleep(2400)
-  await p.getByRole('button', { name: 'View my work' }).click()
+  await p.evaluate(() => window.__viewWork()) // (the hero's "View my work" shortcut was removed; the same journey)
   await p.waitForFunction(() => (window.__mindscape?.x ?? 0) > 300, null, { timeout: 60000 })
   await sleep(3000)
   await p.evaluate(() => window.__teleport(341.6, -6.2, Math.PI / 2))
