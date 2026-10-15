@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { create } from 'zustand'
 import { disableGuide, enableText, enableVoice, interruptGuide, resumeAudio, submit, toggleListening } from '@/ai/guide'
 import { useVoiceStore } from '@/ai/voiceStore'
 import { soundManager } from '@/core/sound/SoundManager'
@@ -166,6 +167,7 @@ function DesktopDock({ modal }: { modal: boolean }) {
   const listening = voice && (v.state === 'listening' || v.state === 'user_speaking')
   const busy = v.state === 'speaking' || v.state === 'thinking' || v.state === 'navigating' || v.state === 'connecting'
   const stateLine = v.status ?? STATE_LINE[v.state]
+  const draft = useDraft((d) => d.text.trim().length > 0)
 
   useEffect(() => { if (log.current) log.current.scrollTop = log.current.scrollHeight }, [v.messages.length, v.messages[v.messages.length - 1]?.text, open])
   // opening the panel puts the cursor in the composer (chat is ready at once) — but not when the
@@ -221,6 +223,14 @@ function DesktopDock({ modal }: { modal: boolean }) {
   }
   const expr = useExpression()
   const status = v.status && voice ? v.status : STATUS[expr]
+  // the guide is working on an answer: a typing indicator in the conversation
+  const typing = v.state === 'thinking' || v.state === 'connecting'
+  // the starters show while the conversation is just beginning
+  const fresh = v.messages.filter((m) => m.role === 'user').length === 0
+  const closeAll = () => {
+    if (voice) void disableGuide().then(() => enableText())
+    closeGuide()
+  }
 
   return (
     <>
@@ -231,39 +241,57 @@ function DesktopDock({ modal }: { modal: boolean }) {
           </button>
         )}
         <button className="ag-launcher" onClick={() => { soundManager.unlock(); soundManager.play('click'); toggleGuide() }} aria-expanded={open} aria-controls="ag-panel" aria-label={open ? 'Close the AI Guide' : 'Open the AI Guide — chat or voice'}>
-          <span className="ag-avatar" aria-hidden="true"><CompanionGlyph size={40} expr={expr} /></span>
+          <span className="ag-avatar" aria-hidden="true"><CompanionGlyph size={36} expr={expr} /></span>
           <span className="ag-launcher__text">
             <b>AI Guide</b>
             <small>{on && stateLine ? stateLine : 'Chat or voice'}</small>
-          </span>
-          <span className={`ag-launcher__mic ${listening ? 'is-live' : ''}`} aria-hidden="true">
-            <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
           </span>
         </button>
       </section>
 
       {open && (
         <section id="ag-panel" ref={panel} className={`ag-panel is-${v.state} ${voice ? 'is-voice' : 'is-chat'}`} role="dialog" aria-label="Naveen’s AI Companion" onKeyDown={onKey}>
+          {/* header: who it is, what it's doing, minimise and close */}
           <header className="ag-head">
-            <span className="ag-avatar ag-avatar--lg" aria-hidden="true"><CompanionGlyph size={52} expr={expr} /></span>
+            <span className="ag-avatar" aria-hidden="true"><CompanionGlyph size={34} expr={expr} /></span>
             <div className="ag-head__text">
-              <h2><span className="ag-grad">Naveen’s</span> AI Companion</h2>
-              <p>Explore the city. Discover projects. Ask me anything.</p>
+              <h2>Naveen’s AI Companion</h2>
               <p className={`ag-state is-${expr}`} role="status" aria-live="polite"><i aria-hidden="true" />{status}</p>
             </div>
-            <button className="ag-icon ag-close" onClick={closeGuide} aria-label="Close the AI Companion" title="Close (Esc)">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" /></svg>
+            <button className="ag-icon ag-min" onClick={closeGuide} aria-label="Minimise the AI Companion" title="Minimise">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="3.5" /><path d="M9 12h6" /></svg>
+            </button>
+            <button className="ag-icon ag-close" onClick={closeAll} aria-label="Close the AI Companion" title="Close (Esc)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg>
             </button>
           </header>
 
-          <div className={`ag-mode ${voice || v.consentOpen ? 'is-voice' : ''}`} role="radiogroup" aria-label="How to talk to the guide">
-            <button role="radio" aria-checked={!voice} className={!voice ? 'is-on' : ''} onClick={chooseChat}>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v10H9.5L5 19v-3.5H4z" /></svg>Chat
-            </button>
-            <button role="radio" aria-checked={voice} className={voice ? 'is-on' : ''} onClick={chooseVoice}>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>Voice
-            </button>
+          {/* the conversation */}
+          <div className="ag-body">
+            <ol className="ag-log ui-voice__log" ref={log} role="log" aria-live="polite" aria-label="Conversation">
+              {v.messages.map((m) => (
+                <li key={m.id} className={`is-${m.role}`}>
+                  {m.role === 'guide' && <span className="ag-log__avatar" aria-hidden="true"><CompanionGlyph size={26} awake={false} /></span>}
+                  <span className="ag-log__text"><span className="sr-only">{m.role === 'user' ? 'You said: ' : 'Guide: '}</span>{m.text}</span>
+                </li>
+              ))}
+              {v.interim && <li className="is-user is-interim" aria-hidden="true"><span className="ag-log__text">{v.interim}…</span></li>}
+              {typing && (
+                <li className="is-guide is-typing" aria-label="The guide is typing">
+                  <span className="ag-log__avatar" aria-hidden="true"><CompanionGlyph size={26} awake={false} /></span>
+                  <span className="ag-typing" aria-hidden="true"><i /><i /><i /></span>
+                </li>
+              )}
+            </ol>
+            {v.messages.length === 0 && <p className="ag-empty">Hi! I’m your guide to Naveen’s world. Want to explore a project or find your way around?</p>}
+            <Extras />
           </div>
+
+          {fresh && (
+            <div className="ag-quick" role="group" aria-label="Suggestions">
+              {QUICK_ACTIONS.map((q) => <button key={q} onClick={() => void submit(q)}>{q}</button>)}
+            </div>
+          )}
 
           {v.consentOpen && !voice && (
             <div className="ag-consent" role="group" aria-labelledby="ag-consent-title">
@@ -291,41 +319,33 @@ function DesktopDock({ modal }: { modal: boolean }) {
             </div>
           )}
 
-          {voice && (
-            // voice: one big microphone (listen / stop listening / stop the guide), what's being heard, and the way back to chat
-            <div className={`ag-status ag-voice ${listening ? 'is-live' : ''} ${busy ? 'is-busy' : ''}`} role="group" aria-label="Voice">
-              <button className={`ag-voice__mic ${listening ? 'is-live' : ''}`} onClick={mic} aria-pressed={listening} aria-label={busy ? 'Stop the guide' : listening ? 'Stop listening' : 'Start listening'}>
-                <span className="ag-voice__waves" aria-hidden="true"><i /><i /><i /></span>
-                {busy
-                  ? <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2.2" /></svg>
+          {/* the composer: type, or tap the microphone to talk */}
+          <div className="ag-compose">
+            {voice && (
+              <div className={`ag-status ${listening ? 'is-live' : ''}`} role="group" aria-label="Voice">
+                <span className="ag-status__tier" title={v.tier === 'realtime' ? 'Live speech-to-speech is on' : 'Browser voice (turn by turn) is on'}>{v.tier === 'realtime' ? 'Live voice' : 'Browser voice'}</span>
+                <span className="ag-status__line">{v.interim ? `“${v.interim}”` : busy ? (v.state === 'speaking' ? 'Speaking — tap ■ to stop' : stateLine ?? 'Working…') : listening ? 'Listening — speak naturally' : 'Tap the microphone and speak'}</span>
+                <button onClick={chooseChat} className="ag-status__off" aria-label="Turn voice off">Voice off</button>
+              </div>
+            )}
+            <AgForm inputRef={input} placeholder={listening ? 'Listening… or type here' : 'Type a message…'} />
+            <div className="ag-compose__bar">
+              <span className="ag-compose__hint">{voice ? 'Voice is on' : 'Chat or talk — press Enter to send'}</span>
+              <button
+                className={`ag-mic ${listening ? 'is-live' : ''} ${busy && voice ? 'is-busy' : ''}`}
+                onClick={mic}
+                aria-pressed={listening}
+                aria-label={!voice ? 'Voice — start talking (asks for the microphone)' : busy ? 'Stop the guide' : listening ? 'Stop listening' : 'Start listening'}
+                title="Voice"
+              >
+                {busy && voice
+                  ? <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7.5" y="7.5" width="9" height="9" rx="2" /></svg>
                   : <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>}
               </button>
-              <div className="ag-voice__text">
-                <span className="ag-status__tier" title={v.tier === 'realtime' ? 'Live speech-to-speech is on' : 'Browser voice (turn by turn) is on'}>{v.tier === 'realtime' ? 'Live voice' : 'Browser voice'}</span>
-                <b>{busy ? (v.state === 'speaking' ? 'Speaking — tap to stop' : stateLine ?? 'Working…') : listening ? 'Listening — speak naturally' : 'Tap the microphone and speak'}</b>
-                {v.interim ? <q className="ag-voice__heard">{v.interim}</q> : <small>{v.tier === 'realtime' ? 'Talk any time; I’ll answer out loud.' : 'One sentence at a time — I’ll answer out loud.'}</small>}
-              </div>
-              <button onClick={chooseChat} className="ag-status__off" aria-label="Turn voice off">Use chat</button>
-            </div>
-          )}
-
-          <div className="ag-body">
-            <Log all refEl={log} />
-            {v.messages.length === 0 && <p className="ag-empty">Hi! I’m your guide to Naveen’s world. Want to explore a project or find your way around?</p>}
-            <Extras />
-          </div>
-
-          <div className="ag-quick" role="group" aria-label="Suggestions">
-            {QUICK_ACTIONS.map((q) => <button key={q} onClick={() => void submit(q)}>{q}</button>)}
-          </div>
-
-          <div className="ag-compose">
-            {!voice && (
-              <button className="ag-mic" onClick={mic} aria-label="Voice — start talking (asks for the microphone)" title="Voice">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+              <button type="submit" form="ag-form" className="ag-send" aria-label="Send" disabled={!draft}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" /></svg>
               </button>
-            )}
-            <AgForm inputRef={input} placeholder={listening ? 'Listening… or type here' : 'Ask about a project or choose a destination…'} />
+            </div>
           </div>
         </section>
       )}
@@ -333,15 +353,17 @@ function DesktopDock({ modal }: { modal: boolean }) {
   )
 }
 
+/** the composer's text field: its value is shared with the send button (which sits in the bar below) */
 function AgForm({ inputRef, placeholder }: { inputRef: React.RefObject<HTMLInputElement | null>; placeholder: string }) {
-  const [text, setText] = useState('')
+  const text = useDraft((d) => d.text)
+  const setText = (t: string) => useDraft.setState({ text: t })
   const send = () => {
     if (!text.trim()) return
     void submit(text)
     setText('')
   }
   return (
-    <form className="ag-form" onSubmit={(e) => { e.preventDefault(); send() }}>
+    <form id="ag-form" className="ag-form" onSubmit={(e) => { e.preventDefault(); send() }}>
       <input
         ref={inputRef}
         value={text}
@@ -352,12 +374,11 @@ function AgForm({ inputRef, placeholder }: { inputRef: React.RefObject<HTMLInput
         maxLength={400}
         enterKeyHint="send"
       />
-      <button type="submit" className="ag-send" aria-label="Send" disabled={!text.trim()}>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
-      </button>
     </form>
   )
 }
+/** the desktop composer's draft (the field and the send button live in different rows) */
+const useDraft = create<{ text: string }>(() => ({ text: '' }))
 
 // ── phones: an orb bottom-right, a compact sheet on demand ────────────────
 function TouchDock({ modal }: { modal: boolean }) {
