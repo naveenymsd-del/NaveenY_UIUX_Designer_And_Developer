@@ -15,6 +15,7 @@ import type { VoiceErrorCode, VoiceProvider } from './voice/types'
 import { useVoiceStore } from './voiceStore'
 import { worldContext } from './worldState'
 import { useGameStore } from '@/stores/gameStore'
+import { react } from './expression'
 import { getProject } from '@/data/projects'
 
 /**
@@ -71,6 +72,7 @@ export function respond(text: string) {
     return
   }
   store().add('guide', text)
+  react('explaining', Math.min(6000, 1800 + text.length * 22))
   // the answer lives in the chat only — the companion just gestures (no floating bubble copy)
   clearCompanion()
   emote('explain', Math.min(6000, 2600 + text.length * 20))
@@ -232,6 +234,7 @@ export async function submit(raw: string) {
     settle()
   }
   reply = withTourPrompt(reply)
+  if (reply.unknown) queueMicrotask(() => react('confused', 4200, { force: true }))
   const later = holdMoves(reply.actions).held
   if (later.length) reply = { ...reply, text: laterLine(later) }
   rememberReply(reply)
@@ -393,6 +396,7 @@ async function fallBack(code: VoiceErrorCode) {
     provider = null
     store().set({ mode: 'text', tier: 'text', session: 'disconnected', state: 'idle', status: null })
     companion.voice = 'idle'
+    queueMicrotask(() => react('error', 4500, { force: true }))
     respond(code === 'denied'
       ? 'I couldn’t access your microphone. You can type instead, or continue exploring normally.'
       : 'I can’t find a microphone. You can type instead, or continue exploring normally.')
@@ -464,7 +468,7 @@ export function enableText() {
   store().set({ consentOpen: false, mode: 'text', tier: 'text', state: 'idle' })
   if (!greeted) {
     greeted = true
-    respond('Sure — type to me any time. Ask about Naveen or a project, or tell me where you’d like to go.')
+    respond('Hi! I’m your guide to Naveen’s world. Want to explore a project or find your way around?')
   }
 }
 

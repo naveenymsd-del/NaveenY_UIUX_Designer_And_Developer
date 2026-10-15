@@ -14,6 +14,7 @@ import { projectArrival } from './brain/local'
 import { arrivalLine, nextPrompt, placePresentation } from './presentations'
 import { nextWalkQuestion } from './smalltalk'
 import { runTour } from './tour'
+import { react } from './expression'
 
 /**
  * The action router: the only way the guide changes the world. Every action
@@ -127,9 +128,14 @@ export interface WalkLines {
 async function handleEnd(result: string, io: ActionIO, lines: WalkLines, arrived: () => void) {
   // a newer journey may have replaced this one — leave its status alone
   if (!walker.active) navStatus(null)
-  if (result === 'arrived') arrived()
-  else if (result === 'manual') io.respond(lines.manual ?? 'Got it — you’re driving.')
-  else if (result === 'stuck') io.respond('I can’t find a clear way from here. Try stepping back onto the street, then ask me again.')
+  if (result === 'arrived') {
+    react('success', 2600, { force: true })
+    arrived()
+  } else if (result === 'manual') io.respond(lines.manual ?? 'Got it — you’re driving.')
+  else if (result === 'stuck') {
+    react('error', 4200, { force: true })
+    io.respond('I can’t find a clear way from here. Try stepping back onto the street, then ask me again.')
+  }
 }
 
 export async function runAction(a: GuideAction, io: ActionIO, lines: WalkLines = {}): Promise<ActionResult> {

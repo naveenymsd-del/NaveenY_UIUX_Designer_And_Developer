@@ -1,28 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { disableGuide, enableText, enableVoice, interruptGuide, resumeAudio, submit, toggleListening } from '@/ai/guide'
 import { useVoiceStore } from '@/ai/voiceStore'
-import { currentLocation } from '@/ai/worldState'
 import { soundManager } from '@/core/sound/SoundManager'
 import { useGameStore } from '@/stores/gameStore'
 import { useUIStore } from '@/stores/uiStore'
 import { CompanionGlyph } from './CompanionGlyph'
 import { useGallery } from './GalleryViewer'
 import { closeGuide, openGuide, toggleGuide } from '@/ai/openGuide'
+import { STATUS, useExpression } from '@/ai/expression'
 
 const SUGGESTIONS = ['Take me to projects', 'Tell me about Naveen', 'Take me to NFC Solutions', 'How does Naveen work?', 'Show me education', 'Take me to contact', 'Guide me']
-/** a few things worth saying in each place (one shown at a time) */
-const STARTERS: Record<string, string[]> = {
-  start: ['Tell me about Naveen', 'Take me to projects', 'Guide me'],
-  street: ['Where should I go first?', 'Take me to projects', 'Guide me'],
-  home: ['What tools does he use?', 'Explain this', 'How does he use AI?'],
-  education: ['Tell me about his education', 'Take me to NFC'],
-  office: ['Explain the company', 'What does Naveen do there?', 'Show me the projects'],
-  projects: ['Show me the projects', 'Which project should I see first?'],
-  project: ['Explain this project', 'What was the challenge?', 'Show me the prototype'],
-  gallery: ['How does Naveen work?', 'Explain this'],
-  contact: ['What can I do here?', 'Take me somewhere else'],
-  plaza: ['Take me to projects', 'Where should I go first?'],
-}
 /** quick destinations in the phone sheet */
 const QUICK: [string, string][] = [['Projects', 'Take me to projects'], ['NFC', 'Take me to NFC Solutions'], ['About', 'Tell me about Naveen'], ['Education', 'Take me to education'], ['Contact', 'Take me to contact']]
 
@@ -131,10 +118,6 @@ function useRotation(ms = 7000) {
   }, [ms])
   return n
 }
-const startersHere = () => {
-  const loc = currentLocation()
-  return STARTERS[loc.startsWith('project:') ? 'project' : loc] ?? STARTERS.street
-}
 
 function TextForm({ inputRef, onEscape }: { inputRef: React.RefObject<HTMLInputElement | null>; onEscape: () => void }) {
   const v = useVoiceStore()
@@ -168,8 +151,8 @@ function TextForm({ inputRef, onEscape }: { inputRef: React.RefObject<HTMLInputE
 const STATE_LINE: Partial<Record<string, string>> = {
   connecting: 'Connecting…', listening: 'Listening…', user_speaking: 'Listening…', thinking: 'Thinking…', speaking: 'Speaking…', navigating: 'On our way…', error: 'I didn’t catch that',
 }
-/** a compact, useful set of first questions (the current place's ideas come first) */
-const QUICK_ACTIONS = ['Take me to Projects', 'Tell me about the INTA project', 'Show me Education', 'What tools does Naveen use?', 'How can I contact Naveen?', 'Explain this location']
+/** a few useful first questions (one row; it scrolls on narrow screens) */
+const QUICK_ACTIONS = ['Take me to Projects', 'Tell me about Naveen', 'Explain the INTA project', 'Show me the design process', 'How can I contact Naveen?']
 
 function DesktopDock({ modal }: { modal: boolean }) {
   const v = useVoiceStore()
@@ -236,7 +219,8 @@ function DesktopDock({ modal }: { modal: boolean }) {
     if (busy) return interruptGuide()
     toggleListening()
   }
-  const quick = [...new Set([...startersHere().slice(0, 2), ...QUICK_ACTIONS])].slice(0, 7)
+  const expr = useExpression()
+  const status = v.status && voice ? v.status : STATUS[expr]
 
   return (
     <>
@@ -246,11 +230,11 @@ function DesktopDock({ modal }: { modal: boolean }) {
             <span>{caption.text}</span>
           </button>
         )}
-        <button className="ag-launcher" onClick={() => { soundManager.unlock(); soundManager.play('click'); toggleGuide() }} aria-expanded={open} aria-controls="ag-panel" aria-label={open ? 'Close the AI Guide' : 'Open the AI Guide — voice and chat'}>
-          <span className="ag-avatar" aria-hidden="true"><CompanionGlyph size={30} /></span>
+        <button className="ag-launcher" onClick={() => { soundManager.unlock(); soundManager.play('click'); toggleGuide() }} aria-expanded={open} aria-controls="ag-panel" aria-label={open ? 'Close the AI Guide' : 'Open the AI Guide — chat or voice'}>
+          <span className="ag-avatar" aria-hidden="true"><CompanionGlyph size={40} expr={expr} /></span>
           <span className="ag-launcher__text">
             <b>AI Guide</b>
-            <small>{on && stateLine ? stateLine : 'Voice + Chat'}</small>
+            <small>{on && stateLine ? stateLine : 'Chat or voice'}</small>
           </span>
           <span className={`ag-launcher__mic ${listening ? 'is-live' : ''}`} aria-hidden="true">
             <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
@@ -259,19 +243,20 @@ function DesktopDock({ modal }: { modal: boolean }) {
       </section>
 
       {open && (
-        <section id="ag-panel" ref={panel} className={`ag-panel is-${v.state}`} role="dialog" aria-label="Naveen’s AI Guide" onKeyDown={onKey}>
+        <section id="ag-panel" ref={panel} className={`ag-panel is-${v.state} ${voice ? 'is-voice' : 'is-chat'}`} role="dialog" aria-label="Naveen’s AI Companion" onKeyDown={onKey}>
           <header className="ag-head">
-            <span className="ag-avatar ag-avatar--lg" aria-hidden="true"><CompanionGlyph size={34} /></span>
+            <span className="ag-avatar ag-avatar--lg" aria-hidden="true"><CompanionGlyph size={52} expr={expr} /></span>
             <div className="ag-head__text">
-              <h2><span className="ag-grad">Naveen’s</span> AI Guide</h2>
-              <p>Explore the city, discover projects, or ask about Naveen.</p>
+              <h2><span className="ag-grad">Naveen’s</span> AI Companion</h2>
+              <p>Explore the city. Discover projects. Ask me anything.</p>
+              <p className={`ag-state is-${expr}`} role="status" aria-live="polite"><i aria-hidden="true" />{status}</p>
             </div>
-            <button className="ag-icon ag-close" onClick={closeGuide} aria-label="Close the AI Guide" title="Close (Esc)">
+            <button className="ag-icon ag-close" onClick={closeGuide} aria-label="Close the AI Companion" title="Close (Esc)">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" /></svg>
             </button>
           </header>
 
-          <div className="ag-mode" role="radiogroup" aria-label="How to talk to the guide">
+          <div className={`ag-mode ${voice || v.consentOpen ? 'is-voice' : ''}`} role="radiogroup" aria-label="How to talk to the guide">
             <button role="radio" aria-checked={!voice} className={!voice ? 'is-on' : ''} onClick={chooseChat}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v10H9.5L5 19v-3.5H4z" /></svg>Chat
             </button>
@@ -307,31 +292,39 @@ function DesktopDock({ modal }: { modal: boolean }) {
           )}
 
           {voice && (
-            <div className={`ag-status ${listening ? 'is-live' : ''}`} role="status">
-              <span className="ag-status__dot" aria-hidden="true" />
-              <span className="ag-status__tier" title={v.tier === 'realtime' ? 'Live speech-to-speech is on' : 'Browser voice (turn by turn) is on'}>{v.tier === 'realtime' ? 'Live voice' : 'Browser voice'}</span>
-              <span>{stateLine ?? 'Voice is on — tap the mic and speak'}</span>
-              {(listening || busy) && (
-                <button onClick={() => (busy ? interruptGuide() : toggleListening())}>{busy ? 'Stop' : 'Stop listening'}</button>
-              )}
-              <button onClick={chooseChat} className="ag-status__off" aria-label="Turn voice off">Voice off</button>
+            // voice: one big microphone (listen / stop listening / stop the guide), what's being heard, and the way back to chat
+            <div className={`ag-status ag-voice ${listening ? 'is-live' : ''} ${busy ? 'is-busy' : ''}`} role="group" aria-label="Voice">
+              <button className={`ag-voice__mic ${listening ? 'is-live' : ''}`} onClick={mic} aria-pressed={listening} aria-label={busy ? 'Stop the guide' : listening ? 'Stop listening' : 'Start listening'}>
+                <span className="ag-voice__waves" aria-hidden="true"><i /><i /><i /></span>
+                {busy
+                  ? <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2.2" /></svg>
+                  : <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>}
+              </button>
+              <div className="ag-voice__text">
+                <span className="ag-status__tier" title={v.tier === 'realtime' ? 'Live speech-to-speech is on' : 'Browser voice (turn by turn) is on'}>{v.tier === 'realtime' ? 'Live voice' : 'Browser voice'}</span>
+                <b>{busy ? (v.state === 'speaking' ? 'Speaking — tap to stop' : stateLine ?? 'Working…') : listening ? 'Listening — speak naturally' : 'Tap the microphone and speak'}</b>
+                {v.interim ? <q className="ag-voice__heard">{v.interim}</q> : <small>{v.tier === 'realtime' ? 'Talk any time; I’ll answer out loud.' : 'One sentence at a time — I’ll answer out loud.'}</small>}
+              </div>
+              <button onClick={chooseChat} className="ag-status__off" aria-label="Turn voice off">Use chat</button>
             </div>
           )}
 
           <div className="ag-body">
             <Log all refEl={log} />
-            {v.messages.length === 0 && <p className="ag-empty">Hi! Ask about Naveen or a project, or tell me where you’d like to go.</p>}
+            {v.messages.length === 0 && <p className="ag-empty">Hi! I’m your guide to Naveen’s world. Want to explore a project or find your way around?</p>}
             <Extras />
           </div>
 
           <div className="ag-quick" role="group" aria-label="Suggestions">
-            {quick.map((q) => <button key={q} onClick={() => void submit(q)}>{q}</button>)}
+            {QUICK_ACTIONS.map((q) => <button key={q} onClick={() => void submit(q)}>{q}</button>)}
           </div>
 
           <div className="ag-compose">
-            <button className={`ag-mic ${listening ? 'is-live' : ''}`} onClick={mic} aria-label={!voice ? 'Voice — start talking (asks for the microphone)' : busy ? 'Stop the guide' : listening ? 'Stop listening' : 'Start listening'} aria-pressed={listening} title="Voice">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
-            </button>
+            {!voice && (
+              <button className="ag-mic" onClick={mic} aria-label="Voice — start talking (asks for the microphone)" title="Voice">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+              </button>
+            )}
             <AgForm inputRef={input} placeholder={listening ? 'Listening… or type here' : 'Ask about a project or choose a destination…'} />
           </div>
         </section>
@@ -369,6 +362,7 @@ function AgForm({ inputRef, placeholder }: { inputRef: React.RefObject<HTMLInput
 // ── phones: an orb bottom-right, a compact sheet on demand ────────────────
 function TouchDock({ modal }: { modal: boolean }) {
   const v = useVoiceStore()
+  const expr = useExpression()
   const hintStep = useUIStore((s) => s.hint)
   const rot = useRotation(6500)
   const input = useRef<HTMLInputElement>(null)
@@ -481,8 +475,8 @@ function TouchDock({ modal }: { modal: boolean }) {
       {open && (
         <div className="ui-voice__sheet" role="dialog" aria-label="AI guide">
           <header className="ui-voice__sheet-head">
-            <span className="ui-voice__avatar" aria-hidden="true"><CompanionGlyph size={22} /></span>
-            <p><b>Naveen’s AI Guide</b><span aria-live="polite">{on ? FAB_LABEL[v.state] ?? (v.mode === 'voice' ? 'Tap the mic to talk' : 'Ready') : 'Ready'}</span></p>
+            <span className="ui-voice__avatar" aria-hidden="true"><CompanionGlyph size={28} expr={expr} /></span>
+            <p><b>Naveen’s AI Companion</b><span aria-live="polite">{on ? FAB_LABEL[v.state] ?? (v.mode === 'voice' ? 'Tap the mic to talk' : 'Ready') : 'Ready'}</span></p>
             {on && v.mode === 'voice' && (
               <button className="ui-voice__power" onClick={() => void disableGuide()} aria-label="Turn voice off" title={v.tier === 'realtime' ? 'Live speech-to-speech is on' : 'Browser voice (turn by turn) is on'}>
                 <span aria-hidden="true" className="ui-voice__dot" />{v.tier === 'realtime' ? 'Live voice' : 'Browser voice'}
@@ -546,7 +540,7 @@ function TouchDock({ modal }: { modal: boolean }) {
           aria-expanded={open}
         >
           <span className="ui-voice__ring" aria-hidden="true" />
-          <CompanionGlyph size={34} />
+          <CompanionGlyph size={40} expr={expr} />
           <span className="ui-voice__wave" aria-hidden="true"><i /><i /><i /></span>
           <span className="ui-voice__micbadge" aria-hidden="true">
             <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>

@@ -1,5 +1,6 @@
 import { enableText } from './guide'
 import { useVoiceStore } from './voiceStore'
+import { react } from './expression'
 
 /**
  * The one AI Guide panel. Every entry point — the hero's "Ask AI Guide", the
@@ -11,6 +12,7 @@ export function openGuide() {
   const v = useVoiceStore.getState()
   if (v.mode === 'off') enableText()
   useVoiceStore.getState().set({ sheet: true })
+  react('welcome', 1800, { force: true })
 }
 export function closeGuide() {
   useVoiceStore.getState().set({ sheet: false, consentOpen: false })

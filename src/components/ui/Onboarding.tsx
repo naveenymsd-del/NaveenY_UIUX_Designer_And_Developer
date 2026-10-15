@@ -7,6 +7,7 @@ import { previewRuntime } from '@/core/preview'
 import { soundManager } from '@/core/sound/SoundManager'
 import { clearAfterEntry, enableText, enableVoice, goAfterEntry, submit, walkTo } from '@/ai/guide'
 import { useVoiceStore } from '@/ai/voiceStore'
+import { useExpression } from '@/ai/expression'
 import { useGameStore } from '@/stores/gameStore'
 import { onboardingDisabled, rememberOnboarding, useUIStore } from '@/stores/uiStore'
 import { CompanionGlyph } from './CompanionGlyph'
@@ -295,6 +296,7 @@ function Welcome() {
  */
 function GuidePreview() {
   const v = useVoiceStore()
+  const expr = useExpression()
   const [text, setText] = useState('')
   const log = useRef<HTMLOListElement>(null)
   const shown = v.messages.slice(-4)
@@ -313,7 +315,7 @@ function GuidePreview() {
   return (
     <section className="wl-ai" aria-labelledby="wl-ai-title">
       <div className="wl-ai__head">
-        <span className="wl-ai__avatar" aria-hidden="true"><CompanionGlyph size={34} /></span>
+        <span className="wl-ai__avatar" aria-hidden="true"><CompanionGlyph size={42} expr={expr} /></span>
         <div>
           <h2 id="wl-ai-title">Meet your AI Guide</h2>
           <p>Ask about Naveen, explore projects, or find your way around.</p>

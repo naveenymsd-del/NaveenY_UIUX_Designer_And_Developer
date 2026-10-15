@@ -518,7 +518,7 @@
 .is-desktop .ag-launch { left: auto; right: calc(var(--gutter) + var(--safe-right)); bottom: calc(var(--gutter) + var(--safe-bottom)); justify-items: end; }
 .is-desktop .ag-caption { border-radius: 18px 18px 6px 18px; }
 /* the panel opens right above its launcher */
-.is-desktop .ag-panel { bottom: calc(var(--gutter) + var(--safe-bottom) + 68px); max-height: 700px; }
+.is-desktop .ag-panel { bottom: calc(var(--gutter) + var(--safe-bottom) + 74px); }
 
 /* ── "Explore the Classic Portfolio": always one tap away ──────────────── */
 .ui-classic-link {

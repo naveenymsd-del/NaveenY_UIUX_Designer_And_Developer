@@ -1,5 +1,6 @@
 import { getTime, setMode, setTime } from '@/core/dayNight'
 import { beginJourney } from '@/core/journey'
+import { react } from '@/ai/expression'
 import { useGameStore } from '@/stores/gameStore'
 import { introRuntime } from '@/core/intro'
 import { useFrame, useThree } from '@react-three/fiber'
@@ -41,6 +42,8 @@ export function DebugProbe() {
     ;(window as unknown as { __intro: unknown }).__intro = introRuntime
     // QA: straight to the Project Studio from the hero (the old "View my work" shortcut)
     ;(window as unknown as { __viewWork: unknown }).__viewWork = () => beginJourney('work')
+    // QA: show a companion expression (as the guide would on a real event)
+    ;(window as unknown as { __react: unknown }).__react = react
     ;(window as unknown as { __time: unknown }).__time = (h: number, animate = false) => setTime(h, animate)
     ;(window as unknown as { __hour: unknown }).__hour = () => +getTime().toFixed(2)
     ;(window as unknown as { __mode: unknown }).__mode = setMode
