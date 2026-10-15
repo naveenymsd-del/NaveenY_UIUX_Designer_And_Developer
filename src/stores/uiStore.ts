@@ -14,27 +14,25 @@ function readSoundPref(): boolean {
   }
 }
 
-const ONBOARDING_KEY = 'naveen-city:onboarding'
-const ONBOARDING_SESSION = 'naveen-city:onboarding-seen'
+// v2: the introduction now shows on every load; earlier opt-outs (made while it was once per session) start fresh
+const ONBOARDING_KEY = 'naveen-city:onboarding-v2'
 
-/** first visit: yes — unless the visitor said "don't show again", already saw it this session, or QA turned it off */
+/** every load (refresh included) — unless the visitor said "don't show again", or QA turned it off */
 function shouldShowOnboarding(): boolean {
   if (typeof location === 'undefined') return false
   const q = new URLSearchParams(location.search)
   if (q.has('debug') || q.get('onboarding') === 'off') return false
   try {
     if (localStorage.getItem(ONBOARDING_KEY) === 'off') return false
-    if (sessionStorage.getItem(ONBOARDING_SESSION) === '1') return false
   } catch {
     /* storage unavailable — show it; dismissing still works in memory */
   }
   return true
 }
 
-/** the visitor closed the guide: remember it for this session (and for good, if they asked) */
+/** the visitor closed the introduction: remember only an explicit "don't show again" */
 export function rememberOnboarding(never: boolean) {
   try {
-    sessionStorage.setItem(ONBOARDING_SESSION, '1')
     if (never) localStorage.setItem(ONBOARDING_KEY, 'off')
     else localStorage.removeItem(ONBOARDING_KEY)
   } catch {
