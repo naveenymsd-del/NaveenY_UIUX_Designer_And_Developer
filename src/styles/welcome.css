@@ -268,7 +268,8 @@
 @media (max-width: 899px) {
   .wl {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(150px, 32svh) minmax(0, 1fr);
+    /* the sheet gets the larger share (58% of the screen); the city preview takes what is left */
+    grid-template-rows: auto minmax(110px, 1fr) minmax(0, 58svh);
     grid-template-areas: "head" "stage" "sheet";
     gap: 0;
     padding: 0;
@@ -297,7 +298,8 @@
     box-shadow: 0 -18px 40px -20px rgba(20, 10, 60, 0.6);
   }
   .wl-dests__lead { color: var(--brand-ink-2); text-shadow: none; }
-  .wl-dests ol { flex-wrap: nowrap; margin: 0 -16px; padding: 0 16px 2px; }
+  /* room above and below the row, so the chips (and their edge and shadow) are never clipped */
+  .wl-dests ol { flex-wrap: nowrap; margin: -4px -16px -6px; padding: 6px 16px 10px; }
   .wl-sheet > * { flex: none; }
   .wl-foot { align-self: stretch; }
   .wl-dests button { background: #fff; box-shadow: inset 0 0 0 1px var(--brand-hair); backdrop-filter: none; -webkit-backdrop-filter: none; }
@@ -317,7 +319,7 @@
   .wl-help { order: 3; }
   .wl-never { order: 4; }
   .wl-foot { order: 5; position: sticky; bottom: 0; z-index: 2; margin: 0 -16px; padding: 10px 16px calc(10px + var(--safe-bottom)); background: rgba(246, 243, 255, 0.98); box-shadow: 0 -10px 24px -16px rgba(20, 10, 60, 0.45); }
-  .wl-never { justify-self: auto; color: var(--brand-ink-2); text-shadow: none; }
+  .wl-never { justify-self: start; justify-content: flex-start; align-self: flex-start; color: var(--brand-ink-2); text-shadow: none; }
   .wl-actions { grid-template-columns: 1fr; gap: 6px; }
   .wl-free { height: 42px; }
   /* fewer labels on the small map: icons only, the chosen one is named */
@@ -329,4 +331,12 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .wl, .wl-marker__pin::after, .wl-route polyline, .wl-enter::after, .wl-dest, .wl-ai__log li, .wl-howto, .wl-building span { animation: none !important; }
+}
+
+/* short phones: a tighter headline, so the sheet below gets the room */
+@media (max-width: 899px) and (max-height: 700px) {
+  .wl-head { padding-top: calc(10px + var(--safe-top)); }
+  .wl-head h1 { font-size: 24px; }
+  .wl-head p#wl-lead { font-size: 12.5px; margin-top: 4px; }
+  .wl-head .ui-classic-link { margin-top: 8px; height: 40px !important; }
 }

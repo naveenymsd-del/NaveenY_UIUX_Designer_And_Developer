@@ -156,3 +156,9 @@ a.ui-intro__classic svg, .ui-intro__way svg, .ui-btn svg { color: inherit !impor
 @media (prefers-reduced-motion: reduce) {
   :is(.ui-btn, .ui-classic-link, a.ui-intro__classic, .ag-launcher, .ui-icon-btn, .ui-menu-btn) { transition: none !important; transform: none !important; }
 }
+
+/* the start page: every button the same height (and the same type) */
+:is(.ui-intro__actions .ui-btn, .ui-intro__links > a, .ui-intro__links > button) { height: 50px !important; min-height: 50px !important; padding: 0 22px !important; font-size: 15px !important; box-sizing: border-box; }
+.ui-intro__ask { padding-left: 8px !important; }
+.ui-intro__ask-avatar { width: 34px !important; height: 34px !important; }
+@media (max-width: 640px) { :is(.ui-intro__actions .ui-btn, .ui-intro__links > a, .ui-intro__links > button) { height: 48px !important; min-height: 48px !important; } }
