@@ -34,6 +34,17 @@ for (const [w, h] of [[425, 601], [390, 844]]) {
   await p.context().close()
 }
 
+// the welcome side panel: no empty band below its content, at every desktop size
+for (const [w, h] of [[1440, 900], [1366, 768], [1920, 1080], [1280, 720]]) {
+  const q = await (await b.newContext({ viewport: { width: w, height: h } })).newPage()
+  await q.goto(`${base}/street?mode=day&desktop`)
+  await q.waitForSelector('.wl.is-ready', { timeout: 120000 })
+  await sleep(1500)
+  const gap = await q.evaluate(() => { const s = document.querySelector('.wl-side'); const r = s.getBoundingClientRect(); const last = [...s.children].pop().getBoundingClientRect(); return Math.round(r.bottom - last.bottom) })
+  expect(gap <= 24, `${w}×${h}: welcome side panel has no empty space below (${gap}px)`)
+  await q.screenshot({ path: `qa-screens/side-${w}x${h}.png` })
+  await q.context().close()
+}
 const p = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage()
 await p.goto(`${base}/street?debug&mode=day&desktop`)
 await p.waitForFunction(() => window.__intro && window.__intro.running, null, { timeout: 90000 })
