@@ -245,7 +245,6 @@ export const INTERIOR_STORIES: InteriorStory[] = [
   { room: 'home', kind: 'portfolio', name: 'Selected Work', x: 7.2, z: 2.8, radius: 2.0, label: 'Press E to see selected work', cam: { position: [4.2, 2.0, 3.8], target: [9, 1.6, 2.8] } },
   { room: 'home', kind: 'window', name: 'Interests', x: -4.8, z: -5.1, radius: 1.7, label: 'Press E · outside product design', cam: { position: [-3.4, 1.9, -2.6], target: [-5, 1.8, -7] } },
   { room: 'home', kind: 'skills', name: 'Skills & Tools', x: -7.1, z: 3.9, radius: 2.6, label: 'Press E to see my skills & tools', cam: { position: [-4.4, 2.0, 4.6], target: [-9, 1.6, 3.9] } },
-  { room: 'home', kind: 'galleryEntry', name: 'Gallery', x: 6.7, z: -5.2, radius: 1.8, label: 'Press E · gallery', cam: { position: [5.6, 2.0, -2.4], target: [6.8, 1.7, -7] } },
   { room: 'cafe', kind: 'conversation', name: 'Sit down with Naveen', x: CAFE_TABLE.x, z: CAFE_TABLE.z + 1.3, radius: 2.0, label: 'Press E to sit down', cam: { position: [CAFE_TABLE.x, 1.22, CAFE_TABLE.z + 1.05], target: [CAFE_TABLE.x, 1.02, CAFE_TABLE.z - 0.75] } },
   { room: 'home', kind: 'contact', name: 'Contact', x: -4.6, z: 5.6, radius: 1.6, label: 'Press E to get in touch', cam: { position: [-2.4, 2.0, 3.4], target: [-4.6, 1.5, 7] } },
 ]

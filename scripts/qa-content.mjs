@@ -88,7 +88,6 @@ const HOME = [
   ['hello', 0, 3.4, 'Hi, I’m Naveen.', 'UI/UX Designer · Product Designer'],
   ['skills', -7.1, 3.9, 'What I work with', 'Heuristic Evaluation'],
   ['aiWorkflow', 7.2, -2.2, 'AI helps me explore. I make the design decisions.', 'Human judgment'],
-  ['galleryEntry', 6.7, -5.2, 'Selected work & interests', 'Go to the Design Journey'],
   ['desk', -1.2, -4.5, 'UI/UX Designer', 'May 2022 – Present'],
   ['laptop', 1.4, -4.5, 'Tools I work with', 'Google Stitch'],
   ['window', -4.8, -5.1, 'Interests', 'Pencil Art & Sketching · Cricket · Dance'],

@@ -437,7 +437,6 @@ function HomeProps() {
   const curtainR = useRef<Mesh>(null!)
   const book = useRef<Mesh>(null!)
   const aiBoard = useRef<Group>(null!)
-  const gallery = useRef<Group>(null!)
   const st = useRef({ lid: 0, cur: 0, book: 0 })
   const hw = INTERIORS.home.width / 2
   const hd = INTERIORS.home.depth / 2
@@ -445,20 +444,10 @@ function HomeProps() {
   const win = useRoomPos('home', -4.8, -hd + 0.1, 1.9)
   const shelf = useRoomPos('home', -hw + 0.3, -0.4, 1.4)
   const aiWall = useRoomPos('home', hw - 0.08, -2.2, 1.75)
-  const galleryPos = useRoomPos('home', 6.8, -hd + 0.09, 1.72)
   const hello = useRoomPos('home', 1.4, 3.9, 0.8)
   const helloTex = useMemo(() => textTexture({ w: 300, h: 220, bg: '#faf6ef', border: '#b06a4c', align: 'center', pad: 24, lines: [{ text: 'HELLO!', size: 34, weight: 800, color: '#b06a4c', gap: 6 }, { text: `I’m ${PROFILE.fullName}`, size: 30, weight: 700, color: '#24262c', gap: 4 }, { text: PROFILE.role, size: 17, weight: 600, color: '#5c4535', gap: 2 }, { text: `${PROFILE.experience} · ${PROFILE.location}`, size: 15, weight: 500, color: '#7a6250' }] }), [])
   const screenTex = useMemo(() => textTexture({ w: 256, h: 160, bg: '#1f2430', pad: 16, lines: [{ text: 'MY DESIGN TOOLS', size: 20, weight: 800, color: '#ffffff', gap: 8 }, { text: TOOLS.slice(0, 4).join(' · '), size: 17, weight: 600, color: '#e3c28a' }] }), [])
   const aiTex = useMemo(aiWorkflowTexture, [])
-  const galleryTex = useMemo(() => textTexture({
-    w: 480, h: 340, bg: '#1f2328', align: 'center', pad: 34,
-    lines: [
-      { text: 'GALLERY', size: 22, weight: 800, color: '#e3c28a', gap: 16 },
-      { text: 'Selected UI work', size: 38, weight: 800, color: '#f7f4ef', gap: 4 },
-      { text: '& interests', size: 38, weight: 800, color: '#f7f4ef', gap: 18 },
-      { text: 'In the park  →', size: 20, weight: 600, color: '#c9ccd2' },
-    ],
-  }), [])
   useFrame((_, dt) => {
     const s = st.current
     s.lid = easeTo(s.lid, distTo(laptop[0], laptop[2] + 1.6) < 2.2 ? 1 : 0, dt, 3)
@@ -471,8 +460,6 @@ function HomeProps() {
     book.current.position.x = shelf[0] + s.book * 0.2
     const onAi = distTo(aiWall[0] - 1.6, aiWall[2]) < 2.2 ? 1 : 0
     aiBoard.current.scale.setScalar(easeTo(aiBoard.current.scale.x, 1 + onAi * 0.04, dt, 6))
-    const onGallery = distTo(galleryPos[0], galleryPos[2] + 2) < 2.2 ? 1 : 0
-    gallery.current.scale.setScalar(easeTo(gallery.current.scale.x, 1 + onGallery * 0.06, dt, 6))
   })
   return (
     <>
@@ -494,11 +481,6 @@ function HomeProps() {
           <mesh geometry={G.box} material={mat('#2a2626')} position={[0, 0, -0.02]} scale={[3.06, 1.16, 0.03]} />
           <mesh geometry={G.plane} material={textMat(aiTex)} scale={[3.0, 1.1, 1]} />
         </group>
-      </group>
-      {/* Gallery entry */}
-      <group position={galleryPos} ref={gallery}>
-        <mesh geometry={G.box} material={mat('#6e5140')} position={[0, 0, -0.02]} scale={[1.5, 1.1, 0.03]} />
-        <mesh geometry={G.plane} material={textMat(galleryTex)} scale={[1.4, 1.0, 1]} />
       </group>
       <group position={hello} rotation-y={Math.PI + 0.35}>
         <mesh geometry={G.box} material={mat('#6e5140')} position={[0, 0.2, -0.03]} rotation-x={-0.25} scale={[0.66, 0.5, 0.03]} />

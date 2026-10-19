@@ -23,7 +23,7 @@ await sleep(2500)
 
 const ROOMS = {
   home: { origin: [320, 120], ask: 'take me home', views: [[0, 5.2, Math.PI], [6.5, 4.5, -2.2], [-1.0, 4.2, 2.6], [5.0, -1.8, 2.2]],
-    stories: [['hello', 0, 3.4], ['desk', -1.2, -4.5], ['laptop', 1.4, -4.5], ['aiWorkflow', 7.2, -2.2], ['portfolio', 7.2, 2.8], ['window', -4.8, -5.1], ['skills', -7.1, 3.9], ['galleryEntry', 6.7, -5.2], ['contact', -4.6, 5.6]] },
+    stories: [['hello', 0, 3.4], ['desk', -1.2, -4.5], ['laptop', 1.4, -4.5], ['aiWorkflow', 7.2, -2.2], ['portfolio', 7.2, 2.8], ['window', -4.8, -5.1], ['skills', -7.1, 3.9], ['contact', -4.6, 5.6]] },
   education: { origin: [320, -120], ask: 'take me to education', views: [[2.3, 4.6, 0], [10.5, 6.5, -2.4], [-4.5, 2.5, -2.4], [5.5, 1.5, Math.PI]],
     stories: [['timeline', -10.2, 0], ['certificates', 10.2, 1.4], ['bell', -3.2, 7.0]] },
 }

@@ -657,7 +657,7 @@ function cafe(ctx: GenContext, r: InteriorDef) {
  * with a floor lamp; a dining table with a pendant light; the work desk
  * under the window; shelves, plants, framed art and warm downlights. The
  * interactive points (about me, desk, tools, skills wall, selected work,
- * AI wall, gallery, contact) are StoryProps and keep their places.
+ * AI wall, contact) are StoryProps and keep their places.
  */
 function home(ctx: GenContext, r: InteriorDef) {
   const { b } = ctx
@@ -794,11 +794,6 @@ function home(ctx: GenContext, r: InteriorDef) {
   b.box(0xb48a62, [-hw + 0.09, 0.53, 3.9], [0.14, 0.04, 3.4], { cast: false })
   b.push(-hw + 0.1, 2.8, 3.9, Math.PI / 2)
   addSign(ctx, 'SKILLS & TOOLS', { bg: '#2e3035', fg: '#f7f4ef', shape: 'rect', weight: 700 }, [0, 0, 0.01], 1.7, 0.2)
-  b.pop()
-  // gallery entry board on the north wall (the card itself is a StoryProp)
-  b.box(0xefe9df, [6.8, 1.75, -hd + 0.05], [2.2, 1.4, 0.04], { cast: false })
-  b.push(6.8, 2.62, -hd + 0.08)
-  addSign(ctx, 'GALLERY', { bg: '#efe9df', fg: '#5c4535', shape: 'rect', weight: 800 }, [0, 0, 0], 1.6, 0.22)
   b.pop()
   // entryway: contact pinboard, a console with keys and a bowl, a coat stand, a doormat
   b.box(0x9c7a58, [-4.6, 1.6, hd - 0.06], [1.4, 1.0, 0.05], { cast: false })
