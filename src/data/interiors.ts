@@ -53,7 +53,7 @@ export const INTERIORS: Record<InteriorId, InteriorDef> = {
     origin: [320, 0, -120], width: 24, depth: 18, height: 3.8,
     outside: { pos: [0, -55.6], yaw: 0 },
     establish: { position: [9.5, 3.2, 7.4], target: [-4, 1.3, -3] },
-    palette: { floor: 0xb58a62, wall: 0xf1e9dc, wainscot: 0x4f6b58, trim: 0xf7f2ea, ceiling: 0xf4efe6 },
+    palette: { floor: 0xcdc5b6, wall: 0xf1e9dc, wainscot: 0x4f6b58, trim: 0xf7f2ea, ceiling: 0xf4efe6 },
   },
   office: {
     id: 'office', name: 'NFC Solutions', subtitle: 'Chapter 04 · Where I work',
@@ -130,6 +130,7 @@ export function studioBay(i: number) {
 // ── furniture layouts (room-local) ─────────────────────────────────────────
 export const EDU_DESKS: [number, number][] = [
   [2.5, -4.6], [5.5, -4.6], [8.5, -4.6], [2.5, -2.0], [5.5, -2.0], [8.5, -2.0],
+  [-0.5, -4.6], [-0.5, -2.0],
 ]
 export const OFFICE_DESKS: { x: number; z: number; facing: 1 | -1 }[] = [
   // clusters of two desks facing each other across a shared divider

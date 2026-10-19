@@ -1,5 +1,6 @@
 import { CAFE_TABLE, EDU_DESKS, INTERIORS, OFFICE_DESKS, STUDIO, interiorBounds, studioBay, type InteriorDef } from '@/data/interiors'
 import { PROJECTS } from '@/data/projects'
+import { CERTIFICATION, EDUCATION } from '@/data/portfolioContent'
 import { PALETTE } from '@/data/palette'
 import { addSign, lightPoolAt, type GenContext } from './buildingGen'
 import type { PartBuilder } from './partBuilder'
@@ -22,7 +23,7 @@ function shell(ctx: GenContext, r: InteriorDef) {
   const t = 0.3
   b.box(p.floor, [cx, -0.1, 0], [w + 0.6, 0.2, d + 0.6], { cast: false })
   b.collider([cx, -0.1, 0], [w + 0.6, 0.2, d + 0.6])
-  if (r.id !== 'office') for (let z = -d / 2 + 0.25; z < d / 2; z += 0.5) b.box(shadeColor(p.floor, -10), [cx, 0.001, z], [w, 0.003, 0.02], { mat: 'paint', cast: false })
+  if (r.id !== 'office' && r.id !== 'education') for (let z = -d / 2 + 0.25; z < d / 2; z += 0.5) b.box(shadeColor(p.floor, -10), [cx, 0.001, z], [w, 0.003, 0.02], { mat: 'paint', cast: false })
   // walls (north / south / west / east) with colliders
   const walls: [number, number, number, number][] = [
     [cx, -d / 2 - t / 2, w + 2 * t, t], [cx, d / 2 + t / 2, w + 2 * t, t], [bb.x0 - t / 2, 0, t, d], [bb.x1 + t / 2, 0, t, d],
@@ -43,7 +44,7 @@ function shell(ctx: GenContext, r: InteriorDef) {
   // ceiling + light panels
   b.box(p.ceiling, [cx, h + 0.1, 0], [w + 0.6, 0.2, d + 0.6], { cast: false })
   b.collider([cx, h + 0.1, 0], [w + 0.6, 0.2, d + 0.6])
-  for (let x = bb.x0 + 3; x < bb.x1 - 1; x += 4)
+  if (r.id !== 'home') for (let x = bb.x0 + 3; x < bb.x1 - 1; x += 4)
     for (let z = -d / 2 + 2.5; z < d / 2 - 1; z += 4) b.box(0xfffcf2, [x, h - 0.01, z], [1.6, 0.03, 0.6], { mat: 'emissive', cast: false })
   // door on the south wall
   b.box(p.trim, [0, 1.3, d / 2 - 0.04], [2.1, 2.7, 0.08], { cast: false })
@@ -118,61 +119,212 @@ function shelfUnit(b: PartBuilder, rng: Rng, x: number, z: number, yaw: number, 
   b.pop()
 }
 
+// ── shared furniture for the two rebuilt rooms ──────────────────────────────
+/** a cushioned sofa, its front facing local +z (seat, back and arms rounded; split cushions; slim legs) */
+function sofa(b: PartBuilder, x: number, z: number, yaw: number, color: number, seats = 3) {
+  const w = seats * 0.78 + 0.36
+  b.push(x, 0, z, yaw)
+  for (const sx of [-w / 2 + 0.12, w / 2 - 0.12]) for (const sz of [-0.34, 0.34]) b.add('cyl8', 0x4a3a2e, [sx, 0.06, sz], [0.05, 0.12, 0.05], { cast: false })
+  b.add('rbox', color, [0, 0.24, 0], [w, 0.24, 0.92], { mat: 'fabric' })
+  for (let i = 0; i < seats; i++) b.add('rbox', shadeColor(color, 10), [-w / 2 + 0.18 + 0.39 + i * 0.78, 0.43, 0.08], [0.74, 0.16, 0.7], { mat: 'fabric' })
+  for (let i = 0; i < seats; i++) b.add('rbox', shadeColor(color, 6), [-w / 2 + 0.18 + 0.39 + i * 0.78, 0.7, -0.33], [0.74, 0.46, 0.2], { mat: 'fabric', rot: [-0.12, 0, 0] })
+  for (const sx of [-w / 2 + 0.09, w / 2 - 0.09]) b.add('rbox', shadeColor(color, -8), [sx, 0.46, 0], [0.18, 0.4, 0.92], { mat: 'fabric' })
+  b.collider([0, 0.4, 0], [w, 0.8, 0.92])
+  b.pop()
+  return w
+}
+function armchair(b: PartBuilder, x: number, z: number, yaw: number, color: number) {
+  b.push(x, 0, z, yaw)
+  for (const sx of [-0.32, 0.32]) for (const sz of [-0.3, 0.3]) b.add('cyl8', 0x6e5140, [sx, 0.08, sz], [0.045, 0.16, 0.045], { cast: false })
+  b.add('rbox', color, [0, 0.3, 0], [0.82, 0.24, 0.8], { mat: 'fabric' })
+  b.add('rbox', shadeColor(color, 10), [0, 0.47, 0.06], [0.6, 0.14, 0.62], { mat: 'fabric' })
+  b.add('rbox', color, [0, 0.72, -0.32], [0.82, 0.62, 0.18], { mat: 'fabric', rot: [-0.1, 0, 0] })
+  for (const sx of [-0.36, 0.36]) b.add('rbox', shadeColor(color, -8), [sx, 0.52, 0], [0.12, 0.3, 0.8], { mat: 'fabric' })
+  b.add('rbox', 0xe8dcc4, [0.1, 0.62, -0.14], [0.36, 0.3, 0.1], { mat: 'fabric', rot: [-0.3, 0.2, 0.1] })
+  b.collider([0, 0.45, 0], [0.82, 0.9, 0.8])
+  b.pop()
+}
+/** a table lamp: base, stem, fabric shade with a warm glow inside */
+function tableLamp(b: PartBuilder, x: number, y: number, z: number) {
+  b.add('cyl', 0xe9e1d3, [x, y + 0.05, z], [0.14, 0.1, 0.14])
+  b.add('cyl8', 0xc49a4e, [x, y + 0.22, z], [0.02, 0.3, 0.02], { mat: 'metal', cast: false })
+  b.add('cone', 0xf3e7cf, [x, y + 0.46, z], [0.34, 0.26, 0.34], { mat: 'fabric', cast: false })
+  b.add('disk', 0xfff1d6, [x, y + 0.34, z], [0.28, 1, 0.28], { rot: [Math.PI, 0, 0], mat: 'emissive', cast: false })
+}
+/** a leafy indoor plant in a ceramic pot (taller and fuller than the basic one) */
+function tallPlant(b: PartBuilder, rng: Rng, x: number, z: number, h = 1.5) {
+  b.add('cyl', rng.pick([0xefe9df, 0xd8cfc2, 0x3b3e44]), [x, 0.22, z], [0.42, 0.44, 0.42])
+  b.add('cyl', 0x4a3a2e, [x, 0.43, z], [0.38, 0.02, 0.38], { cast: false })
+  b.add('cyl8', 0x5d4632, [x, 0.44 + h * 0.3, z], [0.03, h * 0.6, 0.03], { cast: false })
+  for (let i = 0; i < 7; i++) {
+    const a = i * 2.4
+    const y = 0.7 + (i / 7) * h * 0.9
+    b.add('ico', rng.pick([PALETTE.leafA, PALETTE.leafB, 0x4f7a4a]), [x + Math.cos(a) * 0.2, y, z + Math.sin(a) * 0.2], [0.42, 0.26, 0.34], { mat: 'foliage', rot: [0.3, a, 0.4] })
+  }
+  b.cylCollider([x, 0, z], 0.28, h)
+}
+/** a snake plant: upright blade leaves in a cylinder pot */
+function snakePlant(b: PartBuilder, x: number, z: number) {
+  b.add('cyl', 0x2f3236, [x, 0.2, z], [0.32, 0.4, 0.32])
+  for (let i = 0; i < 7; i++) {
+    const a = i * 0.9
+    b.box(i % 2 ? 0x4c7a46 : 0x6b8f4e, [x + Math.cos(a) * 0.06, 0.62 + (i % 3) * 0.06, z + Math.sin(a) * 0.06], [0.07, 0.6 + (i % 3) * 0.14, 0.012], { mat: 'foliage', rot: [Math.sin(a) * 0.12, a, Math.cos(a) * 0.12], cast: false })
+  }
+  b.cylCollider([x, 0, z], 0.2, 1)
+}
+/** a small framed photo standing or hanging (art from the decor atlas) */
+function frame(ctx: GenContext, seed: number, x: number, y: number, z: number, yaw: number, w: number, h: number, pal: string[]) {
+  const rect = ctx.decor.add(96, 120, artPainter(seed, ['#ffffff', ...pal]), `frame-${seed}`)
+  painting(ctx, rect, x, y, z, yaw, w, h, 0x2a2626)
+}
+
 // ────────────────────────────────────────────────────────────────────────────
+/**
+ * Education: a college classroom. Practical tiled floor, rows of student
+ * desks (notebooks, pens, the odd backpack), a chalkboard with a lesson on
+ * it, a projector and pull-down screen, a lectern and the teacher's desk,
+ * ceiling fans, a department sign, the timetable, posters, a library corner,
+ * and an "academic record" board written from the verified portfolio data.
+ * The interactive plaques, certificate wall and bell are StoryProps.
+ */
 function education(ctx: GenContext, r: InteriorDef) {
   const { b } = ctx
   const rng = createRng(301)
   const wood = 0x8a6a4c
   const hw = r.width / 2
   const hd = r.depth / 2
+  // institutional floor: light vinyl tiles (the shell's planks are skipped for this room)
+  for (let x = -hw; x <= hw + 0.01; x += 0.6) b.box(0xc3bbad, [x, 0.002, 0], [0.01, 0.004, r.depth], { mat: 'paint', cast: false })
+  for (let z = -hd; z <= hd + 0.01; z += 0.6) b.box(0xc3bbad, [0, 0.002, z], [r.width, 0.004, 0.01], { mat: 'paint', cast: false })
   // timeline band on the west wall (plaques are animated StoryProps)
   b.box(wood, [-hw + 0.05, 1.75, 0], [0.06, 1.15, 14], { cast: false })
   b.push(-hw + 0.09, 2.75, 0, Math.PI / 2)
   addSign(ctx, 'EDUCATION', { bg: '#f1e9dc', fg: '#3f5e4c', shape: 'rect', weight: 800 }, [0, 0, 0], 3.2, 0.42)
   b.pop()
-  // chalkboard + teacher desk
+  // ── teaching wall: chalkboard with a lesson, chalk ledge, teacher's desk, lectern
   b.box(wood, [6, 1.85, -hd + 0.06], [6.5, 2.2, 0.08], { cast: false })
   b.box(0x2f3f38, [6, 1.85, -hd + 0.11], [6.2, 1.95, 0.02], { cast: false })
+  const chalk = { bg: '#2f3f38', fg: '#e9efe6', shape: 'rect' as const, weight: 600 }
+  b.push(6, 0, -hd + 0.125)
+  addSign(ctx, 'UI / UX DESIGN', { ...chalk, weight: 800 }, [-1.5, 2.48, 0], 2.4, 0.42)
+  addSign(ctx, 'Empathise → Define → Ideate', chalk, [-0.9, 1.98, 0], 3.6, 0.36)
+  addSign(ctx, '→ Prototype → Test', chalk, [-1.5, 1.56, 0], 2.4, 0.34)
+  addSign(ctx, 'users · problems · solutions', chalk, [1.4, 1.14, 0], 2.8, 0.3)
+  b.pop()
   b.box(wood, [6, 0.82, -hd + 0.2], [6.2, 0.06, 0.18], { cast: false })
-  b.box(wood, [8.8, 0.4, -6.9], [1.8, 0.8, 0.8])
+  for (let i = 0; i < 4; i++) b.box(i === 1 ? 0xe9b8a4 : 0xf6f3ec, [4 + i * 0.12, 0.86, -hd + 0.2], [0.07, 0.015, 0.015], { cast: false })
+  b.box(0x3b3e44, [7.4, 0.87, -hd + 0.2], [0.14, 0.04, 0.05], { cast: false })
+  // teacher's desk: a proper desk with drawers, a register, books, a pen stand
+  b.add('rbox', wood, [8.8, 0.4, -6.9], [1.8, 0.8, 0.8])
   b.box(0xe9e0cf, [8.8, 0.82, -6.9], [1.9, 0.05, 0.9], { cast: false })
+  for (let i = 0; i < 3; i++) b.box(0x6e5140, [8.15, 0.62 - i * 0.2, -6.48], [0.42, 0.16, 0.02], { cast: false })
   b.add('sphere', 0x5d8fb3, [8.3, 1.08, -6.9], [0.36, 0.36, 0.36])
+  b.add('cyl8', 0xb48a62, [8.3, 0.86, -6.9], [0.06, 0.06, 0.06], { cast: false })
+  books(b, rng, 9.0, 9.5, 0.845, -7.1, 0.2)
+  b.box(0x2f4a8a, [9.2, 0.86, -6.7], [0.3, 0.03, 0.22], { cast: false })
+  b.add('cyl8', 0x3b3e44, [9.6, 0.9, -6.6], [0.07, 0.12, 0.07], { cast: false })
   b.collider([8.8, 0.42, -6.9], [1.9, 0.85, 0.9])
-  // student desks
-  for (const [x, z] of EDU_DESKS) {
-    b.box(0xd9c3a0, [x, 0.74, z], [1.1, 0.05, 0.6])
-    for (const [lx, lz] of [[-0.5, -0.25], [0.5, -0.25], [-0.5, 0.25], [0.5, 0.25]]) b.box(PALETTE.charcoal, [x + lx, 0.36, z + lz], [0.04, 0.72, 0.04], { cast: false })
-    b.box(0xf6f1e8, [x + rng.range(-0.2, 0.2), 0.775, z], [0.3, 0.01, 0.22], { cast: false, rot: [0, rng.range(-0.3, 0.3), 0] })
+  chair(b, 8.8, -7.6, 0, 0x3b3e44, true)
+  // lectern
+  b.push(3.2, 0, -7.2, 0)
+  b.add('rbox', 0x6e5140, [0, 0.55, 0], [0.62, 1.1, 0.46])
+  b.box(0x8a6a4c, [0, 1.16, 0.04], [0.7, 0.04, 0.54], { rot: [0.22, 0, 0], cast: false })
+  b.box(0xf6f1e8, [0, 1.19, 0.05], [0.4, 0.01, 0.3], { rot: [0.22, 0, 0], cast: false })
+  b.add('cyl8', 0x2b2e34, [0.2, 1.3, -0.12], [0.012, 0.3, 0.012], { rot: [0.5, 0, 0], cast: false })
+  b.collider([0, 0.55, 0], [0.62, 1.1, 0.46])
+  b.pop()
+  // projector on the ceiling and a pull-down screen showing a lesson slide
+  b.box(0x2b2e34, [0.6, 3.5, -3.4], [0.04, 0.6, 0.04], { cast: false })
+  b.add('rbox', 0xe9e8e4, [0.6, 3.15, -3.4], [0.42, 0.14, 0.36], { cast: false })
+  b.add('cyl', 0x22252c, [0.6, 3.15, -3.6], [0.1, 0.05, 0.1], { rot: [Math.PI / 2, 0, 0], cast: false })
+  b.box(0x3b3e44, [0.6, 3.55, -hd + 0.12], [2.7, 0.12, 0.14], { cast: false })
+  b.box(0xf7f6f2, [0.6, 2.45, -hd + 0.1], [2.5, 2.0, 0.01], { cast: false })
+  const slide = ctx.decor.add(256, 192, screenPainter(312), 'edu-slide')
+  b.add('plane', 0xffffff, [0.6, 2.5, -hd + 0.11], [2.3, 1.7, 1], { mat: 'decorAtlas', uv: slide, cast: false })
+  // ── student desks: wooden tops on metal frames, notebooks, pens, the odd bag
+  EDU_DESKS.forEach(([x, z], i) => {
+    b.add('rbox', 0xd9c3a0, [x, 0.74, z], [1.2, 0.05, 0.62])
+    b.box(0xc8b08a, [x, 0.6, z - 0.2], [1.1, 0.02, 0.22], { cast: false })
+    for (const [lx, lz] of [[-0.54, -0.26], [0.54, -0.26], [-0.54, 0.26], [0.54, 0.26]]) b.box(0x5a5e66, [x + lx, 0.36, z + lz], [0.035, 0.72, 0.035], { mat: 'metal', cast: false })
+    b.box(0x5a5e66, [x, 0.12, z - 0.26], [1.08, 0.025, 0.025], { mat: 'metal', cast: false })
+    // notebook (open), a closed book, a pen
+    b.box(0xf6f1e8, [x + rng.range(-0.25, 0.1), 0.775, z + 0.04], [0.34, 0.01, 0.24], { cast: false, rot: [0, rng.range(-0.3, 0.3), 0] })
+    if (i % 2 === 0) b.box(rng.pick([0x2f4a8a, 0x7a3f3a, 0x3f5e4c]), [x + 0.34, 0.79, z - 0.06], [0.2, 0.04, 0.27], { cast: false, rot: [0, 0.2, 0] })
+    b.box(rng.pick([0x2f4a8a, 0xc0392b, 0x22252c]), [x - 0.4, 0.78, z + 0.12], [0.14, 0.012, 0.012], { cast: false, rot: [0, 0.6, 0] })
     chair(b, x, z + 0.62, Math.PI, 0x4f6b58)
-    b.collider([x, 0.4, z], [1.1, 0.8, 0.6])
+    // a backpack leaning against some chairs
+    if (i % 3 === 1) b.add('rbox', rng.pick([0x2f4a8a, 0x8a3b32, 0x3b3e44]), [x + 0.36, 0.2, z + 0.98], [0.3, 0.4, 0.18], { mat: 'fabric', rot: [-0.2, 0.3, 0] })
+    b.collider([x, 0.4, z], [1.2, 0.8, 0.62])
+  })
+  // ceiling fans (typical of a college classroom)
+  for (const x of [-4, 5]) {
+    b.add('cyl8', 0x5a5e66, [x, 3.55, -1.5], [0.03, 0.5, 0.03], { cast: false })
+    b.add('cyl', 0xefece6, [x, 3.28, -1.5], [0.2, 0.1, 0.2], { cast: false })
+    for (let k = 0; k < 3; k++) {
+      const a = (k * Math.PI * 2) / 3 + 0.4
+      b.box(0xefece6, [x + Math.cos(a) * 0.52, 3.26, -1.5 + Math.sin(a) * 0.52], [0.9, 0.012, 0.13], { rot: [0, -a, 0.06], cast: false })
+    }
   }
-  // library corner
+  // ── library corner: shelves, a reading table with a lamp
   for (let i = 0; i < 3; i++) shelfUnit(b, rng, -10 + i * 2.8, -hd + 0.24, 0, 2.7, 2.3)
-  b.box(wood, [-6, 0.74, -4.8], [1.6, 0.05, 0.8])
+  b.push(-hw + 0.09, 3.3, -hd + 3.5, Math.PI / 2)
+  addSign(ctx, 'LIBRARY', { bg: '#3f5e4c', fg: '#f7f2ea', shape: 'rect', weight: 800 }, [0, 0, 0], 1.4, 0.26)
+  b.pop()
+  b.add('rbox', wood, [-6, 0.74, -4.8], [1.6, 0.05, 0.8])
   b.box(wood, [-6, 0.37, -4.8], [1.5, 0.72, 0.7])
   b.collider([-6, 0.4, -4.8], [1.6, 0.8, 0.8])
   b.box(PALETTE.charcoal, [-6.6, 0.95, -5.0], [0.05, 0.4, 0.05], { cast: false })
   b.box(PALETTE.lamp, [-6.45, 1.15, -5.0], [0.3, 0.12, 0.2], { mat: 'emissive', cast: false })
+  books(b, rng, -5.7, -5.2, 0.765, -4.9, 0.18)
   chair(b, -6, -4.1, Math.PI, 0x4f6b58)
-  // certificates wall label + lockers + plants + clock
-  b.push(hw - 0.09, 2.85, 1.4, -Math.PI / 2)
-  addSign(ctx, 'CERTIFICATION', { bg: '#f1e9dc', fg: '#3f5e4c', shape: 'rect', weight: 800 }, [0, 0, 0], 2.8, 0.32)
+  // ── south wall: department sign, academic record board, notices, lockers
+  b.push(0, 3.36, hd - 0.06, Math.PI)
+  addSign(ctx, 'DEPARTMENT OF COMPUTER SCIENCE', { bg: '#3f5e4c', fg: '#f7f2ea', shape: 'rect', weight: 800 }, [0, 0, 0], 4.2, 0.3)
   b.pop()
+  // academic record: from the portfolio's own education data (no invented details)
+  b.box(0x6e5140, [2.3, 1.75, hd - 0.05], [1.95, 1.55, 0.05], { cast: false })
+  b.box(0xf7f2ea, [2.3, 1.75, hd - 0.08], [1.8, 1.4, 0.01], { cast: false })
+  b.push(2.3, 0, hd - 0.09, Math.PI)
+  const ink = { bg: '#f7f2ea', fg: '#2f3f38', shape: 'rect' as const, weight: 600 }
+  addSign(ctx, 'ACADEMIC RECORD', { ...ink, fg: '#3f5e4c', weight: 800 }, [0, 2.3, 0], 1.6, 0.17)
+  EDUCATION.forEach((e, i) => {
+    addSign(ctx, `${e.short} ${e.field} · ${e.years}`, { ...ink, weight: 700 }, [0, 2.02 - i * 0.42, 0], 1.66, 0.14)
+    addSign(ctx, `${e.institution}, ${e.place} · CGPA ${e.cgpa}`, ink, [0, 1.86 - i * 0.42, 0], 1.66, 0.11)
+  })
+  addSign(ctx, `${CERTIFICATION.title}`, { ...ink, weight: 700 }, [0, 1.18, 0], 1.66, 0.14)
+  addSign(ctx, `${CERTIFICATION.issuer} · ${CERTIFICATION.year}`, ink, [0, 1.02, 0], 1.66, 0.11)
+  b.pop()
+  // notice board with the timetable
+  b.box(0x9c7a58, [7.8, 1.65, hd - 0.06], [2.2, 1.2, 0.06], { cast: false })
+  b.push(7.8, 2.4, hd - 0.1, Math.PI)
+  addSign(ctx, 'NOTICES · TIMETABLE', { bg: '#9c7a58', fg: '#ffffff', shape: 'rect', weight: 800 }, [0, 0, 0], 1.9, 0.18)
+  b.pop()
+  // a timetable grid on the left of the board, notes on the right
+  b.box(0xf7f2ea, [8.35, 1.6, hd - 0.1], [0.9, 0.8, 0.01], { cast: false })
+  for (let i = 1; i < 5; i++) b.box(0x8aa39a, [8.35, 1.2 + i * 0.16, hd - 0.105], [0.86, 0.008, 0.005], { cast: false })
+  for (let i = 1; i < 4; i++) b.box(0x8aa39a, [7.9 + i * 0.225, 1.6, hd - 0.105], [0.008, 0.76, 0.005], { cast: false })
+  for (let i = 0; i < 4; i++) b.box(rng.pick([0xf6f1e8, 0xe3d2a2, 0xbcd0d8, 0xe8c9bd]), [7.05 + (i % 2) * 0.48, 1.85 - Math.floor(i / 2) * 0.45, hd - 0.1], [0.4, 0.32, 0.01], { rot: [0, 0, rng.range(-0.1, 0.1)], cast: false })
   for (let i = 0; i < 6; i++) {
     const x = -11 + i * 0.8
     b.box(0x6f8a6a, [x, 0.95, hd - 0.3], [0.76, 1.9, 0.5])
     b.box(0x5c7658, [x + 0.25, 1.2, hd - 0.56], [0.04, 0.12, 0.02], { cast: false })
+    for (let v = 0; v < 3; v++) b.box(0x5c7658, [x, 1.65 + v * 0.05, hd - 0.56], [0.4, 0.015, 0.01], { cast: false })
   }
   b.collider([-9, 0.95, hd - 0.3], [4.8, 1.9, 0.5])
-  // notice board
-  b.box(0x9c7a58, [7.8, 1.65, hd - 0.06], [2.2, 1.2, 0.06], { cast: false })
-  for (let i = 0; i < 6; i++) b.box(rng.pick([0xf6f1e8, 0xe3d2a2, 0xbcd0d8, 0xe8c9bd]), [7.1 + (i % 3) * 0.7, 1.9 - Math.floor(i / 3) * 0.5, hd - 0.1], [0.46, 0.36, 0.01], { rot: [0, 0, rng.range(-0.1, 0.1)], cast: false })
+  // ── east wall: certification sign (the certificates are a StoryProp) and two learning posters
+  b.push(hw - 0.09, 2.85, 1.4, -Math.PI / 2)
+  addSign(ctx, 'CERTIFICATION', { bg: '#f1e9dc', fg: '#3f5e4c', shape: 'rect', weight: 800 }, [0, 0, 0], 2.8, 0.32)
+  b.pop()
+  frame(ctx, 341, hw - 0.04, 1.85, -3.0, -Math.PI / 2, 0.9, 1.2, ['#2f4a8a', '#c49a4e', '#3f7f78'])
+  frame(ctx, 342, hw - 0.04, 1.85, -1.6, -Math.PI / 2, 0.9, 1.2, ['#3f5e4c', '#c27a60', '#e3d2a2'])
+  // plants, clock, windows with daylight
   plant(b, rng, -hw + 0.8, hd - 1.2)
   plant(b, rng, hw - 0.8, -hd + 0.8)
   plant(b, rng, hw - 0.8, hd - 0.8, 0.9)
-  b.add('cyl', 0xfaf7f0, [0, 3.0, -hd + 0.05], [0.6, 0.05, 0.6], { rot: [Math.PI / 2, 0, 0], cast: false })
-  b.add('torus', PALETTE.charcoal, [0, 3.0, -hd + 0.07], [0.62, 0.62, 0.6], { cast: false })
-  // painted windows on the south wall and east wall
+  b.add('cyl', 0xfaf7f0, [-2.2, 3.0, -hd + 0.05], [0.6, 0.05, 0.6], { rot: [Math.PI / 2, 0, 0], cast: false })
+  b.add('torus', PALETTE.charcoal, [-2.2, 3.0, -hd + 0.07], [0.62, 0.62, 0.6], { cast: false })
+  b.box(PALETTE.charcoal, [-2.14, 3.04, -hd + 0.09], [0.12, 0.012, 0.01], { cast: false })
+  b.box(PALETTE.charcoal, [-2.2, 3.08, -hd + 0.09], [0.012, 0.16, 0.01], { cast: false })
   for (const x of [-7.5, 4.5]) windowView(ctx, x, 2.0, hd - 0.02, Math.PI, 2.2, 1.6, 11 + x, r.palette.trim)
   windowView(ctx, hw - 0.02, 2.0, -5.6, -Math.PI / 2, 2.4, 1.6, 17, r.palette.trim)
 }
@@ -498,29 +650,112 @@ function cafe(ctx: GenContext, r: InteriorDef) {
   b.box(cream, [0, 0, 0], [0.01, 0.01, 0.01], { cast: false })
 }
 
+/**
+ * Home: a warm, lived-in apartment living room. A cushioned sofa and an
+ * armchair around a rug and an oak coffee table, facing a TV wall unit (a
+ * slatted oak panel with a TV, console and family photos); a reading corner
+ * with a floor lamp; a dining table with a pendant light; the work desk
+ * under the window; shelves, plants, framed art and warm downlights. The
+ * interactive points (about me, desk, tools, skills wall, selected work,
+ * AI wall, gallery, contact) are StoryProps and keep their places.
+ */
 function home(ctx: GenContext, r: InteriorDef) {
   const { b } = ctx
   const rng = createRng(503)
   const hw = r.width / 2
   const hd = r.depth / 2
   const wood = 0x8a6a4c
-  // rug + living area
-  b.box(0xc9a58a, [-3, 0.005, 1.0], [4.2, 0.01, 3.0], { mat: 'paint', cast: false })
-  b.push(-3, 0, 2.4, Math.PI)
-  b.box(0x6f7f68, [0, 0.25, 0], [2.4, 0.5, 0.9])
-  b.box(0x6f7f68, [0, 0.62, -0.38], [2.4, 0.6, 0.18])
-  b.box(0x6f7f68, [-1.1, 0.5, 0], [0.2, 0.5, 0.9])
-  b.box(0x6f7f68, [1.1, 0.5, 0], [0.2, 0.5, 0.9])
-  for (const x of [-0.6, 0.6]) b.box(0xe3d2a2, [x, 0.62, -0.2], [0.42, 0.34, 0.12], { rot: [-0.2, 0, 0] })
-  b.collider([0, 0.4, 0], [2.4, 0.8, 0.9])
+  const oak = 0xb98d62
+  const walnut = 0x6e5140
+  // oak floor: a few planks a shade lighter or darker so it reads as real boards
+  for (let i = 0; i < 46; i++) {
+    const z = -hd + 0.25 + Math.floor(rng.range(0, r.depth / 0.5)) * 0.5
+    b.box(shadeColor(r.palette.floor, rng.pick([-5, -3, 3, 5])), [rng.range(-hw + 1, hw - 1), 0.0015, z], [rng.range(1.2, 2.4), 0.003, 0.47], { mat: 'paint', cast: false })
+  }
+  // warm downlights (no office panels here) and a light pool where people sit
+  for (const [x, z] of [[-6, -3], [-3, -3], [0, -3], [3.6, -3], [-6, 2], [0, 2], [6, 2], [6, -3], [-3, 4.6], [3, 4.6]] as const) {
+    b.add('cyl', 0xffffff, [x, r.height - 0.005, z], [0.22, 0.02, 0.22], { cast: false })
+    b.add('disk', 0xfff0d6, [x, r.height - 0.02, z], [0.16, 1, 0.16], { rot: [Math.PI, 0, 0], mat: 'emissive', cast: false })
+  }
+
+  // ── living area ─────────────────────────────────────────────────────
+  // layered rugs: a woven base and a softer top rug
+  b.add('rbox', 0xb9967a, [-3, 0.006, 0.9], [4.6, 0.012, 3.4], { mat: 'fabric', cast: false })
+  b.add('rbox', 0xe6d8c3, [-3, 0.014, 0.9], [4.1, 0.01, 2.9], { mat: 'fabric', cast: false })
+  // sofa facing the TV (north), cushions and a throw
+  sofa(b, -3, 2.45, Math.PI, 0x7c8b74, 3)
+  b.push(-3, 0, 2.45, Math.PI)
+  for (const [x, c, rz] of [[-0.95, 0xe3d2a2, 0.18], [-0.6, 0xc27a60, -0.12], [0.85, 0xe9e1d3, -0.2]] as const) b.add('rbox', c, [x, 0.66, -0.12], [0.42, 0.38, 0.12], { mat: 'fabric', rot: [-0.28, 0, rz] })
+  b.add('rbox', 0xd8c7a0, [0.6, 0.53, 0.05], [0.7, 0.04, 0.6], { mat: 'fabric', rot: [0, 0.2, 0.05], cast: false })
   b.pop()
-  b.box(wood, [-3, 0.22, 0.6], [1.2, 0.44, 0.7])
-  b.collider([-3, 0.22, 0.6], [1.2, 0.44, 0.7])
-  b.add('cyl', 0xf5f1ea, [-2.8, 0.49, 0.6], [0.09, 0.1, 0.09], { cast: false })
-  b.add('cyl8', PALETTE.charcoal, [-5.4, 0.8, 2.8], [0.05, 1.6, 0.05], { cast: false })
-  b.add('cone', 0xf1e3c8, [-5.4, 1.65, 2.8], [0.5, 0.35, 0.5], { mat: 'emissive', cast: false })
-  // workspace desk under the window
-  b.box(wood, [0, 0.76, -hd + 0.55], [2.6, 0.05, 0.8])
+  // armchair in the reading corner, angled to the coffee table
+  armchair(b, -5.55, 0.7, Math.PI / 2 - 0.3, 0xc9a77e)
+  // coffee table: oak top on tapered legs, with books, a mug, a tray and a small plant
+  b.add('rbox', oak, [-3, 0.42, 0.65], [1.3, 0.06, 0.72])
+  b.box(walnut, [-3, 0.2, 0.65], [1.18, 0.02, 0.6], { cast: false })
+  for (const [lx, lz] of [[-0.56, -0.28], [0.56, -0.28], [-0.56, 0.28], [0.56, 0.28]]) b.add('cyl8', walnut, [-3 + lx, 0.2, 0.65 + lz], [0.04, 0.4, 0.04], { cast: false })
+  b.collider([-3, 0.25, 0.65], [1.3, 0.5, 0.72])
+  for (let k = 0; k < 3; k++) b.box(rng.pick([0x2f4a8a, 0xe7dccb, 0x7a3f3a]), [-3.35, 0.47 + k * 0.03, 0.6], [0.3 - k * 0.03, 0.028, 0.22 - k * 0.02], { rot: [0, k * 0.2, 0], cast: false })
+  b.add('cyl', 0xf5f1ea, [-2.8, 0.5, 0.75], [0.09, 0.1, 0.09], { cast: false })
+  b.add('cyl', 0x3b3e44, [-2.55, 0.46, 0.5], [0.32, 0.02, 0.32], { cast: false })
+  b.add('cyl8', PALETTE.terracotta, [-2.55, 0.52, 0.5], [0.1, 0.1, 0.1], { cast: false })
+  b.add('ico', PALETTE.leafA, [-2.55, 0.64, 0.5], [0.16, 0.14, 0.16], { mat: 'foliage', cast: false })
+  // side table + table lamp beside the sofa
+  b.add('cyl', walnut, [-1.25, 0.52, 2.55], [0.44, 0.04, 0.44])
+  b.add('cyl8', walnut, [-1.25, 0.26, 2.55], [0.05, 0.5, 0.05], { cast: false })
+  b.add('cyl', walnut, [-1.25, 0.02, 2.55], [0.3, 0.03, 0.3], { cast: false })
+  tableLamp(b, -1.25, 0.54, 2.55)
+  b.cylCollider([-1.25, 0, 2.55], 0.24, 0.6)
+  // floor lamp in the reading corner
+  b.add('cyl', 0x2b2e34, [-5.4, 0.02, 2.8], [0.34, 0.03, 0.34], { cast: false })
+  b.add('cyl8', PALETTE.charcoal, [-5.4, 0.8, 2.8], [0.04, 1.6, 0.04], { cast: false })
+  b.add('cone', 0xf1e3c8, [-5.4, 1.65, 2.8], [0.5, 0.35, 0.5], { mat: 'fabric', cast: false })
+  b.add('disk', 0xfff1d6, [-5.4, 1.48, 2.8], [0.42, 1, 0.42], { rot: [Math.PI, 0, 0], mat: 'emissive', cast: false })
+  const [lx, , lz] = b.toWorld(-5.0, 0, 2.2)
+  lightPoolAt(ctx, lx, lz, 1.6, 0xffdcae)
+  // ── TV wall unit: a slatted oak panel with the TV, a low console, photos and decor
+  b.push(-3, 0, -1.5, 0)
+  b.box(0xd8cbb8, [0, 1.05, -0.12], [2.9, 2.1, 0.06])
+  for (let i = 0; i < 17; i++) b.box(oak, [-1.36 + i * 0.17, 1.05, -0.08], [0.1, 2.1, 0.04], { cast: false })
+  b.add('rbox', walnut, [0, 0.26, 0.08], [2.6, 0.44, 0.42])
+  b.box(0xd9cbb5, [0, 0.49, 0.08], [2.64, 0.025, 0.44], { cast: false })
+  for (let k = 0; k < 3; k++) b.box(0x5b4436, [-0.86 + k * 0.86, 0.26, 0.3], [0.8, 0.36, 0.01], { cast: false })
+  b.collider([0, 0.9, -0.02], [2.9, 1.8, 0.62])
+  // the TV: a thin black panel showing a portfolio screen
+  b.box(0x15171b, [0, 1.32, -0.04], [1.62, 0.94, 0.04])
+  const tv = ctx.decor.add(256, 144, screenPainter(915), 'home-tv')
+  b.add('plane', 0xffffff, [0, 1.32, -0.017], [1.54, 0.86, 1], { mat: 'decorAtlas', uv: tv, cast: false })
+  // on the console: a speaker, a vase, a book stack and two framed photos
+  b.add('rbox', 0x2b2e34, [0.95, 0.62, 0.08], [0.16, 0.24, 0.16], { cast: false })
+  b.add('cyl', 0xe9e1d3, [-0.95, 0.62, 0.1], [0.14, 0.24, 0.14], { cast: false })
+  for (let k = 0; k < 3; k++) b.add('cyl8', 0x8a6a4c, [-0.95 + (k - 1) * 0.03, 0.85, 0.1], [0.008, 0.28, 0.008], { rot: [0, 0, (k - 1) * 0.25], cast: false })
+  books(b, rng, -0.62, -0.36, 0.5, 0.12, 0.2)
+  b.pop()
+  frame(ctx, 721, -3.95, 0.66, -1.36, 0, 0.18, 0.24, ['#e9d8c4', '#7a5a44', '#c49a4e'])
+  frame(ctx, 722, -2.08, 0.66, -1.36, 0, 0.22, 0.16, ['#dfe6ea', '#3f7f78', '#2f4a8a'])
+  // plants either side of the TV wall
+  snakePlant(b, -4.75, -1.4)
+  tallPlant(b, rng, -1.1, -1.6, 1.4)
+
+  // ── dining: an oak table for four with a pendant light and a fruit bowl
+  const dx = 3.6
+  const dz = 0.4
+  b.add('rbox', oak, [dx, 0.75, dz], [1.7, 0.05, 0.92])
+  for (const [ox, oz] of [[-0.72, -0.36], [0.72, -0.36], [-0.72, 0.36], [0.72, 0.36]]) b.add('cyl8', walnut, [dx + ox, 0.37, dz + oz], [0.045, 0.74, 0.045], { cast: false })
+  b.collider([dx, 0.4, dz], [1.7, 0.8, 0.92])
+  for (const [ox, oz, yaw] of [[-0.42, -0.72, 0], [0.42, -0.72, 0], [-0.42, 0.72, Math.PI], [0.42, 0.72, Math.PI]] as const) chair(b, dx + ox, dz + oz, yaw, 0xd9c3a0)
+  b.add('cyl', 0xe9e1d3, [dx, 0.8, dz], [0.36, 0.06, 0.36], { cast: false })
+  for (const [fx, fz, c] of [[-0.06, 0, 0xd9822b], [0.07, 0.04, 0xc0392b], [0.01, -0.07, 0xe0b23a]] as const) b.add('sphere', c, [dx + fx, 0.86, dz + fz], [0.09, 0.09, 0.09], { cast: false })
+  for (const ox of [-0.5, 0.5]) b.add('cyl', 0xf5f1ea, [dx + ox, 0.78, dz - 0.2], [0.2, 0.01, 0.2], { cast: false })
+  b.add('cyl8', 0x2b2e34, [dx, 3.0, dz], [0.01, 0.8, 0.01], { cast: false })
+  b.add('sphere', 0xf3e7cf, [dx, 2.55, dz], [0.42, 0.34, 0.42], { mat: 'glass', cast: false })
+  b.add('disk', 0xfff1d6, [dx, 2.42, dz], [0.24, 1, 0.24], { rot: [Math.PI, 0, 0], mat: 'emissive', cast: false })
+  const [px, , pz] = b.toWorld(dx, 0, dz)
+  lightPoolAt(ctx, px, pz, 1.6, 0xffe2b8)
+  tallPlant(b, rng, 5.3, -0.9, 1.3)
+
+  // ── workspace desk under the window (the screen and laptop are StoryProps' anchors)
+  b.add('rbox', wood, [0, 0.76, -hd + 0.55], [2.6, 0.05, 0.8])
   for (const x of [-1.2, 1.2]) b.box(wood, [x, 0.38, -hd + 0.55], [0.06, 0.76, 0.7], { cast: false })
   b.collider([0, 0.4, -hd + 0.55], [2.6, 0.8, 0.8])
   b.box(0x22252c, [-0.3, 1.12, -hd + 0.3], [0.8, 0.46, 0.03])
@@ -531,12 +766,18 @@ function home(ctx: GenContext, r: InteriorDef) {
   b.add('cyl8', PALETTE.terracotta, [-1.05, 0.86, -hd + 0.35], [0.14, 0.18, 0.14], { cast: false })
   b.add('ico', PALETTE.leafA, [-1.05, 1.04, -hd + 0.35], [0.24, 0.26, 0.24], { mat: 'foliage', cast: false })
   chair(b, 0, -hd + 1.35, Math.PI, 0x3b3e44, true)
-  // window with a view (curtains are a StoryProp)
+  // a floating shelf above the desk: books, a small plant, a photo
+  b.box(oak, [0.1, 1.8, -hd + 0.14], [1.9, 0.04, 0.24], { cast: false })
+  books(b, rng, -0.75, -0.1, 1.82, -hd + 0.14, 0.18)
+  b.add('cyl8', 0xefe9df, [0.45, 1.88, -hd + 0.14], [0.1, 0.12, 0.1], { cast: false })
+  b.add('ico', PALETTE.leafB, [0.45, 2.0, -hd + 0.14], [0.16, 0.16, 0.16], { mat: 'foliage', cast: false })
+  frame(ctx, 723, 0.82, 1.94, -hd + 0.06, 0, 0.18, 0.24, ['#e8e2d6', '#b06a4c', '#3f7f78'])
+  // windows with a view (curtains are a StoryProp)
   windowView(ctx, -4.8, 1.9, -hd + 0.02, 0, 2.0, 1.6, 81, r.palette.trim)
   windowView(ctx, 3.6, 1.9, -hd + 0.02, 0, 1.6, 1.4, 83, r.palette.trim)
   // bookshelf on the west wall
   shelfUnit(b, rng, -hw + 0.24, -0.4, Math.PI / 2, 3.2, 2.4)
-  // education + portfolio walls (east): frames
+  // selected work + AI walls (east): frames and signs
   const palettes = [['#f6f1e8', '#2f4a8a', '#c27a60'], ['#1f2430', '#c49a4e', '#8fa2bd'], ['#e8e2d6', '#3f7f78', '#b06a4c']]
   for (let i = 0; i < 4; i++) {
     const rect = ctx.decor.add(128, 128, artPainter(710 + i, ['#ffffff', ...palettes[i % 3]]), `homeart-${i}`)
@@ -548,8 +789,7 @@ function home(ctx: GenContext, r: InteriorDef) {
   b.push(hw - 0.09, 2.65, -2.2, -Math.PI / 2)
   addSign(ctx, 'AI-ASSISTED DESIGN', { bg: '#f3ece1', fg: '#5c4535', shape: 'rect', weight: 800 }, [0, 0, 0], 2.8, 0.3)
   b.pop()
-  // skills board on the west wall, by the entrance
-  // (the tool tiles themselves are live StoryProps so they can respond to the visitor)
+  // skills board on the west wall, by the entrance (the tool tiles are StoryProps)
   b.box(0x2e3035, [-hw + 0.06, 1.55, 3.9], [0.05, 2.0, 3.3], { cast: false })
   b.box(0xb48a62, [-hw + 0.09, 0.53, 3.9], [0.14, 0.04, 3.4], { cast: false })
   b.push(-hw + 0.1, 2.8, 3.9, Math.PI / 2)
@@ -560,14 +800,23 @@ function home(ctx: GenContext, r: InteriorDef) {
   b.push(6.8, 2.62, -hd + 0.08)
   addSign(ctx, 'GALLERY', { bg: '#efe9df', fg: '#5c4535', shape: 'rect', weight: 800 }, [0, 0, 0], 1.6, 0.22)
   b.pop()
-  // contact pinboard by the door
+  // entryway: contact pinboard, a console with keys and a bowl, a coat stand, a doormat
   b.box(0x9c7a58, [-4.6, 1.6, hd - 0.06], [1.4, 1.0, 0.05], { cast: false })
   for (let i = 0; i < 4; i++) b.box(rng.pick([0xf6f1e8, 0xe3d2a2, 0xbcd0d8]), [-5.0 + (i % 2) * 0.8, 1.75 - Math.floor(i / 2) * 0.42, hd - 0.1], [0.5, 0.32, 0.01], { cast: false })
-  // coat hooks, plants, side table with the hello card
+  b.add('rbox', 0x8a6448, [0, 0.008, hd - 0.75], [1.4, 0.016, 0.8], { mat: 'fabric', cast: false })
+  b.add('cyl8', walnut, [2.4, 0.9, hd - 0.4], [0.04, 1.8, 0.04], { cast: false })
+  for (let k = 0; k < 4; k++) b.add('cyl8', walnut, [2.4 + Math.cos(k * 1.57) * 0.12, 1.72, hd - 0.4 + Math.sin(k * 1.57) * 0.12], [0.02, 0.2, 0.02], { rot: [Math.sin(k * 1.57) * 0.6, 0, -Math.cos(k * 1.57) * 0.6], cast: false })
+  b.add('rbox', 0x5d6b5c, [2.5, 1.35, hd - 0.36], [0.3, 0.6, 0.14], { mat: 'fabric', cast: false })
+  b.add('cyl', walnut, [2.4, 0.02, hd - 0.4], [0.36, 0.03, 0.36], { cast: false })
+  b.cylCollider([2.4, 0, hd - 0.4], 0.2, 1.8)
+  // plants and the side table that carries the hello card
   plant(b, rng, hw - 0.7, -hd + 0.7, 1.2)
   plant(b, rng, -hw + 0.7, hd - 0.7, 1.0)
-  b.box(wood, [1.4, 0.4, 3.9], [1.0, 0.8, 0.4])
+  b.add('rbox', wood, [1.4, 0.4, 3.9], [1.0, 0.8, 0.4])
   b.collider([1.4, 0.4, 3.9], [1.0, 0.8, 0.4])
+  // wall art by the dining table (south wall)
+  frame(ctx, 724, 4.5, 1.8, hd - 0.06, Math.PI, 0.7, 0.9, ['#efe6d6', '#c27a60', '#3f5e4c'])
+  frame(ctx, 725, 5.5, 1.9, hd - 0.06, Math.PI, 0.5, 0.5, ['#e9e4da', '#2f4a8a', '#c49a4e'])
 }
 
 function shadeColor(c: number, amt: number) {
