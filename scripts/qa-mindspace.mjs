@@ -196,7 +196,7 @@ const windowFits = (p) => p.evaluate(() => { const r = document.querySelector('.
   const intro = await p.evaluate(() => !!document.querySelector('.ms.is-intro'))
   const noCity = await p.evaluate(() => !document.querySelector('.game-canvas'))
   expect(href.endsWith('/mindspace') && intro && noCity, `city hero → "Explore the Classic Portfolio" (${href}) → the intro plays, the city is gone`)
-  await p.getByRole('link', { name: /return to the 3D city/ }).count().then(() => {})
+  await p.getByRole('link', { name: /Explore the 3D Portfolio/ }).count().then(() => {})
   await ctx.close()
 }
 

@@ -80,7 +80,7 @@ export default function MindspaceApp() {
       <MiniPlayer />
       <IntroOverlay ready={ready || fallback} />
       {!ready && !fallback && <div className="ms-loading" role="status" aria-label="Preparing the room"><span /></div>}
-      <a className="ms-skiplink" href={`${BASE}street`}>Back to the 3D city</a>
+      <a className="ms-skiplink" href={`${BASE}street`}>Explore the 3D Portfolio</a>
     </div>
   )
 }

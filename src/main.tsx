@@ -18,9 +18,14 @@ import './styles/buttons.css'
 import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 
-// /mindspace is a separate experience (the spatial portfolio): its own bundle,
-// and the 3D city is never mounted alongside it
-const isMindspace = /\/mindspace\/?$/.test(window.location.pathname)
+// The classic portfolio (/mindspace) is the front door: the site's plain address opens it, and
+// its "Explore the 3D Portfolio" button leads to the city (/street, /projects). Each is its own
+// bundle — the 3D city is never mounted alongside the classic portfolio.
+const path = window.location.pathname
+const isCity = /\/(street|projects)\/?$/.test(path)
+const isMindspace = !isCity
+// the plain address shows /mindspace in the bar, so a refresh or a shared link lands in the same place
+if (isMindspace && !/\/mindspace\/?$/.test(path)) window.history.replaceState(null, '', `${import.meta.env.BASE_URL}mindspace${window.location.search}${window.location.hash}`)
 const Mindspace = lazy(() => import('./mindspace/MindspaceApp'))
 const City = lazy(() => import('./app/App').then((m) => ({ default: m.App })))
 

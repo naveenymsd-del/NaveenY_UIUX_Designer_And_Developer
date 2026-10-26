@@ -51,9 +51,10 @@ export function Controls() {
 
   return (
     <>
-      <a className="ms-pill ms-back" href={`${BASE}street`} aria-label="Leave Mindspace and return to the 3D city">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
-        <span>3D city</span>
+      <a className="ms-pill ms-back ms-to3d" href={`${BASE}street`} aria-label="Explore the 3D Portfolio — walk through Naveen’s 3D city">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3zM4 7.5 12 12l8-4.5M12 12v9" /></svg>
+        <span>Explore the 3D Portfolio</span>
+        <svg className="ms-to3d__go" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-6 6 6-6 6" /></svg>
       </a>
       {!fallback && (
         <div className="ms-controls" role="toolbar" aria-label="View controls">
